@@ -5,7 +5,7 @@ import Product from "../models/Products.js";
 // Get /api/v1/cart
 export const getCart = async (req: Request, res: Response) => {
   try {
-   console.log("Fetching cart for user:", req.user?._id);
+   console.log("Fetching cart for user:", req.user._id);
     let cart = await Cart.findOne({
       user: req.user._id,
     }).populate("items.product", "name images price stock");
