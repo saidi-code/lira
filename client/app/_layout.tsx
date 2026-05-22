@@ -1,0 +1,44 @@
+import { ClerkProvider } from "@clerk/clerk-expo";
+// Avoid token-cache which pulls expo-auth-session -> expo-crypto AES on Expo Go
+import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { useFonts } from "expo-font";
+import { SplashScreen, Stack } from "expo-router";
+import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "../constants/config";
+import { CartProvider } from "../context/CartContext";
+import { FavorisProvider } from "../context/FavorisContext";
+import "../global.css";
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error("Add your Clerk Publishable Key to the .env file");
+}
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    "jazera-bold": require("../assets/fonts/Al-Jazeera-Arabic-Bold.ttf"),
+    "tajwal-meduim": require("../assets/fonts/Tajawal-Medium.ttf"),
+    "arabic-body": require("../assets/fonts/IBMPlexSansArabic-Regular.ttf"),
+  });
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+    if (!fontsLoaded) return;
+  }, [fontsLoaded]);
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
+        <CartProvider>
+          <FavorisProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+              }}
+            />
+            <Toast config={toastConfig} />
+          </FavorisProvider>
+        </CartProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
+  );
+}
