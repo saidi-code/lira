@@ -22,9 +22,9 @@ export const getCart = async (req: Request, res: Response) => {
 // POST /api/v1/cart/add
 export const addToCart = async (req: Request, res: Response) => {
   try {
-    const { productId, quantity = 1, size } = req.body;
+    const { _id, quantity = 1, size } = req.body;
     console.log("request body" ,req.body)
-    const product = await Product.findById(productId);
+    const product = await Product.findById(_id);
   
     if (!product) {
       return res
@@ -48,7 +48,7 @@ export const addToCart = async (req: Request, res: Response) => {
       existingItem.price = product.price;
     } else {
       cart.items.push({
-        product: productId,
+        product: product._id,
         quantity,
         price: product.price,
         size,
