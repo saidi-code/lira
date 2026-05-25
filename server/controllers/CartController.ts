@@ -145,9 +145,9 @@ export const deleteCartItem = async (req: Request, res: Response) => {
       const matchesProduct = item.product?.toString() === req.params.productId;
       const matchesSize = item.size === size;
       const matchesColor = color === undefined ? true : item.color === color;
-
+      const matchItemId = item._id.toString() === req.params.itemId;
       // remove only if it matches the full identity (product + size [+ color if provided])
-      return !(matchesProduct && matchesSize && matchesColor);
+      return !(matchesProduct && matchesSize && matchesColor && matchItemId);
     });
 
     cart.calculateTotal();
