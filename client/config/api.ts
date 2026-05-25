@@ -7,6 +7,6 @@ const LOCAL_API_URL = Platform.select({
   default: "http://localhost:3000/api/v1",
 });
 const api = axios.create({
-  baseURL: LOCAL_API_URL,
+  baseURL: "https://lira-lilac.vercel.app/api/v1",
 });
 export default api;
