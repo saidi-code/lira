@@ -22,27 +22,34 @@ export const getCart = async (req: Request, res: Response) => {
 // POST /api/v1/cart/add
 export const addToCart = async (req: Request, res: Response) => {
   try {
-    const { _id, quantity = 1, size } = req.body;
-    console.log("request body" ,req.body)
-    const product = await Product.findById(_id);
-  
+    // for debugging
+    console.log("request body", req.body);
+
+    const { productId, quantity = 1, size } = req.body;
+
+    const product = await Product.findById(productId);
     if (!product) {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
     }
+
     if (product.stock < quantity) {
       return res
         .status(400)
         .json({ success: false, message: "Insufficent stock" });
     }
+
     let cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       cart = new Cart({ user: req.user._id, items: [] });
     }
-    const existingItem = cart.items.find((item) => {
-      return item.product.toString() === productId && item.size === size;
-    });
+
+    const existingItem = cart.items.find(
+      (item: any) =>
+        item.product?.toString?.() === productId && item.size === size,
+    );
+
     if (existingItem) {
       existingItem.quantity += quantity;
       existingItem.price = product.price;
@@ -54,6 +61,7 @@ export const addToCart = async (req: Request, res: Response) => {
         size,
       });
     }
+
     cart.calculateTotal();
     await cart.save();
     await cart.populate("items.product", "name images price stock");
