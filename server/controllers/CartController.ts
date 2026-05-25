@@ -23,10 +23,10 @@ export const getCart = async (req: Request, res: Response) => {
 export const addToCart = async (req: Request, res: Response) => {
   try {
     // for debugging
-    console.log("request body", req.body);
+   
 
-    const { productId, quantity = 1, size } = req.body;
-
+    const { productId, quantity = 1, size,  color } = req.body;
+ console.info("request body", req.body);
     const product = await Product.findById(productId);
     if (!product) {
       return res
@@ -55,7 +55,7 @@ export const addToCart = async (req: Request, res: Response) => {
       existingItem.price = product.price;
     } else {
       cart.items.push({
-        product: product._id,
+        product:product,
         quantity,
         price: product.price,
         size,
