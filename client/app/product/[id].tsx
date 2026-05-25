@@ -15,6 +15,7 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,8 +23,10 @@ import Header from "../../components/Header";
 import axios from "../../config/api";
 import { COLORS, CURRENCY, PRODUCTS } from "../../constants/index";
 import { IProduct } from "../../constants/types";
+import { useCart } from "../../context/CartContext";  
 
 const SingleProduct = () => {
+  const { addToCart } = useCart();
   const { isLiked, addToFavoris, removeFromFavoris } = useFavoris();
   const [product, setProduct] = useState<IProduct | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -36,6 +39,7 @@ const SingleProduct = () => {
     try {
       const { data } = await axios.get(`/products/${id}`);
       setProduct(data.data);
+      console.log("Fetched product data:", data.data);
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -88,7 +92,7 @@ const SingleProduct = () => {
                 uri:
                   product.type === "simple"
                     ? product?.images?.[0]
-                    : product?.colors?.[0].images?.[0],
+                    : (product as any)?.vcolors?.[0]?.images?.[0],
               }}
               defaultSource={require("../../assets/images/productLoadingImage.png")}
               style={{
@@ -100,7 +104,7 @@ const SingleProduct = () => {
           ) : (
             <View className="">
               <FlatList
-                data={product?.colors?.[0].images}
+                data={product?.vcolors?.[0].images}
                 keyExtractor={(item, index) => String(index)}
                 horizontal
                 pagingEnabled
@@ -129,16 +133,18 @@ const SingleProduct = () => {
 
               {/* Pagination Dots */}
               <View className="flex-row justify-center -mt-4 gap-2">
-                {product?.colors?.[0].images.map((_, index) => (
-                  <View
-                    key={index}
-                    className={`h-2 rounded-full ${
-                      index === activeBannerIndex
-                        ? "w-8 bg-primary"
-                        : "w-2 bg-gray-300"
-                    }`}
-                  />
-                ))}
+                {(product as any)?.vcolors?.[0]?.images?.map(
+                  (_: string, index: number) => (
+                    <View
+                      key={index}
+                      className={`h-2 rounded-full ${
+                        index === activeBannerIndex
+                          ? "w-8 bg-primary"
+                          : "w-2 bg-gray-300"
+                      }`}
+                    />
+                  ),
+                )}
               </View>
             </View>
           )}
@@ -178,7 +184,7 @@ const SingleProduct = () => {
                   اللون
                 </Text>
                 <FlatList
-                  data={product?.colors ?? []}
+                  data={((product as any)?.vcolors ?? []) as any[]}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -194,15 +200,15 @@ const SingleProduct = () => {
                       className="h-8 w-8 rounded-full"
                       style={{
                         backgroundColor: color.hex,
-                        outlineWidth: 2, // سماكة الحلقة
+                        outlineWidth: 2,
                         outlineColor:
                           selectedColor === index
                             ? "#B89354"
-                            : "#rgba(184,147,84,0.4)", // لون الحلقة (يمكن تغييره)
-                        shadowColor: "#fff", // ظل خفيف لإضفاء عمق
+                            : "#rgba(184,147,84,0.4)",
+                        shadowColor: "#fff",
                         shadowOpacity: 0.2,
                         shadowRadius: 6,
-                        elevation: 4, // لتفعيل الظل على Android
+                        elevation: 4,
                         outlineOffset: 2,
                       }}
                     />
@@ -216,7 +222,7 @@ const SingleProduct = () => {
                 </Text>
 
                 <FlatList
-                  data={product?.colors?.[selectedColor]?.variants ?? []}
+                  data={((product as any)?.vcolors?.[selectedColor]?.variants ?? []) as any[]}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -231,8 +237,12 @@ const SingleProduct = () => {
                       <TouchableOpacity
                         activeOpacity={0.85}
                         onPress={() => setSelectedSize(index)}
-                        className="w-[77px] h-[42px] flex items-center justify-center rounded-lg"
+                        className="flex items-center justify-center rounded-lg"
                         style={{
+                          color: isActive ? "#201b16" : "#807668",
+                          height: 42,
+                          width: 77,
+                          backgroundColor: isActive ? "#B89354" : "#fff", 
                           borderStyle: "solid",
                           borderWidth: 1,
                           borderColor: isActive
@@ -356,7 +366,9 @@ const SingleProduct = () => {
 
       <View className=" px-6 pt-4 pb-12 absolute left-0 bottom-0 bg-stone-50/90 shadow-md border-t border-amber-900/10 backdrop-blur-md flex-row justify-start items-center gap-4">
         {/* زر إضافة إلى الحقيبة */}
-        <View className="flex-1 h-[59px] bg-[#785920] rounded-xl flex-row justify-center items-center gap-2">
+        <TouchableOpacity onPress={
+         ()=> addToCart(product, null)
+        } className="flex-1 h-[59px] bg-[#785920] rounded-xl flex-row justify-center items-center gap-2">
           {/* أيقونة */}
           <MaterialIcons name="add-shopping-cart" size={16} color="white" />
           {/* <View className="bg-white rounded-sm" /> */}
@@ -364,7 +376,7 @@ const SingleProduct = () => {
           <Text className="text-center text-white text-base font-tajwal">
             إضافة إلى الحقيبة
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {/* زر أيقونة جانبي */}
         <View className="px-4 h-[59px] w-[59px] border border-[#785920]  rounded-[12px] flex justify-center items-center">

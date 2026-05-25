@@ -1,5 +1,7 @@
 import Header from "@/components/Header";
+import { COLORS } from "@/constants";
 import { useSignUp } from "@clerk/clerk-expo";
+import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import * as React from "react";
 import {
@@ -9,7 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View,Image
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 export default function Page() {
@@ -96,7 +98,7 @@ export default function Page() {
   if (pendingVerification) {
     return (
       <SafeAreaView className="flex-1 bg-white" style={{ padding: 28 }}>
-        <Header showBack />
+      
         <Text style={styles.title}>تحقق من بريدك الإلكتروني</Text>
         <Text style={styles.description}>
           تم إرسال رمز التحقق إلى بريدك الإلكتروني.
@@ -126,14 +128,31 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
-      <Header showBack />
-      <View className="flex  items-center my-6">
-        <Text className="text-4xl  text-center font-bold  text-primary mb-4">
-          إنشاء حساب
-        </Text>
-      </View>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+     
+     
+      <ScrollView  contentContainerStyle={{
+        flex:1,
+        display: "flex",
+        justifyContent: "center",
+       
+       
+      }} showsVerticalScrollIndicator={false}>
         <View className="bg-white/90 mx-4 py-8 px-4 rounded-lg shadow shadow-primary-500">
+            <View className="flex gap-4 items-center  mb-8">
+                     <View className=" justify-center items-center  w-20 h-20 rounded-full bg-[#b89354]/5 mb-2  ">
+                                   <Image
+                                     style={{
+                                       height: 72,
+                                       width: 72,
+                                     }}
+                                     resizeMode="contain"
+                                     source={require("../../assets/images/logo2.png")}
+                                   />
+                                 </View>
+                    <Text className="text-3xl  text-center font-bold  text-primary mb-4">
+                      إنشاء حساب
+                    </Text>
+                  </View>
           {authError && (
             <View className="p-4 rounded-lg bg-red-100 mb-4">
               <Text className="text-red-500 text-sm font-semibold">
@@ -212,6 +231,23 @@ export default function Page() {
             </Link>
             <Text className="text-base text-gray-400">هل لديك حساب؟ </Text>
           </View>
+          <View className="mt-6 items-center justify-center">
+            <Link
+              href="/"
+              className="flex-row-reverse items-center  px-6 py-3 rounded-full"
+              style={{ backgroundColor: "#f7efe1" }}
+            >
+              <Text
+                className="text-primary font-tajwal  font-bold text-lg"
+                style={{ textDecorationLine: "underline" }}
+              >
+                العودة إلي المتجر
+              </Text>
+              <Entypo name="shop" size={18} color={COLORS.primary} />
+            </Link>
+          </View>
+        
+            
         </View>
       </ScrollView>
     </SafeAreaView>

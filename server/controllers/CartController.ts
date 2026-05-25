@@ -23,6 +23,7 @@ export const getCart = async (req: Request, res: Response) => {
 export const addToCart = async (req: Request, res: Response) => {
   try {
     const { productId, quantity = 1, size } = req.body;
+    console.log("request body" ,req.body)
     const product = await Product.findById(productId);
   
     if (!product) {

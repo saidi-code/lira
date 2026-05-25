@@ -4,6 +4,7 @@ import { IProduct } from "@/constants/types";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Animated,
@@ -33,6 +34,7 @@ type CategoryState = {
 const LIMIT = 4;
 
 export default function Shop() {
+  const router = useRouter();
   const fetchInFlight = useRef(false);
 
   const [searchText, setSearchText] = useState("");
@@ -77,10 +79,12 @@ export default function Shop() {
     }
   );
 
-  const loadingInitial = useMemo(() => {
-    const vals = Object.values(categoryState);
-    return vals.some((v) => v.products.length === 0 && v.page === 1);
-  }, [categoryState]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+
+  // Lazy loading of category sections (show 1 first, then add 1 on scroll end)
+  const [visibleSectionsCount, setVisibleSectionsCount] = useState(1);
+  const [loadingMoreSections, setLoadingMoreSections] = useState(false);
+  const lazyLoadInFlight = useRef(false);
 
   const animatePress = (callback: () => void) => {
     Animated.sequence([
@@ -120,12 +124,15 @@ export default function Shop() {
       const queryParams: any = { page: nextPage, limit: LIMIT };
       if (title !== "الكل") queryParams.category = title;
 
+      // api.ts already sets baseURL to /api/v1, so we must not call /api/v1 again
       const { data } = await axios.get("/products", { params: queryParams });
 
       setCategoryState((prev) => {
         const prevCat = prev[title];
         const appended =
-          nextPage === 1 ? data.data : [...(prevCat?.products ?? []), ...data.data];
+          nextPage === 1
+            ? data.data
+            : [...(prevCat?.products ?? []), ...data.data];
         const hasMore = data.pagination?.page < data.pagination?.pages;
 
         return {
@@ -156,15 +163,100 @@ export default function Shop() {
   useEffect(() => {
     // Initial load for each category: 4 products (page=1)
     (async () => {
-      await fetchCategoryPage("الكل", 1);
-      for (const t of categoriesMaped) {
-        await fetchCategoryPage(t, 1);
+      try {
+        // await fetchCategoryPage("الكل", 1);
+        for (const t of categoriesMaped) {
+          await fetchCategoryPage(t, 1);
+        }
+      } finally {
+        setLoadingInitial(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const titlesForSections = useMemo(() => ["الكل", ...categoriesMaped], [categoriesMaped]);
+
+  const eligibleTitles = useMemo(() => {
+    // Only categories with at least LIMIT products
+    return titlesForSections.filter((title) => (categoryState[title]?.products?.length ?? 0) >= LIMIT);
+  }, [titlesForSections, categoryState]);
+
+  // Keep visible count in bounds as data arrives
+  useEffect(() => {
+    setVisibleSectionsCount((c) => Math.min(Math.max(1, c), eligibleTitles.length || 1));
+  }, [eligibleTitles.length]);
+
+  const visibleTitles = useMemo(() => eligibleTitles.slice(0, visibleSectionsCount), [eligibleTitles, visibleSectionsCount]);
+
+  const renderCategorySection = ({ item: title }: { item: CategoryTitle | "الكل" }) => {
+    const st = categoryState[title];
+    const items = st?.products ?? [];
+
+    // show only categories that have at least LIMIT products (should already be filtered)
+    if (items.length < LIMIT) return null;
+
+    // "إظهار المزيد" should show only if the server indicates more than LIMIT products exist
+    const showMoreVisible = !!st?.hasMore;
+
+    return (
+      <View className="mb-8">
+        <View className="flex-row-reverse items-center justify-between mb-3">
+          <Text
+            className="text-right font-tajwal font-bold text-lg text-[#201b16]"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
+
+          {showMoreVisible && (
+            <TouchableOpacity
+              onPress={() => router.push(`/product/${encodeURIComponent(title)}`)}
+              activeOpacity={0.7}
+              disabled={!!st?.loadingMore}
+              className="px-2 py-1 rounded-full"
+            >
+              <Text
+                className={`font-tajwal text-base ${
+                  st?.loadingMore ? "text-gray-400" : "text-primary"
+                }`}
+                style={{ textDecorationLine: "underline" }}
+              >
+                إظهار المزيد
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <FlatList
+          data={items.slice(0, LIMIT)}
+          keyExtractor={(p) => p._id}
+          numColumns={2}
+          scrollEnabled={false}
+          columnWrapperStyle={{ flex: 1, marginBottom: 16, columnGap: 16 }}
+          renderItem={({ item }) => <ProductCard product={item as IProduct} />}
+        />
+      </View>
+    );
+  };
+
+  const handleEndReached = () => {
+    if (lazyLoadInFlight.current) return;
+    if (visibleSectionsCount >= eligibleTitles.length) return;
+    if (loadingInitial) return;
+
+    lazyLoadInFlight.current = true;
+    setLoadingMoreSections(true);
+
+    setVisibleSectionsCount((c) => Math.min(c + 1, eligibleTitles.length));
+
+    // small unlock delay to prevent rapid multiple triggers
+    setTimeout(() => {
+      setLoadingMoreSections(false);
+      lazyLoadInFlight.current = false;
+    }, 300);
+  };
 
   return (
     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
@@ -236,52 +328,30 @@ export default function Shop() {
         </View>
       ) : (
         <FlatList
-          data={titlesForSections}
+          data={visibleTitles}
           keyExtractor={(item) => item}
-          renderItem={({ item: title }) => {
-            const st = categoryState[title];
-            const items = st?.products ?? [];
-            const showMoreVisible = items.length > LIMIT;
-
-            return (
-              <View className="mb-8">
-                <View className="flex-row items-center justify-between mb-3">
-                  <Text className="text-right text-body text-lg font-bold font-tajwal text-[#201b16]">
-                    {title}
-                  </Text>
-
-                  {showMoreVisible && (
-                    <TouchableOpacity
-                      onPress={() => fetchCategoryPage(title, (st?.page ?? 1) + 1)}
-                      className="px-4 py-2 rounded-full"
-                      style={{ backgroundColor: COLORS.primary }}
-                      disabled={!!st?.loadingMore || !st?.hasMore}
-                    >
-                      {st?.loadingMore ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <Text className="text-white font-tajwal text-base">إظهار المزيد</Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <FlatList
-                  data={items.slice(0, LIMIT)}
-                  keyExtractor={(p) => p._id}
-                  numColumns={2}
-                  scrollEnabled={false}
-                  columnWrapperStyle={{ flex: 1, marginBottom: 16, columnGap: 16 }}
-                  renderItem={({ item }) => (
-                    <ProductCard product={item as IProduct} />
-                  )}
-                />
+          renderItem={renderCategorySection}
+          ListFooterComponent={
+            visibleSectionsCount >= eligibleTitles.length ? (
+              <View className="h-10" />
+            ) : (
+              <View className="py-4">
+                {loadingMoreSections ? (
+                  <View className="flex-row items-center justify-center">
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                  </View>
+                ) : (
+                  <View className="h-10" />
+                )}
               </View>
-            );
-          }}
-          ListFooterComponent={<View className="h-10" />}
+            )
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.35}
+          // ensures onEndReached triggers reliably
+          initialNumToRender={1}
         />
       )}
 
@@ -320,11 +390,9 @@ export default function Shop() {
                       outlineWidth: c === color ? 3 : 2,
                       backgroundColor: c,
                     }}
-                    className={`flex items-center justify-center h-[32px] w-[32px] rounded-full`}
+                    className="flex items-center justify-center h-[32px] w-[32px] rounded-full"
                   >
-                    {c === color && (
-                      <Ionicons name="checkmark-sharp" color="#785920" size={14} />
-                    )}
+                    {c === color && <Ionicons name="checkmark-sharp" color="#785920" size={14} />}
                   </TouchableOpacity>
                 ))}
                 <TouchableOpacity
@@ -417,7 +485,11 @@ export default function Shop() {
                       borderWidth: 1,
                     }}
                   >
-                    <Text className={`font-tajwal text-base ${s.value === size ? "text-active" : "text-inactive"}`}>
+                    <Text
+                      className={`font-tajwal text-base ${
+                        s.value === size ? "text-active" : "text-inactive"
+                      }`}
+                    >
                       {s.label}
                     </Text>
                   </TouchableWithoutFeedback>
@@ -427,9 +499,7 @@ export default function Shop() {
           </ScrollView>
 
           <View className="bg-[#fcf9f1]/90 py-4 px-6 border-t border-t-primary-100 flex-row justify-between items-center">
-            <TouchableOpacity
-              className="px-12 py-3 relative bg-[#785920] rounded-full inline-flex flex-col justify-center items-center"
-            >
+            <TouchableOpacity className="px-12 py-3 relative bg-[#785920] rounded-full inline-flex flex-col justify-center items-center">
               <View className="w-[177.64px] h-[52px] left-0 top-0 absolute bg-white/0 rounded-full shadow-[0px_4px_6px_-4px_rgba(120,89,32,0.20)] shadow-[0px_10px_15px_-3px_rgba(120,89,32,0.20)]" />
               <Text className="text-center justify-center text-white text-lg font-bold font-tajwal leading-7">
                 تطبيق الفلاتر
@@ -454,4 +524,3 @@ export default function Shop() {
     </SafeAreaView>
   );
 }
-

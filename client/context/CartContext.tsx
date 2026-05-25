@@ -52,7 +52,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const addToCart = async (
-    product: IProduct,
+    product: IProduct | null,
     size: string | null = null,
     color: string | null = null,
   ) => {
@@ -60,15 +60,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setAuthModalVisible(true);
       return;
     }
+    if (!product?._id) {
+      console.error("addToCart: missing product id");
+      return;
+    }
     try {
       setLoading(true);
+
       const token = await getToken();
       const { data } = await axios.post(
         "/cart/add",
         {
-          productId: product._id,
+          productId: product?._id,
           quantity: 1,
-          size,
+          size: size ?? null,
+          // backend currently ignores color, but we keep sending it for consistency
+          color: color ?? null,
         },
         {
           headers: {
@@ -79,11 +86,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.success) {
         await fetchCartItems();
+      } else {
+        console.error("Add to cart failed:", data);
       }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      setLoading(false);
+    } catch (error: any) {
+      console.error(
+        "Error adding to cart:",
+        error?.response?.data ?? error,
+      );
     } finally {
       setLoading(false);
     }

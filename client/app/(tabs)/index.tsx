@@ -15,7 +15,9 @@ import Header from "../../components/Header";
 import ProductCard from "../../components/ProductCard";
 import { CATEGORIES, COLLECTIONS, COLORS } from "../../constants/index";
 import { ICollection, IProduct } from "../../constants/types";
+import { useRouter } from "expo-router";
 export default function Index() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [collections, setCollections] = useState<ICollection[]>([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -220,10 +222,17 @@ export default function Index() {
             keyExtractor={(item) => item.title}
             renderItem={({ item }) => (
               <TouchableOpacity
+              onPress={() => {
+                // Navigate to category page, e.g. /product/مجوهرات
+                router.push({
+                  pathname: "/product",
+                  params: { category: item.title },
+                });
+              }}
                 className="rounded-2xl mx-4 items-center justify-center"
                 activeOpacity={0.8}
               >
-                <View className="w-[80px] h-[80px] rounded-full bg-[#FDF1EA] flex items-center justify-center outline -outline-offset-1 outline-[#B89354}">
+                <View className="w-[80px] h-[80px] rounded-full bg-[#FDF1EA] flex items-center justify-center outline -outline-offset-1 outline-[#B89354]/20 mb-2">
                   {getIcon(item.title)}
                   {/* <Ionicons
                     name={getIconName(item.title)}

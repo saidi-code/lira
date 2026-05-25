@@ -14,6 +14,8 @@ import {
 
 import Header from "@/components/Header";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Entypo from "@expo/vector-icons/build/Entypo";
+import { COLORS } from "@/constants";
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
@@ -126,7 +128,16 @@ export default function Page() {
   if (showEmailCode) {
     return (
       <>
-        <Header showBack />
+        <View className=" justify-center items-center w-16 h-16 rounded-full bg-[#b89354]/5 mb-2  ">
+                           <Image
+                             style={{
+                               height: 48,
+                               width: 48,
+                             }}
+                             resizeMode="contain"
+                           source={require("../../assets/images/logo2.png")}
+                           />
+                         </View>
         <SafeAreaView className="flex-1 bg-white">
           <View className="flex  items-center ">
             <Text className="text-3xl  text-center font-bold  text-primary">
@@ -179,15 +190,26 @@ export default function Page() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
-      <Header showBack />
+     
 
-      <View className="flex-1 ">
-        <View className="flex  items-center mt-6 mb-12">
+      <View className="flex-1 justify-center">
+      
+        <View className="bg-white/90 mx-4 py-4 px-4 rounded-lg shadow shadow-primary-500">
+            <View className="flex gap-4 items-center  mb-8">
+           <View className=" justify-center items-center  w-20 h-20 rounded-full bg-[#b89354]/5 mb-2  ">
+                         <Image
+                           style={{
+                             height: 72,
+                             width: 72,
+                           }}
+                           resizeMode="contain"
+                           source={require("../../assets/images/logo2.png")}
+                         />
+                       </View>
           <Text className="text-3xl  text-center font-bold  text-primary mb-4">
             تسجيل الدخول
           </Text>
         </View>
-        <View className="bg-white/90 mx-4 py-8 px-4 rounded-lg shadow shadow-primary-500">
           {authError && (
             <View className="p-4 rounded-lg bg-red-100 mb-4">
               <Text className="text-red-500 text-sm font-semibold">
@@ -252,6 +274,21 @@ export default function Page() {
             </Text>
           </View>
         </View>
+                 <View className="mt-6 items-center justify-center">
+            <Link
+              href="/"
+              className="flex-row-reverse items-center  px-6 py-3 rounded-full"
+              style={{ backgroundColor: "#f7efe1" }}
+            >
+              <Text
+                className="text-primary font-tajwal  font-bold text-lg"
+                style={{ textDecorationLine: "underline" }}
+              >
+                العودة إلي المتجر
+              </Text>
+              <Entypo name="shop" size={18} color={COLORS.primary} />
+            </Link>
+          </View>
       </View>
     </SafeAreaView>
   );
