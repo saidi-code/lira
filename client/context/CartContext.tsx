@@ -32,12 +32,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       });
       if (data.success) {
         const serverCart = data.data;
-        const mappedCartItems: ICartItem[] = serverCart.map((item: any) => ({
-          _id: item.product?._id,
-          product: item?.product,
-          quantity: item?.quantity,
-          size: item?.size,
-          price: item?.price,
+        const mappedCartItems: ICartItem[] = (serverCart ?? []).map((item: any) => ({
+          _id: item?.product?._id ?? "",
+          product: item?.product ?? null,
+          quantity: item?.quantity ?? 0,
+          size: item?.size ?? null,
+          price: item?.price ?? 0,
         }));
         setCartItems(mappedCartItems);
         setCartTotal(serverCart.totalAmount);
