@@ -26,7 +26,6 @@ export const addToCart = async (req: Request, res: Response) => {
    
 
     const { productId, quantity = 1, size,  color } = req.body;
- console.info("request body", req.body);
     const product = await Product.findById(productId);
     if (!product) {
       return res
@@ -45,7 +44,7 @@ export const addToCart = async (req: Request, res: Response) => {
       cart = new Cart({ user: req.user._id, items: [] });
     }
 
-    const existingItem = cart.items.find(
+    const existingItem: any = cart.items.find(
       (item: any) =>
         item.product?.toString?.() === productId && item.size === size,
     );
@@ -131,25 +130,29 @@ export const updateCartItem = async (req: Request, res: Response) => {
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
     const size = req.query.size as string | undefined;
+    const color = req.query.color as string | undefined;
+
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       return res
         .status(404)
         .json({ success: false, message: "Cart not found" });
     }
-    if (!size) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Size query parameter is required" });
-    }
-    cart.items = cart.items.filter(
-      (item) =>
-        item.product.toString() !== req.params.productId || item.size !== size,
-    );
+
+    // Simple products: size may be null/undefined -> we still match by size (and color is ignored)
+    // Variable products: we match by both size and color
+    cart.items = cart.items.filter((item: any) => {
+      const matchesProduct = item.product?.toString() === req.params.productId;
+      const matchesSize = item.size === size;
+      const matchesColor = color === undefined ? true : item.color === color;
+
+      // remove only if it matches the full identity (product + size [+ color if provided])
+      return !(matchesProduct && matchesSize && matchesColor);
+    });
+
     cart.calculateTotal();
     await cart.save();
     await cart.populate("items.product", "name images price stock");
-    console.log("cart data", cart);
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

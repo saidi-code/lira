@@ -102,14 +102,17 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
         <Image
           source={{
             uri:
-              item.product.type === "simple"
+              item?.product?.type === "simple"
                 ? item?.product?.images?.[0]
-                : item?.product?.colors?.[0].images?.[0],
+                : (item?.product as any)?.vcolors?.[0]?.images?.[0] ??
+                  // fallback (in case some records still store images under colors[])
+                  (item?.product as any)?.colors?.[0]?.images?.[0] ??
+                  undefined,
           }}
+          style={{ width: 100, height: 100 }}
           defaultSource={require("../assets/images/productLoadingImage.png")}
           className="w-full h-full"
           resizeMode="cover"
-          // onError={}
         />
       </View>
     </View>

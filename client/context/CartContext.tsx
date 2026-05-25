@@ -31,16 +31,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         },
       });
       if (data.success) {
-        const serverCart = data.data;
-        const mappedCartItems: ICartItem[] = (serverCart ?? []).map((item: any) => ({
+        const cart = data.data;
+        const itemsArray = Array.isArray(cart?.items) ? cart.items : [];
+
+        const mappedCartItems: ICartItem[] = itemsArray.map((item: any) => ({
           _id: item?.product?._id ?? "",
           product: item?.product ?? null,
           quantity: item?.quantity ?? 0,
           size: item?.size ?? null,
           price: item?.price ?? 0,
         }));
+
         setCartItems(mappedCartItems);
-        setCartTotal(serverCart.totalAmount);
+        setCartTotal(cart?.totalAmount ?? 0);
       }
     } catch (error: any) {
       console.error("Error Fetch Cart Items", error);

@@ -95,11 +95,12 @@ export interface ICartItem {
 }
 
 export interface ICartContext {
-  addToCart: (product: IProduct, size?: string | null) => Promise<void>;
-  removeFromCart: (itemId: string, size: string | null) => Promise<void>;
+  addToCart: (product: IProduct, size?: string | null,color?: string | null) => Promise<void>;
+  removeFromCart: (itemId: string, size: string | null,color?: string | null) => Promise<void>;
   updateCartItemQuantity: (
     itemId: string,
     size: string | null,
+    color: string | null,
     quantity: number,
   ) => Promise<void>;
   clearCart: () => Promise<void>;
