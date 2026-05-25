@@ -104,8 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromCart = async (
     itemId: string,
-    size: string | null = null,
-    color: string | null = null,
+  
   ) => {
     if (!isSignedIn) {
       return;
@@ -114,7 +113,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const token = await getToken();
       const { data } = await axios.delete(
-        `/cart/item/${itemId}?size=${size}&color=${color}`,
+        `/cart/item/${itemId}`,
 
         {
           headers: {

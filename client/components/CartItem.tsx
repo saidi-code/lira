@@ -25,7 +25,7 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
             {/* Decorative square - appears on the right in RTL */}
             <TouchableOpacity
               onPress={() => {
-                removeItem(item._id, item.size || null, item.color || null);
+                removeItem(item._id);
               }}
               className="flex-col justify-center items-center"
             >

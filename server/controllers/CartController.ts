@@ -129,8 +129,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 // DELETE api/v1/cart/item/:productId
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
-    const size = req.query.size as string | undefined;
-    const color = req.query.color as string | undefined;
+   
 
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
@@ -141,18 +140,10 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 
     // Simple products: size may be null/undefined -> we still match by size (and color is ignored)
     // Variable products: we match by both size and color
-    cart.items = cart.items.filter((item: any) => {
-      const matchesProduct = item.product?.toString() === req.params.productId;
-      const matchesSize = item.size === size;
-      const matchesColor = color === undefined ? true : item.color === color;
-      const matchItemId = item._id.toString() === req.params.itemId;
-      // remove only if it matches the full identity (product + size [+ color if provided])
-      return !(matchesProduct && matchesSize && matchesColor && matchItemId);
-    });
-
+    cart.items = cart.items.filter((item: any) => item.id !== req.params.itemId);
     cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images price stock");
+    // await cart.populate("items.product", "name images price stock");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
