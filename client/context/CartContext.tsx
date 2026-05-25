@@ -8,13 +8,16 @@ import {
 } from "react";
 import axios from "../config/api";
 import { ICartContext, ICartItem, IProduct } from "../constants/types";
+
+import {useRouter} from "expo-router";
+import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
 const CartContext = createContext<ICartContext | undefined>(undefined);
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [cartTotal, setCartTotal] = useState(0);
   const { getToken, isSignedIn } = useAuth();
-
   const fetchCartItems = async () => {
     if (!isSignedIn) {
       return;
@@ -46,11 +49,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+
   const addToCart = async (
     product: IProduct,
     size: string | null = null,
     color: string | null = null,
   ) => {
+    if (!isSignedIn) {
+      setAuthModalVisible(true);
+      return;
+    }
     try {
       setLoading(true);
       const token = await getToken();
@@ -207,6 +216,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         cartItems,
       }}
     >
+      <LoginOrRegisterModal show={authModalVisible} setShow = {setAuthModalVisible} />
       {children}
     </CartContext.Provider>
   );

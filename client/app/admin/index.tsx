@@ -1,4 +1,5 @@
-import { COLORS, getStatusColor } from "@/constants";
+import { COLORS } from "@/constants";
+import { getStatusColor } from "../../constants/utility";
 import { useAuth } from "@clerk/clerk-expo";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import axios from "../../api/config";
+import axios from "../../config/api";
 
 export default function AdminDashboard() {
   const { getToken } = useAuth();

@@ -23,12 +23,18 @@ const Shop = () => {
   const fetchInFlight = useRef(false);
   const [searchText, setSearchText] = useState("");
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [productsByCategory, setProductsByCategory] = useState<Record<string, IProduct[]>>(
+    {}
+  );
+
   const [isFocused, setIsFocused] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const categoriesMaped = CATEGORIES.map((c) => c.title);
   const [category, setCategory] = useState<string>("الكل");
+  const [activeCategoryLoading, setActiveCategoryLoading] = useState(false);
+
   const [color, setColor] = useState<string>("");
   const [brand, setBrand] = useState([
     { label: "الكل", checked: true },
@@ -95,6 +101,39 @@ const Shop = () => {
       setLoadingMore(false);
     }
   };
+  const fetchProductsByCategory = async (
+    pageNumber: number = 1,
+    category: string
+  ) => {
+    if (!category) return;
+
+    if (fetchInFlight.current) return;
+
+    fetchInFlight.current = true;
+    if (pageNumber === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    try {
+      const queryParams: any = { page: pageNumber, limit: 4,category };
+      const { data } = await axios.get("/products", { params: queryParams });
+      if (pageNumber === 1) {
+        setProducts(data.data);
+      } else {
+        setProducts((prev) => [...prev, ...data.data]);
+      }
+      setHasMore(data.pagination.page < data.pagination.pages);
+      setPage(pageNumber);
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+    } finally {
+      fetchInFlight.current = false;
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
   const loadMore = () => {
     if (!loading && !loadingMore && hasMore && !fetchInFlight.current) {
       fetchProducts(page + 1);
@@ -116,8 +155,27 @@ const Shop = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
+    // fetch first page for all categories (4 products each)
+    const fetchAll = async () => {
+      // Use promise sequence to avoid overloading fetchInFlight ref.
+      // We'll display category tabs but initial grid will show 'الكل'.
+      // (If you want to render multiple category sections, you'll need UI changes.)
+      setCategory("الكل");
+      fetchProducts(1);
+
+      // Preload first page for each category (optional)
+      for (const c of categoriesMaped) {
+        try {
+          await fetchProductsByCategory(1, c);
+        } catch {
+          // ignore
+        }
+      }
+    };
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   return (
     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
       <Header showBack />
@@ -189,7 +247,15 @@ const Shop = () => {
         </TouchableOpacity>
       </Animated.View>
       <View className="mr-4 mt-4  ">
-        <FlatList
+      {
+        loading? (
+          <View className="flex-1 flex-row items-center justify-center mt-4">
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text className="text-secondary mr-2 text-sm">
+              جارٍ التحميل...
+            </Text>
+          </View>
+        ):( <FlatList
           data={[...categoriesMaped, "الكل"]}
           horizontal
           contentContainerStyle={{
@@ -228,43 +294,53 @@ const Shop = () => {
               </Text>
             </TouchableOpacity>
           )}
-        />
+        />)
+      }
+       
       </View>
 
-      <View className="flex-1 mt-4 mb-6 mx-4">
-        <FlatList
-          showsVerticalScrollIndicator={false}
-          data={products}
-          keyExtractor={(item) => item._id}
-          numColumns={2}
-          columnWrapperStyle={{
-            flex: 1,
-            marginBottom: 16,
-            columnGap: 16,
-          }}
-          renderItem={({ item }) => <ProductCard product={item as IProduct} />}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loadingMore ? (
-              <View className="flex-1 flex-row items-center justify-center mt-4">
-                <Text className="text-secondary mr-2 text-sm">
-                  Loading more products...
-                </Text>
-                <ActivityIndicator size="small" color={COLORS.primary} />
-              </View>
-            ) : (
-              <View className="items-center justify-center mt-4">
-                <Text className="text-secondary *:text-sm">
-                  No more products to load
+      <ScrollView className="flex-1 mt-4 mb-6 mx-4" showsVerticalScrollIndicator={false}>
+        {/* Section: first 4 products for each category */}
+        {(["الكل", ...categoriesMaped] as string[]).map((c) => {
+          const items =
+            c === "الكل" ? products : productsByCategory[c] ?? [];
+
+          return (
+            <View key={c} className="mb-8">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-right text-body text-lg font-bold font-tajwal text-[#201b16]">
+                  {c}
                 </Text>
               </View>
-            )
-          }
-        />
-      </View>
-      <Modal
-        visible={filterModal}
+
+              {items.length === 0 ? (
+                <View className="flex-1 flex-row items-center justify-center mt-2">
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text className="text-secondary mr-2 text-sm">جارٍ التحميل...</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={items}
+                  keyExtractor={(item) => item._id}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  columnWrapperStyle={{
+                    flex: 1,
+                    marginBottom: 16,
+                    columnGap: 16,
+                  }}
+                  renderItem={({ item }) => (
+                    <ProductCard product={item as IProduct} />
+                  )}
+                />
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      <Modal visible={filterModal}
+       
         animationType="fade"
         transparent
         onRequestClose={() => setFilterModal(false)}

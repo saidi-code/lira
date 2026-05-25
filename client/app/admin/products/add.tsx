@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import axios from "../../../api/config";
+import axios from "../../../config/api";
 export default function AddProduct() {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -147,7 +147,7 @@ export default function AddProduct() {
           className="bg-surface p-3 rounded-lg mb-4 flex-row justify-between items-center"
         >
           <Text className="text-primary">{category}</Text>
-          <Ionicons name="chevron-down" size={20} color={COLORS.secondary} />
+          <Ionicons name="chevron-down" size={20} color={COLORS.accent} />
         </TouchableOpacity>
 
         {/* CATEGORY MODAL */}

@@ -91,10 +91,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <View className="pt-2 flex-row justify-between items-center">
           <TouchableOpacity
             onPress={() => {
-              if (!isSignedIn) {
-                Alert.alert("يرجى تسجيل الدخول لإضافة منتجات إلى الحقيبة");
-                return;
-              }
               addToCart(product, null);
             }}
             className="w-10 h-10 bg-[#b89354] rounded-full justify-center items-center"

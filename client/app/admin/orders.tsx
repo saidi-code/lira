@@ -1,4 +1,6 @@
-import { COLORS, getStatusColor } from "@/constants";
+import { COLORS } from "@/constants";
+import { getStatusColor } from "../../constants/utility";
+
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,7 +17,8 @@ import {
 // import { dummyOrders, dummyUser } from "@/assets/assets";
 import { useAuth } from "@clerk/clerk-expo";
 import Toast from "react-native-toast-message";
-import axios from "../../api/config";
+import axios from "../../config/api";
+
 // import { dummyUser } from "../(tabs)/assets";
 export default function AdminOrders() {
   const [loading, setLoading] = useState(true);

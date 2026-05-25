@@ -14,7 +14,8 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
-import axios from "../../../api/config";
+import axios from "../../../config/api";
+
 export default function AdminProducts() {
   const { getToken } = useAuth();
   const router = useRouter();

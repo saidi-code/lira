@@ -131,7 +131,7 @@ export const seedProducts = async () => {
 
   // Idempotent admin user seed (avoid unique index duplicate errors)
   const clerkId = "user_1234567890";
-  const email = "achraf03@gmail.com";
+  const email = "achraf.saidi03@gmail.com";
 
   await User.updateOne(
     { clerkId },

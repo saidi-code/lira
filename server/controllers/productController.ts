@@ -5,11 +5,18 @@ import cloudinary from "../config/cloundinary.js";
 export const getProducts = async (req: Request, res: Response) => {
   let query = { isActive: true };
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const total = await Product.countDocuments();
+    const { page = 1, limit = 10, category } = req.query;
+
+    if (category && typeof category === "string" && category !== "الكل") {
+      // assuming your schema uses `category` field (based on client filters)
+      query = { ...query, category };
+    }
+
+    const total = await Product.countDocuments(query);
     const products = await Product.find(query)
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
+
     res.json({
       success: true,
       data: products,
