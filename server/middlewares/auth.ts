@@ -11,7 +11,7 @@ export const protect = async (req:Request, res:Response, next:NextFunction) => {
 let user = await User.findOne({ clerkId: userId });
 
         if (!user) {
-            return res.status(401).json({ "success": "false", "message": "Unauthorized" });
+            return res.status(401).json({ "success": "false", "message": "Unauthorized user not found in db" });
         }
 
         req.user = user;
