@@ -55,7 +55,7 @@ export const addToCart = async (req: Request, res: Response) => {
       existingItem.price = product.price;
     } else {
       cart.items.push({
-        product:product,
+        product: product._id,
         quantity,
         price: product.price,
         size,
@@ -64,6 +64,13 @@ export const addToCart = async (req: Request, res: Response) => {
 
     cart.calculateTotal();
     await cart.save();
+
+    // remove corrupted cart items (where product reference is null/undefined)
+    // to avoid populate() / client crashes
+    cart.items = cart.items.filter(
+      (i: any) => i?.product !== null && i?.product !== undefined,
+    );
+
     await cart.populate("items.product", "name images price stock");
     res.json({ success: true, data: cart });
   } catch (error: any) {
