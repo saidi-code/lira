@@ -54,12 +54,7 @@ const Cart = () => {
             حقيبة التسوق
           </Text>
         </View>
-        {loading ? (
-          <View className="flex-1 flex-row items-center justify-center mt-4">
-            <ActivityIndicator size="small" color={COLORS.primary} />
-            <Text className="text-secondary mr-2 text-sm">جارٍ التحميل...</Text>
-          </View>
-        ) : cartItems?.length <= 0 ? (
+        {cartItems?.length <= 0 ? (
           <View
             className="flex-1 mx-4 p-4 items-center justify-center bg-[#ece0d9]/30 rounded-xl border
          border-primary border-dashed"
@@ -104,8 +99,8 @@ const Cart = () => {
                 <CartItem
                   item={item}
                   removeItem={removeFromCart}
-                  updateItemQuantity={(itemId, newQty, size) =>
-                    updateCartItemQuantity(itemId, size, item?.color ?? null, newQty)
+                  updateItemQuantity={(itemId, newQty, size,color) =>
+                    updateCartItemQuantity(itemId, size, color, newQty)
                   }
                 />
               )}

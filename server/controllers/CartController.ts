@@ -168,11 +168,7 @@ export const deleteCartItem = async (req: Request, res: Response) => {
         .status(404)
         .json({ success: false, message: "Cart not found" });
     }
-    if (!size) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Size query parameter is required" });
-    }
+
     cart.items = cart.items.filter(
       (item) =>
         item.product.toString() !== req.params.productId || item.size !== size,
