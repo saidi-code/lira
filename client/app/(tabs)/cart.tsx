@@ -15,8 +15,7 @@ import Header from "../../components/Header";
 import OrderSummary from "../../components/OrderSummary";
 
 import { useCart } from "../../context/CartContext";
-import {useState,useEffect} from "react";
-import axios from "../../config/api";
+
 import { useAuth } from "@clerk/clerk-expo";
 import { COLORS } from "@/constants";
 
@@ -25,7 +24,7 @@ const Cart = () => {
   const router = useRouter();
 
 
-  const { cartItems,loading, removeFromCart, updateCartItemQuantity, itemCount } =
+  const { cartItems, removeFromCart, updateCartItemQuantity } =
     useCart();
 
 

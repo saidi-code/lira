@@ -127,32 +127,60 @@ export const updateCartItem = async (req: Request, res: Response) => {
 };
 // Delete Cart Item
 // DELETE api/v1/cart/item/:productId
+// export const deleteCartItem = async (req: Request, res: Response) => {
+//   try {
+//     const size = req.query.size as string | undefined;
+//     const color = req.query.color as string | undefined;
+
+//     const cart = await Cart.findOne({ user: req.user._id });
+//     if (!cart) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Cart not found" });
+//     }
+
+//     // Simple products: identity is (productId + size). Color is ignored.
+//     // Variable products: identity is (productId + size + color).
+//     cart.items = cart.items.filter((item: any) => {
+//       const matchesProduct = item?.product?.toString?.() === req.params.productId;
+//       const matchesSize = item?.size === size;
+//       const matchesColor = color === undefined ? true : item?.color === color;
+
+//       return !(matchesProduct && matchesSize && matchesColor);
+//     });
+
+//     cart.calculateTotal();
+//     await cart.save();
+
+//     await cart.populate("items.product", "name images price stock");
+//     res.json({ success: true, data: cart });
+//   } catch (error: any) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
     const size = req.query.size as string | undefined;
-    const color = req.query.color as string | undefined;
-
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       return res
         .status(404)
         .json({ success: false, message: "Cart not found" });
     }
-
-    // Simple products: identity is (productId + size). Color is ignored.
-    // Variable products: identity is (productId + size + color).
-    cart.items = cart.items.filter((item: any) => {
-      const matchesProduct = item?.product?.toString?.() === req.params.productId;
-      const matchesSize = item?.size === size;
-      const matchesColor = color === undefined ? true : item?.color === color;
-
-      return !(matchesProduct && matchesSize && matchesColor);
-    });
-
+    if (!size) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Size query parameter is required" });
+    }
+    cart.items = cart.items.filter(
+      (item) =>
+        item.product.toString() !== req.params.productId || item.size !== size,
+    );
     cart.calculateTotal();
     await cart.save();
-
     await cart.populate("items.product", "name images price stock");
+    console.log("cart data", cart);
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
