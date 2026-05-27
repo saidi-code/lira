@@ -26,7 +26,7 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
             <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation();
-                removeItem(item._id, item.size ?? null, item.color ?? null);
+                removeItem(item?._id, item?.size ?? null, item?.color ?? null);
               }}
               className="flex-col justify-center items-center"
             >

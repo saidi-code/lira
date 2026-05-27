@@ -161,7 +161,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
-    const size = req.query.size as string | undefined;
+    // const size = req.query.size as string | undefined;
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       return res
@@ -171,7 +171,7 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 
     cart.items = cart.items.filter(
       (item) =>
-        item.product.toString() !== req.params.productId || item.size !== size,
+        item.product.toString() !== req.params.productId,
     );
     cart.calculateTotal();
     await cart.save();
