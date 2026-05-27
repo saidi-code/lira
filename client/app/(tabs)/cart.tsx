@@ -7,20 +7,56 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View,ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartItem from "../../components/CartItem";
 import Header from "../../components/Header";
 import OrderSummary from "../../components/OrderSummary";
-import { DUMMY_RALATED_PRODUCTS_CART } from "../../constants/index";
+
 import { useCart } from "../../context/CartContext";
+import {useState,useEffect} from "react";
+import axios from "../../config/api";
+import { useAuth } from "@clerk/clerk-expo";
+import { COLORS } from "@/constants";
+
 const Cart = () => {
+  const { isSignedIn,getToken } = useAuth();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [serverCartItems, setServerCartItems] = useState([])
   const { cartItems, removeFromCart, updateCartItemQuantity, itemCount } =
     useCart();
 
-  console.log(cartItems);
+const fetchCartItems = async () => {
+  const token = await getToken();
+    try {
+      setLoading(true);
+const { data } = await axios.get("/cart", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      } );
+      if (data.success) {
+        console.log("CART RESPONSE:", data);
+        const cart = data.data;
+        const itemsArray = Array.isArray(cart?.items) ? cart.items : [];
+
+        console.log("CART ITEMS (array):", itemsArray);
+        setServerCartItems(itemsArray);
+      }
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+    } finally {
+      setLoading(false) ;
+    }
+  };
+
+ useEffect(() => {
+  if(isSignedIn) {
+    fetchCartItems();
+  }
+  }, []);
 
   return (
     <SafeAreaView className=" bg-surface flex-1" edges={["top"]}>
@@ -45,7 +81,12 @@ const Cart = () => {
             حقيبة التسوق
           </Text>
         </View>
-        {itemCount <= 0 ? (
+        {loading ? (
+          <View className="flex-1 flex-row items-center justify-center mt-4">
+            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Text className="text-secondary mr-2 text-sm">جارٍ التحميل...</Text>
+          </View>
+        ) : serverCartItems?.length <= 0 ? (
           <View
             className="flex-1 mx-4 p-4 items-center justify-center bg-[#ece0d9]/30 rounded-xl border
          border-primary border-dashed"
@@ -68,15 +109,11 @@ const Cart = () => {
                 elevation: 4,
               }}
             >
-              {/* Arrow icon (left pointing, rotated 180°) */}
-
-              {/* <Ionicons name="basket-outline" color={"#fff"} size={20} /> */}
               <MaterialCommunityIcons
                 name="shopping-search-outline"
                 color={"#fff"}
                 size={20}
               />
-              {/* Button Text */}
               <Text className="text-white text-base leading-6 font-normal text-center">
                 أبدء التسوق الأن
               </Text>
@@ -84,9 +121,10 @@ const Cart = () => {
           </View>
         ) : (
           <>
+
             {/* Cart Items Container */}
             <FlatList
-              data={cartItems}
+              data={serverCartItems}
               keyExtractor={(item) => String(item._id)}
               scrollEnabled={false}
               renderItem={({ item }) => (
@@ -94,7 +132,7 @@ const Cart = () => {
                   item={item}
                   removeItem={removeFromCart}
                   updateItemQuantity={(itemId, newQty, size) =>
-                    updateCartItemQuantity(itemId, size, newQty)
+                    updateCartItemQuantity(itemId, size, item?.color ?? null, newQty)
                   }
                 />
               )}
@@ -149,7 +187,7 @@ const Cart = () => {
               </View>
 
               <FlatList
-                data={DUMMY_RALATED_PRODUCTS_CART}
+                data={serverCartItems}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(product: any, index) =>
@@ -163,8 +201,8 @@ const Cart = () => {
                 )}
               />
             </View>
-          </>
-        )}
+          </>)
+        }
       </ScrollView>
     </SafeAreaView>
   );
