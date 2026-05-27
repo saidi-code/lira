@@ -107,31 +107,30 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     size: string | null = null,
     color: string | null = null,
   ) => {
-    const sizeQuery = size ?? undefined;
-    const colorQuery = color ?? undefined;
-    if (!isSignedIn) {
-      return;
-    }
+    if (!isSignedIn || !itemId) return;
+
     try {
       setLoading(true);
       const token = await getToken();
-      const { data } = await axios.delete(
-        `/cart/item/${itemId}`,
 
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const { data } = await axios.delete(`/cart/item/${itemId}`, {
+        params: {
+          // backend uses: req.query.size and req.query.color
+          size: size ?? undefined,
+          color: color ?? undefined,
         },
-      );
-      if (data.success) {
-        await fetchCartItems();
-      }
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setLoading(false);
+      if (data?.success) {
+        await fetchCartItems();
+      } else {
+        console.error("Remove from cart failed:", data);
+      }
     } catch (error) {
       console.error("Error removing from cart:", error);
-      setLoading(false);
     } finally {
       setLoading(false);
     }

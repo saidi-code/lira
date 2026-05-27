@@ -23,40 +23,14 @@ import { COLORS } from "@/constants";
 const Cart = () => {
   const { isSignedIn,getToken } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [serverCartItems, setServerCartItems] = useState([])
-  const { cartItems, removeFromCart, updateCartItemQuantity, itemCount } =
+
+
+  const { cartItems,loading, removeFromCart, updateCartItemQuantity, itemCount } =
     useCart();
 
-const fetchCartItems = async () => {
-  const token = await getToken();
-    try {
-      setLoading(true);
-const { data } = await axios.get("/cart", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      } );
-      if (data.success) {
-        console.log("CART RESPONSE:", data);
-        const cart = data.data;
-        const itemsArray = Array.isArray(cart?.items) ? cart.items : [];
 
-        console.log("CART ITEMS (array):", itemsArray);
-        setServerCartItems(itemsArray);
-      }
-    } catch (error) {
-      console.error("Error fetching cart items:", error);
-    } finally {
-      setLoading(false) ;
-    }
-  };
 
- useEffect(() => {
-  if(isSignedIn) {
-    fetchCartItems();
-  }
-  }, []);
+
 
   return (
     <SafeAreaView className=" bg-surface flex-1" edges={["top"]}>
@@ -86,7 +60,7 @@ const { data } = await axios.get("/cart", {
             <ActivityIndicator size="small" color={COLORS.primary} />
             <Text className="text-secondary mr-2 text-sm">جارٍ التحميل...</Text>
           </View>
-        ) : serverCartItems?.length <= 0 ? (
+        ) : cartItems?.length <= 0 ? (
           <View
             className="flex-1 mx-4 p-4 items-center justify-center bg-[#ece0d9]/30 rounded-xl border
          border-primary border-dashed"
@@ -124,7 +98,7 @@ const { data } = await axios.get("/cart", {
 
             {/* Cart Items Container */}
             <FlatList
-              data={serverCartItems}
+              data={cartItems}
               keyExtractor={(item) => String(item._id)}
               scrollEnabled={false}
               renderItem={({ item }) => (
@@ -187,7 +161,7 @@ const { data } = await axios.get("/cart", {
               </View>
 
               <FlatList
-                data={serverCartItems}
+                data={cartItems}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(product: any, index) =>

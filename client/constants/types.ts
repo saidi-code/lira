@@ -64,7 +64,8 @@ export interface CartItemProps {
   item: ICartItem;
   removeItem: (
     itemId: string,
-   
+    size?: string | null,
+    color?: string | null,
   ) => void;
   updateItemQuantity: (
     itemId: string,
@@ -94,13 +95,17 @@ export interface ICartItem {
 }
 
 export interface ICartContext {
-  addToCart: (product: IProduct, size?: string | null,color?: string | null) => Promise<void>;
-  removeFromCart: (itemId: string) => Promise<void>;
+  addToCart: (product: IProduct, size?: string | null, color?: string | null) => Promise<void>;
+  removeFromCart: (
+    itemId: string,
+    size?: string | null,
+    color?: string | null,
+  ) => Promise<void>;
   updateCartItemQuantity: (
     itemId: string,
     size: string | null,
-    color: string | null,
     quantity: number,
+    color: string | null,
   ) => Promise<void>;
   clearCart: () => Promise<void>;
   cartTotal: number;
