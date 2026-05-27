@@ -52,15 +52,16 @@ export interface HeaderProps {
   showBack?: boolean;
 }
 export interface OrderSummaryProps {
-  subtotal: string;
-  shipping: string;
-  total: string;
+  subtotal: number;
+  shipping: number;
+ 
 }
 
 export interface FavorisItemsProps {
   product: IProduct;
 }
 export interface CartItemProps {
+  loading:boolean;
   item: ICartItem;
   removeItem: (
     itemId: string,

@@ -8,7 +8,7 @@ export const getCart = async (req: Request, res: Response) => {
    console.log("Fetching cart for user:", req.user._id);
     let cart = await Cart.findOne({
       user: req.user._id,
-    }).populate("items.product", "name images price stock");
+    }).populate("items.product", "name images price stock vcolors colors");
     if (!cart) {
       cart = await Cart.create({ user: req.user._id, items: [] });
     }

@@ -8,7 +8,7 @@ import {
 } from "react";
 import axios from "../config/api";
 import { ICartContext, ICartItem, IProduct } from "../constants/types";
-
+import  toast  from "react-native-toast-message";
 import {useRouter} from "expo-router";
 import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
 const CartContext = createContext<ICartContext | undefined>(undefined);
@@ -89,6 +89,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.success) {
         await fetchCartItems();
+        toast.show({
+          type: "successToast",
+          text2: "تمت إضافة المنتج إلى السلة",
+          topOffset: 100,
+        });
       } else {
         console.error("Add to cart failed:", data);
       }

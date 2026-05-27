@@ -3,13 +3,25 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { FavorisItemsProps } from "../constants/types";
+import { useCart } from "../context/CartContext";
+import { useFavoris } from "../context/FavorisContext";
 
 const FavorisItem = ({ product }: FavorisItemsProps) => {
-  console.log(product);
+  const { addToCart } = useCart();
+  const { removeFromFavoris, isLiked, addToFavoris } = useFavoris();
+
   const imageUri =
     product?.type === "simple"
       ? product?.images?.[0]
-      : product?.colors?.[0]?.images?.[0];
+      : product?.vcolors?.[0]?.images?.[0] ?? product?.colors?.[0]?.images?.[0];
+
+  const handleToggleLike = () => {
+    if (isLiked(product?._id)) {
+      removeFromFavoris(product?._id);
+    } else {
+      addToFavoris(product);
+    }
+  };
 
   return (
     <View className="self-stretch p-4 bg-white rounded-xl shadow-lg flex-row justify-start items-center gap-4 mb-4">
@@ -17,7 +29,10 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
       <View className="flex-1 flex-col justify-between items-start">
         <View className="self-stretch flex-col justify-start items-start gap-1">
           <View className="self-stretch flex-row justify-between items-start">
-            <TouchableOpacity className="flex-col justify-center items-center">
+            <TouchableOpacity
+              onPress={handleToggleLike}
+              className="flex-col justify-center items-center"
+            >
               <Ionicons name={"heart-sharp"} color={"#b89354"} size={20} />
             </TouchableOpacity>
 

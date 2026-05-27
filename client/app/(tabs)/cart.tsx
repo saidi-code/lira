@@ -24,7 +24,7 @@ const Cart = () => {
   const router = useRouter();
 
 
-  const { cartItems, removeFromCart, updateCartItemQuantity } =
+  const { cartItems, removeFromCart, updateCartItemQuantity,cartTotal,loading } =
     useCart();
 
 
@@ -97,6 +97,7 @@ const Cart = () => {
               scrollEnabled={false}
               renderItem={({ item }) => (
                 <CartItem
+                loading={loading}
                   item={item}
                   removeItem={removeFromCart}
                   updateItemQuantity={(itemId, newQty, size,color) =>
@@ -108,7 +109,7 @@ const Cart = () => {
             />
             {/* Order Summary Section */}
             <View className="flex-1 p-4 bg-[#ece0d9]/30 ">
-              <OrderSummary subtotal={"440"} shipping="7" total={"447"} />
+              <OrderSummary subtotal={cartTotal} shipping={7} />
             </View>
             {/* CheckOut Button */}
             <View className="flex-1 justify-center p-4">

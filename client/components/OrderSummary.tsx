@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { OrderSummaryProps } from "../constants/types";
-const OrderSummary = ({ subtotal, shipping, total }: OrderSummaryProps) => {
+const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
   return (
     <View className="self-stretch p-6 bg-white/50 rounded-2xl flex-col justify-start items-start gap-4">
       {/* Header with bottom border */}
@@ -35,7 +35,7 @@ const OrderSummary = ({ subtotal, shipping, total }: OrderSummaryProps) => {
       {/* Total row with top border */}
       <View className="self-stretch pt-2 border-t border-[#d1c5b4] flex-row justify-between items-center">
         <Text className="text-right text-[#785920] text-base leading-6 font-normal">
-          {total} {CURRENCY}
+          {subtotal + shipping} {CURRENCY}
         </Text>
         <Text className="text-right text-[#201b16] text-base leading-6 font-normal">
           الإجمالي

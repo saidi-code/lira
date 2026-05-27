@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
-const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
+import {COLORS} from "../constants/index";
+const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProps) => {
+ console.log(item.product)
   return (
     <View
       key={item?._id}
@@ -23,7 +25,14 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
         <View className="self-stretch flex-col justify-start items-start gap-1">
           <View className="self-stretch flex-row justify-between items-start">
             {/* Decorative square - appears on the right in RTL */}
-            <TouchableOpacity
+           {
+            loading ? 
+            (
+            <ActivityIndicator size={"small"} 
+              color={COLORS.primary}
+            />):
+            (
+               <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation();
                 removeItem(item?._id, item?.size ?? null, item?.color ?? null);
@@ -32,6 +41,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
             >
               <Ionicons name="close-outline" color="#785920" size={20} />
             </TouchableOpacity>
+            )
+           }
 
             {/* Title and Subtitle - right-aligned for Arabic */}
             <View className="flex-col justify-start items-end flex-1 mr-2">
@@ -63,8 +74,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
                 updateItemQuantity(
                   item._id,
                   item.quantity - 1,
-                  item.size || null,
-                  item.color || null,
+                  item.size ?? null,
+                  item.color ?? null,
                 )
               }
               activeOpacity={0.7}
@@ -99,21 +110,18 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
       </View>
 
       {/* Product Image - responsive using aspect ratio (3:4 = 0.75) */}
-      <View className="w-1/4 aspect-[3/4] rounded-lg overflow-hidden">
+      <View className="h-[100px]  z-50 w-[100px] rounded-lg overflow-hidden">
         <Image
           source={{
             uri:
               item?.product?.type === "simple"
-                ? item?.product?.images?.[0]
-                : (item?.product as any)?.vcolors?.[0]?.images?.[0] ??
-                  // fallback (in case some records still store images under colors[])
-                  (item?.product as any)?.colors?.[0]?.images?.[0] ??
-                  undefined,
+                ? item?.product?.colors?.[0]?.images?.[0] : item?.product?.vcolors?.[0]?.images?.[0],
+                 
           }}
           style={{ width: 100, height: 100 }}
           defaultSource={require("../assets/images/productLoadingImage.png")}
-          className="w-full h-full"
-          resizeMode="cover"
+         
+          resizeMode="contain"
         />
       </View>
     </View>
