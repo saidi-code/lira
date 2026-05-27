@@ -1,10 +1,19 @@
 import mongoose from "mongoose";
-const variantSchema = new mongoose.Schema({
-  size: { type: String, required: true },
-  sku: { type: String, required: true },
-  stock: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-},{timestamps:true});
+const variantSchema = new mongoose.Schema(
+  {
+    // Allow a variant to hold many sizes
+    sizes: [{ type: String, required: true }],
+
+    // SKU is required
+    sku: { type: String, required: true },
+
+    // Stock applies to the whole variant
+    stock: { type: Number, default: 0 },
+
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
 
 variantSchema.index({sku:'text'})
 

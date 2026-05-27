@@ -83,20 +83,45 @@ const normalizeProduct = (p: any) => {
       return {
         ...c,
         variants: variants.map((v: any, idx: number) => {
-          const resolvedSize =
-            (v?.size ?? "").toString().trim() ||
-            (v?.sise ?? "").toString().trim() ||
-            productSizes[idx] ||
-            productSizes[0] ||
-            "default";
+          // Variant model now supports MANY sizes.
+          // Accept either:
+          // - v.sizes: string[]
+          // - v.size: string (single)
+          // - fallback to productSizes entries
+          const resolvedSizes: string[] = (() => {
+            if (Array.isArray(v?.sizes) && v?.sizes.length) {
+              return v.sizes
+                .map((s: any) => (s ?? "").toString().trim())
+                .filter(Boolean);
+            }
 
+            const singleSize =
+              (v?.size ?? "").toString().trim() ||
+              (v?.sise ?? "").toString().trim();
+
+            if (singleSize) return [singleSize];
+
+            const byIndex = productSizes?.[idx];
+            const byFirst = productSizes?.[0];
+
+            const fallback = (byIndex ?? byFirst ?? "default")
+              .toString()
+              .trim();
+
+            return [fallback];
+          })();
+
+          // Keep existing behavior: one SKU per variant.
+          // (If you later want SKU per-size, you'd model that separately.)
           const resolvedSku =
             (v?.sku ?? "").toString().trim() ||
-            `SKU-${(p?.name ?? "product").toString().replace(/\s+/g, "-")}-${colorName}-${resolvedSize}-${idx}`;
+            `SKU-${(p?.name ?? "product")
+              .toString()
+              .replace(/\s+/g, "-")}-${colorName}-${resolvedSizes[0]}-${idx}`;
 
           return {
             ...v,
-            size: resolvedSize,
+            sizes: resolvedSizes,
             sku: resolvedSku,
           };
         }),
@@ -130,23 +155,30 @@ export const seedProducts = async () => {
   console.log(`Seeded products: ${ops.length}`);
 
   // Idempotent admin user seed (avoid unique index duplicate errors)
-  const clerkId = "user_1234567890";
+  // Update only the role rules/email from "user" -> "admin" when running "npm run seed"
   const email = "achraf.saidi03@gmail.com";
+  const user= await User.findOne({email})
+  if(!user){
+    await User.create({
+          email,
+         
+          role:"admin"
+    })
+  }else{
+ await User.updateOne(
 
-  await User.updateOne(
-    { clerkId },
     {
       $set: {
-        name: "Admin User",
         email,
-        image: "https://avatars.githubusercontent.com/u/12345678?v=4",
         role: "admin",
       },
     },
     { upsert: true }
   );
-
-  console.log("Admin user ensured (upsert by clerkId).");
+  }
+   
+    
+  console.log("Admin role ensured  role/email updated).");
 };
 
 // CLI entry

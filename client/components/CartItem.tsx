@@ -52,6 +52,21 @@ const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProp
               >
                 {item?.product.name}
               </Text>
+              {item?.product.type !== "simple" && item?.product?.vcolors?.[0] ? (
+                <>
+                  <Text className="text-right text-600 text-xs  font-medium tracking-wide mt-1">
+                    {item?.product?.vcolors?.[0]?.variants?.[0]?.sizes?.[0]}
+                  </Text>
+                  <View
+                    className="w-4 h-4 rounded-full"
+                    style={{
+                      backgroundColor:
+                        item?.product?.vcolors?.[0]?.hex ??
+                        item?.product?.colors?.[0]?.hex,
+                    }}
+                  />
+                </>
+              ) : null}
               <Text className="text-right text-600 text-xs  font-medium tracking-wide mt-1">
                 {item?.product.subtitle}
               </Text>
