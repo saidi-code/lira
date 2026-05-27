@@ -104,8 +104,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromCart = async (
     itemId: string,
-  
+    size: string | null = null,
+    color: string | null = null,
   ) => {
+    const sizeQuery = size ?? undefined;
+    const colorQuery = color ?? undefined;
     if (!isSignedIn) {
       return;
     }

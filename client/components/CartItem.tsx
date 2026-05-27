@@ -24,8 +24,9 @@ const CartItem = ({ item, removeItem, updateItemQuantity }: CartItemProps) => {
           <View className="self-stretch flex-row justify-between items-start">
             {/* Decorative square - appears on the right in RTL */}
             <TouchableOpacity
-              onPress={() => {
-                removeItem(item._id);
+              onPress={(e) => {
+                e.stopPropagation();
+                removeItem(item._id, item.size ?? null, item.color ?? null);
               }}
               className="flex-col justify-center items-center"
             >

@@ -64,8 +64,7 @@ export interface CartItemProps {
   item: ICartItem;
   removeItem: (
     itemId: string,
-    size: string | null,
-    color: string | null,
+   
   ) => void;
   updateItemQuantity: (
     itemId: string,
