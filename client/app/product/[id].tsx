@@ -91,7 +91,7 @@ const SingleProduct = () => {
               source={{
                 uri:
                   product.type === "simple"
-                    ? product?.images?.[0]
+                    ? product?.images?.[0] ?? (product as any)?.vcolors?.[0]?.images?.[0]
                     : (product as any)?.vcolors?.[0]?.images?.[0],
               }}
               defaultSource={require("../../assets/images/productLoadingImage.png")}

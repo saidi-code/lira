@@ -169,9 +169,9 @@ export const PRODUCTS = [
     type: "simple",
     subtitle: "inspiration one",
     price: 80,
-
+sizes: [],
     description: "",
-    sizes: null,
+   
     category: "ساعات",
     stock: 10,
     isFeatured: true,
@@ -199,13 +199,13 @@ export const PRODUCTS = [
     createdAt: "2026-05-01T24:45:27.922+00:0",
   },
   {
-        name: "ميار",
+     name: "ميار",
     type: "variable",
     subtitle: "ميار",
     price: 180,
     description: "",
-    sizes: ["s", "m", "l", "xl"],
     category: "ملابس",
+      sizes: [],
     stock: 10,
     isFeatured: true,
     colors: [
@@ -218,7 +218,7 @@ export const PRODUCTS = [
         ],
         variants: [
           {
-            size: "s",
+            sizes: ["s", "m", "l", "xl"],
             sku: "TSH-BLC-S",
             stock: 2,
             isActive: true,
@@ -236,7 +236,7 @@ export const PRODUCTS = [
     subtitle: "لوجين",
     price: 280,
     description: "",
-    sizes: ["s", "m", "l", "xl"],
+    
     category: "ملابس",
     stock: 10,
     isFeatured: true,
@@ -247,7 +247,7 @@ export const PRODUCTS = [
         images: [
           "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
         ],
-        variants: [{ size: "s", sku: "TSH-MAR-S", isActive: true, stock: 5 }],
+        variants: [{sizes: ["l", "xl"], sku: "TSH-MAR-S", isActive: true, stock: 5 }],
       },
       {
         name: "noir",
@@ -255,7 +255,7 @@ export const PRODUCTS = [
         images: [
           "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
         ],
-        variants: [{ size: "m", sku: "TSH-MAR-S", isActive: true, stock: 5 }],
+        variants: [{ sizes: ["s", "m", "l", "xl"], sku: "TSH-MAR-S", isActive: true, stock: 5 }],
       },
     ],
     isActive: true,
@@ -267,7 +267,7 @@ export const PRODUCTS = [
     subtitle: "منيار",
     price: 280,
     description: "",
-    sizes: ["s", "m", "l", "xl"],
+   
     category: "ملابس",
     stock: 10,
     isFeatured: true,
@@ -280,7 +280,7 @@ export const PRODUCTS = [
         ],
         variants: [
           {
-            sise: "m",
+          sizes: ["s", "m", "l", "xl"],
             stock: 4,
             sku: "tsh-rox",
             isActive: true,
@@ -298,7 +298,7 @@ export const PRODUCTS = [
     subtitle: "لارا",
     price: 380,
     description: "",
-    sizes: ["s", "m", "l", "xl"],
+  
     category: "ملابس",
     stock: 10,
     isFeatured: true,
@@ -309,7 +309,7 @@ export const PRODUCTS = [
         images: ["https://69f78dbca0be0e562864a507.imgix.net/clothes_lara.png"],
         variants: [
           {
-            size: "xl",
+             sizes: ["s", "m", "l", "xl"],
             sku: "ths-veeret-xxl",
             stock: 3,
             isActive: true,

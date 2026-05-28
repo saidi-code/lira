@@ -5,8 +5,9 @@ import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
 import {COLORS} from "../constants/index";
 const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProps) => {
- console.log(item.product)
-  return (
+//  console.log(item.product.vcolors?.[0]?.variants?.[0]?.sizes?.[0],"cart item image")
+console.log(item?.product?.images?.[0]) 
+return (
     <View
       key={item?._id}
       className="mb-6 p-4 bg-white rounded-xl 
@@ -50,25 +51,56 @@ const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProp
                 className="text-right text-body text-lg font-body"
                 numberOfLines={1}
               >
-                {item?.product.name}
+                {item?.product?.name}
               </Text>
-              {item?.product.type !== "simple" && item?.product?.vcolors?.[0] ? (
-                <>
-                  <Text className="text-right text-600 text-xs  font-medium tracking-wide mt-1">
-                    {item?.product?.vcolors?.[0]?.variants?.[0]?.sizes?.[0]}
-                  </Text>
-                  <View
-                    className="w-4 h-4 rounded-full"
-                    style={{
-                      backgroundColor:
-                        item?.product?.vcolors?.[0]?.hex ??
-                        item?.product?.colors?.[0]?.hex,
-                    }}
-                  />
-                </>
-              ) : null}
+              {/* selected size (hide if null/empty) */}
+              {(() => {
+                const selectedSize =
+                  (item?.product as any)?.vcolors?.[0]?.variants?.[0]?.sizes?.[0] ??
+                  item?.size ??
+                  "";
+
+                if (!selectedSize) return null;
+
+                return (
+                  <View className="flex-row items-center gap-2 justify-end mt-1">
+                    <View className="w-5 h-5 bg-[#fdf1ea] items-center rounded-md border border-primary">
+                      <Text className="uppercase text-primay-600 text-xs font-medium tracking-wide">
+                        {selectedSize}
+                      </Text>
+                    </View>
+
+                    <Text className="text-right text-primay-600 text-xs font-medium tracking-wide">
+                      المقاس:
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {/* selected color (hide if null/empty) */}
+              {(() => {
+                const selectedColor =
+                  (item?.product as any)?.vcolors?.[0]?.hex ??
+                  item?.product?.colors?.[0]?.hex ??
+                  null;
+
+                if (!selectedColor) return null;
+
+                return (
+                  <View className="flex-row items-center gap-2 justify-end mt-1">
+                    <View
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: selectedColor }}
+                    />
+                    <Text className="text-right text-600 text-xs font-medium tracking-wide">
+                      اللون:
+                    </Text>
+                  </View>
+                );
+              })()}
+
               <Text className="text-right text-600 text-xs  font-medium tracking-wide mt-1">
-                {item?.product.subtitle}
+                {item?.product?.subtitle}
               </Text>
             </View>
           </View>
@@ -78,7 +110,7 @@ const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProp
         <View className="self-stretch pt-4 flex-row justify-between items-end">
           {/* Price - right-aligned */}
           <Text className="text-right text-primary-700 text-base font-body">
-            {item?.product.price} {CURRENCY}
+            {item?.product?.price} {CURRENCY}
           </Text>
 
           {/* Quantity Selector - left side with pill background */}
@@ -125,18 +157,22 @@ const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProp
       </View>
 
       {/* Product Image - responsive using aspect ratio (3:4 = 0.75) */}
-      <View className="h-[100px]  z-50 w-[100px] rounded-lg overflow-hidden">
+      <View className="w-1/3 h-full 
+      aspect-square 
+      rounded-lg overflow-hidden">
         <Image
           source={{
             uri:
               item?.product?.type === "simple"
-                ? item?.product?.colors?.[0]?.images?.[0] : item?.product?.vcolors?.[0]?.images?.[0],
-                 
+          ? 
+                   
+                    item?.product?.images?.[0]
+                : (item?.product as any)?.vcolors?.[0]?.images?.[0],
           }}
-          style={{ width: 100, height: 100 }}
+          style={{ width:"100%", height: "100%" }}
           defaultSource={require("../assets/images/productLoadingImage.png")}
          
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
     </View>

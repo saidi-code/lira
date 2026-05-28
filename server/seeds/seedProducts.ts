@@ -63,7 +63,33 @@ const normalizeProduct = (p: any) => {
 
     brand: (p.brand ?? "").trim?.() ? p.brand : "غير محدد",
     subCategory: normalizeSubCategory(p.subCategory) ?? "woman",
-    images: p.images ?? [],
+    images: (() => {
+      // Some seed objects may provide images under different keys.
+      // Normalize into the schema field `images: string[]`.
+      const fromImages = Array.isArray(p.images) ? p.images : [];
+      const fromImage = Array.isArray(p.image) ? p.image : (p.image ? [p.image] : []);
+      const fromImageUrl = Array.isArray(p.imageUrl)
+        ? p.imageUrl
+        : p.imageUrl
+          ? [p.imageUrl]
+          : [];
+
+      const normalized = [...fromImages, ...fromImage, ...fromImageUrl]
+        .map((x: any) => (x ?? "").toString().trim())
+        .filter(Boolean);
+
+      // Remove duplicates while preserving order
+      const seen = new Set<string>();
+      const deduped: string[] = [];
+      for (const u of normalized) {
+        if (!seen.has(u)) {
+          seen.add(u);
+          deduped.push(u);
+        }
+      }
+
+      return deduped;
+    })(),
     sizes: p.sizes ?? undefined,
     isActive: p.isActive ?? true,
     isFeatured: p.isFeatured ?? false,
@@ -119,8 +145,12 @@ const normalizeProduct = (p: any) => {
               .toString()
               .replace(/\s+/g, "-")}-${colorName}-${resolvedSizes[0]}-${idx}`;
 
+          // Move `size` (single) out of the variant object and store it under `sizes`.
+          // Variant schema supports many sizes now.
+          const { size: _size, ...rest } = v ?? {};
+
           return {
-            ...v,
+            ...rest,
             sizes: resolvedSizes,
             sku: resolvedSku,
           };
@@ -155,37 +185,33 @@ export const seedProducts = async () => {
   console.log(`Seeded products: ${ops.length}`);
 
   // Idempotent admin user seed (avoid unique index duplicate errors)
-  // Update only the role rules/email from "user" -> "admin" when running "npm run seed"
+  // Update only the role/email when running "npm run seed"
   const email = "achraf.saidi03@gmail.com";
-  const user= await User.findOne({email})
-  if(!user){
-    await User.create({
-          email,
-         
-          role:"admin"
-    })
-  }else{
- await User.updateOne(
 
+  await User.updateOne(
+    { email },
     {
       $set: {
-        email,
         role: "admin",
       },
     },
-    { upsert: true }
+    { upsert: true },
   );
-  }
-   
-    
-  console.log("Admin role ensured  role/email updated).");
+
+  console.log("Admin role ensured (role/email updated by email).");
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // CLI entry
-if (process.argv[1] && process.argv[1].includes("seedProducts")) {
+if (
+  typeof process !== "undefined" &&
+  process.argv &&
+  process.argv[1] &&
+  process.argv[1].includes("seedProducts")
+) {
   seedProducts()
     .then(() => process.exit(0))
-    .catch((err) => {
+    .catch((err: any) => {
       console.error("Seed failed:", err);
       process.exit(1);
     });
