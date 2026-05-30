@@ -7,7 +7,7 @@ export const getCart = async (req: Request, res: Response) => {
   try {
     let cart = await Cart.findOne({
       user: req.user._id,
-    }).populate("items.product", "name images price stock  colors");
+    }).populate("items.product", "name images price stock colors vcolors");
     if (!cart) {
       cart = await Cart.create({ user: req.user._id, items: [] });
     }
@@ -48,17 +48,22 @@ export const addToCart = async (req: Request, res: Response) => {
         item.product?.toString?.() === productId && item.size === size,
     );
 
+
     if (existingItem) {
       existingItem.quantity += quantity;
       existingItem.price = product.price;
     } else {
-      cart.items.push({
+      // Typescript in this repo expects `ICartItem` shape including `_id`.
+      // Mongoose will generate `_id` for embedded subdocuments, so we cast here to unblock build.
+      (cart.items as any).push({
         product: product._id,
         quantity,
         price: product.price,
         size,
       });
     }
+
+
 
     cart.calculateTotal();
     await cart.save();
@@ -118,7 +123,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     }
     cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images  price stock colors");
+    await cart.populate("items.product", "name images price stock colors vcolors");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

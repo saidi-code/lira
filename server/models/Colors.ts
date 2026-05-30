@@ -4,7 +4,6 @@ const colorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   hex: { type: String, required: true },
   images: [{ type: String }], // array of image URLs
-
   // Store variant subdocuments directly using variantSchema (embedded subdocuments).
   variants: [variantSchema],
 },{timestamps:true});

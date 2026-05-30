@@ -89,12 +89,9 @@ const SingleProduct = () => {
         <View className="relative">
           {product.type === "simple" ? (
             <Image
-              source={{
-                uri:
-                  product.type === "simple"
-                    ? product?.images?.[0] ?? (product as any)?.vcolors?.[0]?.images?.[0]
-                    : (product as any)?.vcolors?.[0]?.images?.[0],
-              }}
+               source={{
+                         uri:  product?.images?.[0] ?? product?.colors?.[0]?.images?.[0] 
+                       }}
               defaultSource={require("../../assets/images/productLoadingImage.png")}
               style={{
                 width: width,
@@ -105,7 +102,7 @@ const SingleProduct = () => {
           ) : (
               <View className="">
                 <FlatList
-                  data={(((product as any)?.vcolors?.[pColor ?? 0]?.images ?? []) as any[])}
+                  data={(((product as any)?.colors?.[pColor ?? 0]?.images ?? []) as any[])}
                 keyExtractor={(item, index) => String(index)}
                 horizontal
                 pagingEnabled

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 const variantSchema = new mongoose.Schema(
   {
     // Allow a variant to hold many sizes
-    sizes: [{ type: String, required: true }],
+    size: [{ type: String, enum: ["s", "m","l","xl"], default: "s" }],
 
     // SKU is required
     sku: { type: String, required: true },
