@@ -45,12 +45,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
         rounded-2xl overflow-hidden"
         >
           <Image
-            source={{
-              uri:
-                product.type === "simple"
-                  ? product.images?.[0] ?? (product as any)?.vcolors?.[0]?.images?.[0]
-                  : (product as any)?.vcolors?.[0]?.images?.[0],
-            }}
+             source={{
+                   uri:  product?.images?.[0]
+                   ?? product?.colors?.[0]?.images?.[0]
+                 }}
             defaultSource={require("../assets/images/productLoadingImage.png")}
             className="w-[125px] h-[125px]"
             resizeMode="cover"

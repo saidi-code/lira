@@ -23,15 +23,16 @@ import Header from "../../components/Header";
 import axios from "../../config/api";
 import { COLORS, CURRENCY, PRODUCTS } from "../../constants/index";
 import { IProduct } from "../../constants/types";
-import { useCart } from "../../context/CartContext";  
+import { useCart } from "../../context/CartContext";
 
 const SingleProduct = () => {
   const { addToCart } = useCart();
+  const [pColor, setPColor] = useState<number>(0);
+  const [pSize, setPSize] = useState<number>(0);
   const { isLiked, addToFavoris, removeFromFavoris } = useFavoris();
   const [product, setProduct] = useState<IProduct | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-  const [selectedColor, setSelectedColor] = useState<number>(0);
-  const [selectedSize, setSelectedSize] = useState<number | null>(null);
+ 
   const { width } = Dimensions.get("screen");
   const [loading, setLoading] = useState(true);
   const { id } = useLocalSearchParams();
@@ -102,9 +103,9 @@ const SingleProduct = () => {
               resizeMode="cover"
             />
           ) : (
-            <View className="">
-              <FlatList
-                data={product?.vcolors?.[0].images}
+              <View className="">
+                <FlatList
+                  data={(((product as any)?.vcolors?.[pColor ?? 0]?.images ?? []) as any[])}
                 keyExtractor={(item, index) => String(index)}
                 horizontal
                 pagingEnabled
@@ -117,7 +118,7 @@ const SingleProduct = () => {
                   );
                   if (index !== activeBannerIndex) setActiveBannerIndex(index);
                 }}
-                renderItem={({ item }) => (
+                  renderItem={({ item }) => (
                   <View
                     className="flex-1 relative overflow-hidden"
                     style={{ width: width }}
@@ -133,7 +134,7 @@ const SingleProduct = () => {
 
               {/* Pagination Dots */}
               <View className="flex-row justify-center -mt-4 gap-2">
-                {(product as any)?.vcolors?.[0]?.images?.map(
+                {(((product as any)?.vcolors?.[pColor ?? 0]?.images ?? []) as any[]).map(
                   (_: string, index: number) => (
                     <View
                       key={index}
@@ -184,7 +185,7 @@ const SingleProduct = () => {
                   اللون
                 </Text>
                 <FlatList
-                  data={((product as any)?.vcolors ?? []) as any[]}
+                  data={(((product as any)?.vcolors ?? []) as any[])}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -196,13 +197,14 @@ const SingleProduct = () => {
                   }}
                   renderItem={({ item: color, index }) => (
                     <TouchableOpacity
-                      onPress={() => setSelectedColor(index)}
+                      onPress={() => setPColor(index)}
                       className="h-8 w-8 rounded-full"
                       style={{
-                        backgroundColor: color.hex,
+                        backgroundColor: color?.hex ?? "#000",  
+
                         outlineWidth: 2,
                         outlineColor:
-                          selectedColor === index
+                          pColor === index
                             ? "#B89354"
                             : "#rgba(184,147,84,0.4)",
                         shadowColor: "#fff",
@@ -222,7 +224,7 @@ const SingleProduct = () => {
                 </Text>
 
                 <FlatList
-                  data={((product as any)?.vcolors?.[selectedColor]?.variants ?? []) as any[]}
+                  data={(((product as any)?.vcolors?.[pColor ?? 0]?.variants ?? []) as any[])}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -231,29 +233,60 @@ const SingleProduct = () => {
                     gap: 12,
                     flex: 1,
                   }}
-                  renderItem={({ item: variant, index }) => {
-                    const isActive = index === selectedSize;
+                  renderItem={({ item: variant }) => {
+                    // Support both seed shapes:
+                    // 1) variant.sizes: string[]
+                    // 2) variant.size: string
+                    const sizesFromVariant: string[] = Array.isArray(variant?.sizes)
+                      ? (variant?.sizes ?? []).filter(Boolean)
+                      : [];
+
+                    const singleSize: string | null =
+                      typeof variant?.size === "string" && variant?.size.trim()
+                        ? variant.size
+                        : null;
+
+                    const sizesToRender =
+                      sizesFromVariant.length
+                        ? sizesFromVariant
+                        : singleSize
+                          ? [singleSize]
+                          : [];
+
                     return (
-                      <TouchableOpacity
-                        activeOpacity={0.85}
-                        onPress={() => setSelectedSize(index)}
-                        className="flex items-center justify-center rounded-lg"
-                        style={{
-                          color: isActive ? "#201b16" : "#807668",
-                          height: 42,
-                          width: 77,
-                          backgroundColor: isActive ? "#B89354" : "#fff", 
-                          borderStyle: "solid",
-                          borderWidth: 1,
-                          borderColor: isActive
-                            ? "#B89354"
-                            : "rgba(184,147,84,0.1)",
-                        }}
-                      >
-                        <Text className="text-[#201b16] font-tajwal text-base uppercase font-bold">
-                          {variant.size}
-                        </Text>
-                      </TouchableOpacity>
+                      <View className="flex-row flex-wrap gap-3">
+                        {sizesToRender.map((s: string, sizeIndex: number) => {
+                          const isActive = sizeIndex === pSize;
+
+                          return (
+                            <TouchableOpacity
+                              key={`${s}-${sizeIndex}`}
+                              activeOpacity={0.85}
+                              onPress={() => setPSize(sizeIndex)}
+                              className="flex items-center justify-center rounded-lg"
+                              style={{
+                                height: 32,
+                                width: 32,
+                                backgroundColor: isActive ? "#B89354" : "#fff",
+                                borderStyle: "solid",
+                                borderWidth: 1,
+                                borderColor: isActive
+                                  ? "#B89354"
+                                  : "rgba(184,147,84,0.1)",
+                              }}
+                            >
+                              <Text
+                                className="font-tajwal text-xs uppercase font-bold"
+                                style={{
+                                  color: isActive ? "#201b16" : "#807668",
+                                }}
+                              >
+                                {(typeof s === "string" ? s : String(s ?? "")).toUpperCase() || "DEFAULT"}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     );
                   }}
                 />
@@ -366,9 +399,35 @@ const SingleProduct = () => {
 
       <View className=" px-6 pt-4 pb-12 absolute left-0 bottom-0 bg-stone-50/90 shadow-md border-t border-amber-900/10 backdrop-blur-md flex-row justify-start items-center gap-4">
         {/* زر إضافة إلى الحقيبة */}
-        <TouchableOpacity onPress={
-         ()=> addToCart(product, null)
-        } className="flex-1 h-[59px] bg-[#785920] rounded-xl flex-row justify-center items-center gap-2">
+        <TouchableOpacity
+          onPress={() => {
+            if (product.type === "variable") {
+              const vcolor = (product as any)?.vcolors?.[pColor ?? 0];
+              const variants = (vcolor?.variants ?? []) as any[];
+
+              // Support both seed shapes:
+              // - variant.sizes: string[]
+              // - variant.size: string
+              const firstVariant = variants?.[0] ?? null;
+
+              const selectedColorName = vcolor?.name ?? null;
+
+              const selectedSizeValue: string | null =
+                Array.isArray(firstVariant?.sizes) && firstVariant?.sizes?.length
+                  ? String(firstVariant.sizes?.[pSize ?? 0] ?? "")
+                      .trim() || null
+                  : typeof firstVariant?.size === "string"
+                    ? firstVariant.size
+                    : null;
+
+              addToCart(product, selectedSizeValue, selectedColorName);
+              return;
+            }
+
+            addToCart(product, null, null);
+          }}
+          className="flex-1 h-[59px] bg-[#785920] rounded-xl flex-row justify-center items-center gap-2"
+        >
           {/* أيقونة */}
           <MaterialIcons name="add-shopping-cart" size={16} color="white" />
           {/* <View className="bg-white rounded-sm" /> */}

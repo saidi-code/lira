@@ -17,6 +17,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [cartTotal, setCartTotal] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const { getToken, isSignedIn } = useAuth();
   const fetchCartItems = async () => {
     if (!isSignedIn) {
@@ -233,9 +235,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         itemCount,
         loading,
         cartItems,
+        pSize: selectedSize,
+        setPSize: setSelectedSize,
+        pColor: selectedColor,
+        setPColor: setSelectedColor,  
       }}
     >
-      <LoginOrRegisterModal show={authModalVisible} setShow = {setAuthModalVisible} />
+      <LoginOrRegisterModal show={authModalVisible} 
+      setShow = {setAuthModalVisible} />
       {children}
     </CartContext.Provider>
   );

@@ -107,6 +107,10 @@ export interface ICartContext {
     size: string | null,
     quantity: number,
     color: string | null,
+    pSize?: string | null,
+    pColor?: string | null,
+    setColor?: (color: string | null) => void,
+    setSize?: (size: string | null) => void,
   ) => Promise<void>;
   clearCart: () => Promise<void>;
   cartTotal: number;

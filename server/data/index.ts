@@ -1,8 +1,9 @@
 export const PRODUCTS = [
+  // Simple products
   {
     name: "أنا الأبيض",
-
     type: "simple",
+    sku: "SMP-ANA-WHT-001",
     subtitle: "نسخة محدودة • ١٠٠ مل",
     description: "",
     sizes: null,
@@ -12,201 +13,208 @@ export const PRODUCTS = [
     price: 180,
     stock: 100,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/parfum_ana_abiyedh_rouge.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/parfum_ana_abiyedh_rouge.png"],
     isActive: true,
-    createdAt: "2026-05-02T21:45:27.922+00:0",
+    createdAt: "2026-05-02T21:45:27.922+00:00"
   },
   {
-  
     name: "عود الليل الملكي",
     type: "simple",
+    sku: "SMP-OUD-LIL-002",
     subtitle: "نسخة محدودة • ١٠٠ مل",
-    price: 250,
     description: "",
     sizes: null,
     category: "عطور",
+    subCategory: "women",
+    brand: "لطافة",
+    price: 250,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/parfum_oud_lail_maleki.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/parfum_oud_lail_maleki.png"],
     isActive: true,
-    createdAt: "2026-05-03T21:45:27.922+00:0",
+    createdAt: "2026-05-03T21:45:27.922+00:00"
   },
   {
-   
     name: "أسد",
     type: "simple",
+    sku: "SMP-ASD-003",
     subtitle: "نسخة محدودة • ١٠٠ مل",
-    price: 250,
     description: "",
     sizes: null,
     category: "عطور",
+    subCategory: "men",
+    brand: "لطافة",
+    price: 250,
     stock: 10,
     isFeatured: true,
     images: ["https://69f78dbca0be0e562864a507.imgix.net/parfum_assad.png"],
     isActive: true,
-    createdAt: "2026-05-02T21:45:27.922+00:0",
+    createdAt: "2026-05-02T21:45:27.922+00:00"
   },
   {
-  
     name: "24 قراط ذهب",
     type: "simple",
+    sku: "SMP-24K-GLD-004",
     subtitle: "نسخة محدودة • ١٠٠ مل",
-    price: 250,
     description: "",
     sizes: null,
     category: "عطور",
+    subCategory: "unisex",
+    brand: "لطافة",
+    price: 250,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/parfum_24_carat_pure_gold.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/parfum_24_carat_pure_gold.png"],
     isActive: true,
-    createdAt: "2026-05-01T21:45:27.922+00:0",
+    createdAt: "2026-05-01T21:45:27.922+00:00"
   },
   {
-   
     name: "بن نافع للعود",
     type: "simple",
+    sku: "SMP-BNF-005",
     subtitle: "بن نافع للعود",
-    price: 180,
     description: "",
     sizes: null,
     category: "باخور",
+    subCategory: "home",
+    brand: "لطافة",
+    price: 180,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/bakour_banafa_for_oud.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/bakour_banafa_for_oud.png"],
     isActive: true,
-    createdAt: "2026-05-04T24:45:27.922+00:0",
+    createdAt: "2026-05-04T23:45:27.922+00:00"
   },
   {
-   
     name: "بخور كويتي",
     type: "simple",
+    sku: "SMP-BKH-KWT-006",
     subtitle: "بخور كويتي",
-    price: 180,
-
     description: "",
     sizes: null,
     category: "باخور",
+    subCategory: "home",
+    brand: "لطافة",
+    price: 180,
     stock: 10,
     isFeatured: true,
     images: ["https://69f78dbca0be0e562864a507.imgix.net/bakour_kwaiti.png"],
     isActive: true,
-    createdAt: "2026-05-03T24:45:27.922+00:0",
+    createdAt: "2026-05-03T23:45:27.922+00:00"
   },
   {
- 
     name: "عود فاخر",
     type: "simple",
-    price: 250,
-
+    sku: "SMP-ODF-007",
+    subtitle: "",
     description: "",
     sizes: null,
     category: "باخور",
+    subCategory: "home",
+    brand: "لطافة",
+    price: 250,
     stock: 10,
     isFeatured: true,
     images: ["https://69f78dbca0be0e562864a507.imgix.net/bakour_oud_wood.png"],
     isActive: true,
-    createdAt: "2026-05-02T24:45:27.922+00:0",
+    createdAt: "2026-05-02T23:45:27.922+00:00"
   },
   {
-   
     name: "بخور عشق العرب",
     type: "simple",
+    sku: "SMP-BKH-ASH-008",
     subtitle: "بخور عشق العرب",
-    price: 350,
     description: "",
     sizes: null,
     category: "باخور",
+    subCategory: "home",
+    brand: "لطافة",
+    price: 350,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/bakour_acheg_al_arab.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/bakour_acheg_al_arab.png"],
     isActive: true,
-    createdAt: "2026-05-01T24:45:27.922+00:0",
+    createdAt: "2026-05-01T23:45:27.922+00:00"
   },
   {
-        name: "luxury watch",
+    name: "luxury watch",
     type: "simple",
+    sku: "SMP-WCH-LUX-009",
     subtitle: "luxury watch",
-    price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
+    subCategory: "men",
+    brand: "ساعات فاخرة",
+    price: 80,
     stock: 100,
     isFeatured: true,
     images: ["https://69f78dbca0be0e562864a507.imgix.net/watch_luxury.png"],
     isActive: true,
-    createdAt: "2026-05-04T24:45:27.922+00:0",
+    createdAt: "2026-05-04T23:45:27.922+00:00"
   },
   {
-        name: "ressence type 11",
+    name: "ressence type 11",
     type: "simple",
+    sku: "SMP-WCH-RES-010",
     subtitle: "ressence type 11",
-    price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
+    subCategory: "men",
+    brand: "Ressence",
+    price: 80,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/watch_ressence_type_11.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/watch_ressence_type_11.png"],
     isActive: true,
-    createdAt: "2026-05-03T24:45:27.922+00:0",
+    createdAt: "2026-05-03T23:45:27.922+00:00"
   },
   {
-        name: "inspiration one",
+    name: "inspiration one",
     type: "simple",
+    sku: "SMP-WCH-INS-011",
     subtitle: "inspiration one",
-    price: 80,
-sizes: [],
-    description: "",
-   
-    category: "ساعات",
-    stock: 10,
-    isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/watch_inspiration.png",
-    ],
-    isActive: true,
-    createdAt: "2026-05-02T24:45:27.922+00:0",
-  },
-  {
-        name: "nautilus 5610p",
-    type: "simple",
-    subtitle: "nautilus 5610p",
-    price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
+    subCategory: "unisex",
+    brand: "Inspiration",
+    price: 80,
     stock: 10,
     isFeatured: true,
-    images: [
-      "https://69f78dbca0be0e562864a507.imgix.net/watch_patek_philip.png",
-    ],
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/watch_inspiration.png"],
     isActive: true,
-    createdAt: "2026-05-01T24:45:27.922+00:0",
+    createdAt: "2026-05-02T23:45:27.922+00:00"
   },
   {
-     name: "ميار",
+    name: "nautilus 5610p",
+    type: "simple",
+    sku: "SMP-WCH-NAU-012",
+    subtitle: "nautilus 5610p",
+    description: "",
+    sizes: null,
+    category: "ساعات",
+    subCategory: "men",
+    brand: "Patek Philippe",
+    price: 80,
+    stock: 10,
+    isFeatured: true,
+    images: ["https://69f78dbca0be0e562864a507.imgix.net/watch_patek_philip.png"],
+    isActive: true,
+    createdAt: "2026-05-01T23:45:27.922+00:00"
+  },
+  // Variable products
+  {
+    name: "ميار",
     type: "variable",
+    sku: "VAR-MYR-001",
     subtitle: "ميار",
     price: 180,
     description: "",
     category: "ملابس",
-      sizes: [],
-    stock: 10,
+    subCategory: "women",
+    brand: "لطافة",
     isFeatured: true,
     colors: [
       {
@@ -214,111 +222,92 @@ sizes: [],
         hex: "#797F69",
         images: [
           "https://69f78dbca0be0e562864a507.imgix.net/clother_mayar.png",
-          "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
+          "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png"
         ],
         variants: [
-          {
-            sizes: ["s", "m", "l", "xl"],
-            sku: "TSH-BLC-S",
-            stock: 2,
-            isActive: true,
-          },
-        ],
-      },
+          { size: "s", sku: "TSH-BLC-S", stock: 2, isActive: true },
+          { size: "m", sku: "TSH-BLC-M", stock: 2, isActive: true },
+          { size: "l", sku: "TSH-BLC-L", stock: 2, isActive: true },
+          { size: "xl", sku: "TSH-BLC-XL", stock: 2, isActive: true }
+        ]
+      }
     ],
-
     isActive: true,
-    createdAt: "2026-05-04T24:45:27.922+00:0",
+    createdAt: "2026-05-04T23:45:27.922+00:00"
   },
   {
-        name: "لوجين",
+    name: "لوجين",
     type: "variable",
+    sku: "VAR-LOJ-002",
     subtitle: "لوجين",
     price: 280,
     description: "",
-    
     category: "ملابس",
-    stock: 10,
+    subCategory: "women",
+    brand: "لطافة",
     isFeatured: true,
     colors: [
       {
         name: "marron",
         hex: "#A88C6E",
-        images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
-        ],
-        variants: [{sizes: ["l", "xl"], sku: "TSH-MAR-S", isActive: true, stock: 5 }],
+        images: ["https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png"],
+        variants: [
+          { size: "s", sku: "TSH-MAR-S", stock: 5, isActive: true },
+          { size: "m", sku: "TSH-MAR-M", stock: 5, isActive: true }
+        ]
       },
       {
         name: "noir",
         hex: "#000000",
-        images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
-        ],
-        variants: [{ sizes: ["s", "m", "l", "xl"], sku: "TSH-MAR-S", isActive: true, stock: 5 }],
-      },
+        images: ["https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png"],
+        variants: [{ size: "l", sku: "TSH-BLACK-l", stock: 5, isActive: true }]
+      }
     ],
     isActive: true,
-    createdAt: "2026-05-03T24:45:27.922+00:0",
+    createdAt: "2026-05-03T23:45:27.922+00:00"
   },
   {
-        name: "منيار",
+    name: "منيار",
     type: "variable",
+    sku: "VAR-MNY-003",
     subtitle: "منيار",
     price: 280,
     description: "",
-   
     category: "ملابس",
-    stock: 10,
+    subCategory: "women",
+    brand: "لطافة",
     isFeatured: true,
     colors: [
       {
         name: "rose",
-        hex: "A58A83",
-        images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/clother_minyar.png",
-        ],
-        variants: [
-          {
-          sizes: ["s", "m", "l", "xl"],
-            stock: 4,
-            sku: "tsh-rox",
-            isActive: true,
-          },
-        ],
-      },
+        hex: "#A58A83",
+        images: ["https://69f78dbca0be0e562864a507.imgix.net/clother_minyar.png"],
+        variants: [{ size: "l", sku: "tsh-rox", stock: 4, isActive: true }]
+      }
     ],
-
     isActive: true,
-    createdAt: "2026-05-02T24:45:27.922+00:0",
+    createdAt: "2026-05-02T23:45:27.922+00:00"
   },
   {
-        name: "لارا",
+    name: "لارا",
     type: "variable",
+    sku: "VAR-LRA-004",
     subtitle: "لارا",
     price: 380,
     description: "",
-  
     category: "ملابس",
-    stock: 10,
+    subCategory: "women",
+    brand: "لطافة",
     isFeatured: true,
     colors: [
       {
         name: "vert",
         hex: "#B8AA8E",
         images: ["https://69f78dbca0be0e562864a507.imgix.net/clothes_lara.png"],
-        variants: [
-          {
-             sizes: ["s", "m", "l", "xl"],
-            sku: "ths-veeret-xxl",
-            stock: 3,
-            isActive: true,
-          },
-        ],
-      },
+        variants: [{ size: "xl", sku: "ths-veeret-xl", stock: 3, isActive: true }]
+      }
     ],
-
     isActive: true,
-    createdAt: "2026-05-01T24:45:27.922+00:0",
-  },
+    createdAt: "2026-05-01T23:45:27.922+00:00"
+  }
 ];
