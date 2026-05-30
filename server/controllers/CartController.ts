@@ -5,10 +5,9 @@ import Product from "../models/Products.js";
 // Get /api/v1/cart
 export const getCart = async (req: Request, res: Response) => {
   try {
-   console.log("Fetching cart for user:", req.user._id);
     let cart = await Cart.findOne({
       user: req.user._id,
-    }).populate("items.product", "name images price stock vcolors colors");
+    }).populate("items.product", "name images price stock  colors");
     if (!cart) {
       cart = await Cart.create({ user: req.user._id, items: [] });
     }
@@ -119,7 +118,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     }
     cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images price stock");
+    await cart.populate("items.product", "name images  price stock colors");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

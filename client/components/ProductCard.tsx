@@ -41,7 +41,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       >
         {/* Image with gold badge */}
         <View
-          className="relative bg-[#fcf9f1] 
+          className=" aspect-square relative bg-[#fcf9f1] 
         rounded-2xl overflow-hidden"
         >
           <Image
@@ -50,7 +50,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
                    ?? product?.colors?.[0]?.images?.[0]
                  }}
             defaultSource={require("../assets/images/productLoadingImage.png")}
-            className="w-[125px] h-[125px]"
+            style={{ width: "100%", height: "100%" }}
+            
             resizeMode="cover"
           />
 
