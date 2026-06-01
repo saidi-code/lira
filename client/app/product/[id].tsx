@@ -26,9 +26,9 @@ import { IProduct } from "../../constants/types";
 import { useCart } from "../../context/CartContext";
 
 const SingleProduct = () => {
-  const { addToCart } = useCart();
-  const [pColor, setPColor] = useState<number>(0);
-  const [pSize, setPSize] = useState<number>(0);
+  const { addToCart,pColor,pSize,setPSize ,setPColor} = useCart();
+  // const [pColor, setPColor] = useState<number>(0);
+  // const [pSize, setPSize] = useState<number>(0);
   const { isLiked, addToFavoris, removeFromFavoris } = useFavoris();
   const [product, setProduct] = useState<IProduct | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -131,7 +131,7 @@ const SingleProduct = () => {
 
               {/* Pagination Dots */}
               <View className="flex-row justify-center -mt-4 gap-2">
-                {(((product as any)?.vcolors?.[pColor ?? 0]?.images ?? []) as any[]).map(
+                {(((product as any)?.colors?.[pColor ?? 0]?.images ?? []) as any[]).map(
                   (_: string, index: number) => (
                     <View
                       key={index}
@@ -182,7 +182,7 @@ const SingleProduct = () => {
                   اللون
                 </Text>
                 <FlatList
-                  data={(((product as any)?.vcolors ?? []) as any[])}
+                  data={(((product as any)?.colors ?? []) as any[])}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -221,7 +221,7 @@ const SingleProduct = () => {
                 </Text>
 
                 <FlatList
-                  data={(((product as any)?.vcolors?.[pColor ?? 0]?.variants ?? []) as any[])}
+                  data={product?.colors?.[0 ?? pColor]?.variants ?? []}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, index) => String(index)}
@@ -230,44 +230,29 @@ const SingleProduct = () => {
                     gap: 12,
                     flex: 1,
                   }}
-                  renderItem={({ item: variant }) => {
+                  renderItem={({ item: variant,index }) => {
                     // Support both seed shapes:
                     // 1) variant.sizes: string[]
                     // 2) variant.size: string
-                    const sizesFromVariant: string[] = Array.isArray(variant?.sizes)
-                      ? (variant?.sizes ?? []).filter(Boolean)
-                      : [];
+                
 
-                    const singleSize: string | null =
-                      typeof variant?.size === "string" && variant?.size.trim()
-                        ? variant.size
-                        : null;
 
-                    const sizesToRender =
-                      sizesFromVariant.length
-                        ? sizesFromVariant
-                        : singleSize
-                          ? [singleSize]
-                          : [];
 
                     return (
                       <View className="flex-row flex-wrap gap-3">
-                        {sizesToRender.map((s: string, sizeIndex: number) => {
-                          const isActive = sizeIndex === pSize;
-
-                          return (
+                    
                             <TouchableOpacity
-                              key={`${s}-${sizeIndex}`}
+                              key={`s-${index}`}
                               activeOpacity={0.85}
-                              onPress={() => setPSize(sizeIndex)}
+                              onPress={() => setPSize(index)}
                               className="flex items-center justify-center rounded-lg"
                               style={{
                                 height: 32,
                                 width: 32,
-                                backgroundColor: isActive ? "#B89354" : "#fff",
+                                backgroundColor: index === pSize ? "#B89354" : "#fff",
                                 borderStyle: "solid",
                                 borderWidth: 1,
-                                borderColor: isActive
+                                borderColor: index === pSize
                                   ? "#B89354"
                                   : "rgba(184,147,84,0.1)",
                               }}
@@ -275,14 +260,16 @@ const SingleProduct = () => {
                               <Text
                                 className="font-tajwal text-xs uppercase font-bold"
                                 style={{
-                                  color: isActive ? "#201b16" : "#807668",
+                                  color: index === pSize ? "#201b16" : "#807668",
                                 }}
                               >
-                                {(typeof s === "string" ? s : String(s ?? "")).toUpperCase() || "DEFAULT"}
+                              {
+                                variant.size
+                              }
                               </Text>
                             </TouchableOpacity>
-                          );
-                        })}
+                          
+                     
                       </View>
                     );
                   }}

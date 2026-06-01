@@ -25,6 +25,7 @@ export const addToCart = async (req: Request, res: Response) => {
    
 
     const { productId, quantity = 1, size,  color } = req.body;
+    console.log("addToCart called with:", { productId, quantity, size, color });
     const product = await Product.findById(productId);
     if (!product) {
       return res

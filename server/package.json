@@ -8,7 +8,8 @@
    "start": "tsx server.ts",
     "server": "nodemon --exec tsx server.ts",
     "build": "tsc",
-    "seed":"npx tsx seeds/seedProducts.ts"
+    "seed":"npx tsx seeds/seedProducts.ts",
+   
   },
   "keywords": [],
   "author": "",

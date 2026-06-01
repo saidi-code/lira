@@ -238,7 +238,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         pSize: selectedSize,
         setPSize: setSelectedSize,
         pColor: selectedColor,
-        setPColor: setSelectedColor,  
+        setPColor: setSelectedColor,
       }}
     >
       <LoginOrRegisterModal show={authModalVisible} 
