@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React ,{useState}from "react";
 import { ActivityIndicator, Image, Pressable, Text, TouchableOpacity, View ,} from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
@@ -8,10 +8,12 @@ import product from "@/app/product";
 import {router, useRouter} from "expo-router";
 import {Link} from "expo-router";
 import { useCart } from "../context/CartContext";
+
 const CartItem = ({ item, removeItem, updateItemQuantity ,loading}: CartItemProps) => { 
 //  console.log(item.product.vcolors?.[0]?.variants?.[0]?.sizes?.[0],"cart item image")
-console.log(item?.product?.images?.[0]) 
-const {pSize,pColor,setSize,setColor} = useCart();
+const [selectedSize, setSelectedSize] = useState<number | null>(0);
+const [selectedColor, setSelectedColor] = useState<number | null>(0);
+
 return (
     <Pressable
     onPress={() => {
@@ -68,7 +70,35 @@ return (
                   <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
                     يمكنك تغيير اللون أو المقاس من صفحة المنتج.
                   </Text>
+                   <View className="flex-row items-center gap-2 justify-end mt-1">
+                    <View className="w-5 h-5 bg-[#fdf1ea] items-center rounded-md border border-primary">
+                        {item.product.colors?.[selectedColor || 0]?.variants?.map((v,index) =>(<Text key={index} className="uppercase text-primay-600 text-xs font-medium tracking-wide">
+                     {v.size}
+                      </Text>) )  }
+                      
+                    </View>
+
+                    <Text className="text-right text-primay-600 text-xs font-medium tracking-wide">
+                      المقاس:
+                    </Text>
+                  </View>
+                   <View className="flex-row items-center gap-2 justify-end mt-1">
+                    {item?.colors.map((color,index) => (
+                      <Pressable
+                      onPress={() => {
+                        setSelectedColor(index);
+                      }}
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: color.hex }}
+                      key={index}/>
+                    ))}
+                   
+                    <Text className="text-right text-600 text-xs font-medium tracking-wide">
+                      اللون:
+                    </Text>
+                  </View>
                 </View>
+                
               )}
 
               <Text
@@ -77,50 +107,8 @@ return (
               >
                 {item?.product?.name}
               </Text>
-              {/* selected size (hide if null/empty) */}
-              {(() => {
-                const selectedSize =
-                  (item?.product as any)?.colors?.[0]?.variants?.[0]?.size?.[0] ??
-                  item?.size ??
-                  "";
-
-                if (!selectedSize) return null;
-
-                return (
-                  <View className="flex-row items-center gap-2 justify-end mt-1">
-                    <View className="w-5 h-5 bg-[#fdf1ea] items-center rounded-md border border-primary">
-                      <Text className="uppercase text-primay-600 text-xs font-medium tracking-wide">
-                        {selectedSize}
-                      </Text>
-                    </View>
-
-                    <Text className="text-right text-primay-600 text-xs font-medium tracking-wide">
-                      المقاس:
-                    </Text>
-                  </View>
-                );
-              })()}
-
-              {/* selected color (hide if null/empty) */}
-              {(() => {
-                const selectedColor =
-                  (item?.product as any)?.colors?.[0]?.hex ??
-                  null;
-
-                if (!selectedColor) return null;
-
-                return (
-                  <View className="flex-row items-center gap-2 justify-end mt-1">
-                    <View
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: selectedColor }}
-                    />
-                    <Text className="text-right text-600 text-xs font-medium tracking-wide">
-                      اللون:
-                    </Text>
-                  </View>
-                );
-              })()}
+             
+            
 
               <Text className="text-right text-600 text-xs  font-medium tracking-wide mt-1">
                 {item?.product?.subtitle}

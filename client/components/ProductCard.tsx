@@ -89,9 +89,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Price and cart button */}
         <View className="pt-2 flex-row justify-between items-center">
           <TouchableOpacity
-            onPress={() => {
-              addToCart(product, null);
-            }}
+            onPress={async () => {
+              console.log("Add to cart", product._id, product.colors?.[0]?.variants?.[0]?.size.toString(), product.colors?.[0]?.name);
+             product.type === "variable" ? 
+             await addToCart(product, product.colors?.[0]?.variants?.[0]?.size.toString() , product.colors?.[0]?.name ) 
+             : await addToCart(product,null,null);
+            }
+            }
             className="w-10 h-10 bg-[#b89354] rounded-full justify-center items-center"
           >
             <Ionicons name="add-outline" size={18} color={"#ffffff"} />

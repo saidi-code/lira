@@ -60,7 +60,7 @@ if(product.type==="simple"){
       cart = new Cart({ user: req.user._id, items: [] });
     }
     if( color && size){
-      const variant = product.colors?.find((c) => c.name === color)?.variants?.find((v) => v.size === size);
+      const variant = product.colors?.find((c) => c.name === color)?.variants?.find((v) => v.size.toString() === size);
       if (!variant || !variant.isActive) {
         return res
           .status(400)
