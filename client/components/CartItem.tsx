@@ -36,7 +36,8 @@ return (
         padding: 16,
         borderRadius: 20,
         alignContent: "center",
-        justifyContent: 16,
+    // justifyContent removed to satisfy RN style types
+    // justifyContent: 16,
         position: "relative",
 
   
@@ -64,42 +65,7 @@ return (
         {/* Header Row: Decorative square + Title & Subtitle */}
          {/* Title and Subtitle - right-aligned for Arabic */}
             <View className="flex-col justify-start items-end mt-6 flex-1 mr-2">
-              {/* Variable product hint */}
-              {item?.product?.type === "variable" && (
-                <View className="mt-1">
-                  <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                    يمكنك تغيير اللون أو المقاس من صفحة المنتج.
-                  </Text>
-                   <View className="flex-row items-center gap-2 justify-end mt-1">
-                    <View className="w-5 h-5 bg-[#fdf1ea] items-center rounded-md border border-primary">
-                        {item.product.colors?.[selectedColor || 0]?.variants?.map((v,index) =>(<Text key={index} className="uppercase text-primay-600 text-xs font-medium tracking-wide">
-                     {v.size}
-                      </Text>) )  }
-                      
-                    </View>
 
-                    <Text className="text-right text-primay-600 text-xs font-medium tracking-wide">
-                      المقاس:
-                    </Text>
-                  </View>
-                   <View className="flex-row items-center gap-2 justify-end mt-1">
-                    {item?.colors.map((color,index) => (
-                      <Pressable
-                      onPress={() => {
-                        setSelectedColor(index);
-                      }}
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: color.hex }}
-                      key={index}/>
-                    ))}
-                   
-                    <Text className="text-right text-600 text-xs font-medium tracking-wide">
-                      اللون:
-                    </Text>
-                  </View>
-                </View>
-                
-              )}
 
               <Text
                 className="text-right text-body text-lg font-body"
