@@ -21,32 +21,67 @@ export const getCart = async (req: Request, res: Response) => {
 // POST /api/v1/cart/add
 export const addToCart = async (req: Request, res: Response) => {
   try {
-    // for debugging
-   
+    const { productId, quantity = 1, size, color } = req.body;
 
-    const { productId, quantity = 1, size,  color } = req.body;
+    if (!productId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "productId is required" });
+    }
+
+    if (quantity <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "quantity must be greater than 0" });
+    }
+
+    if ((productId as string).length < 12) {
+      // prevents obvious invalid ObjectId values
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid productId" });
+    }
     console.log("addToCart called with:", { productId, quantity, size, color });
-    const product = await Product.findById(productId);
+    const product  = await Product.findById(productId);
     if (!product) {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
     }
-
+if(product.type==="simple"){
     if (product.stock < quantity) {
       return res
         .status(400)
         .json({ success: false, message: "Insufficent stock" });
     }
-
+}
     let cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       cart = new Cart({ user: req.user._id, items: [] });
     }
+    if( color && size){
+      const variant = product.colors?.find((c) => c.name === color)?.variants?.find((v) => v.size === size);
+      if (!variant || !variant.isActive) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Selected variant is not available" });
+      }
+      if (variant.stock < quantity) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Insufficent stock for selected variant" });
+      }
+
+    } else if (product.type === "variable") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Size and color must be selected for variable products" });
+    }
+   
 
     const existingItem: any = cart.items.find(
       (item: any) =>
-        item.product?.toString?.() === productId && item.size === size,
+        item.product?.toString?.() === productId && item.size === size && item.color === color,
     );
 
 
@@ -61,6 +96,7 @@ export const addToCart = async (req: Request, res: Response) => {
         quantity,
         price: product.price,
         size,
+        color,
       });
     }
 
@@ -75,7 +111,7 @@ export const addToCart = async (req: Request, res: Response) => {
       (i: any) => i?.product !== null && i?.product !== undefined,
     );
 
-    await cart.populate("items.product", "name images price stock");
+    await cart.populate("items.product", "name images price stock sizes colors ");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
