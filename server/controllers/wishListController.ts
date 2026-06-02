@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import WishList from "../models/WishList.js";
-import Product from "../models/Products.js";
+import WishList from "../models/WishList.ts";
+import Product from "../models/Products.ts";
 const getWishList = async (req: Request, res: Response) => {
     
   try {
