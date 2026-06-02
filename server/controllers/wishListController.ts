@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import WishList from "../models/WishList.js";
 import Product from "../models/Products.js";
-const getWishList = async (req: Request, res: Response) => {
+export const getWishList = async (req: Request, res: Response) => {
     
   try {
     let wishList = await WishList.findOne({ user: req.user._id }).populate(   "items.product", "name images price category");
