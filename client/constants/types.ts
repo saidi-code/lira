@@ -126,5 +126,6 @@ export interface IFavorisContextValue {
   isLiked: (productId: string) => boolean;
   addToFavoris: (product: IProduct) => void;
   removeFromFavoris: (productId: string) => void;
+  toggleLike: (product: IProduct) => void;
   itemsCount: number;
 }

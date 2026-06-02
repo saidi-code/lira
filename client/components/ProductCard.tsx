@@ -18,15 +18,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const { addToCart } = useCart();
-  const { addToFavoris, isLiked, removeFromFavoris } = useFavoris();
+  const {  isLiked,toggleLike } = useFavoris();
 
-  const toggleLike = (product: IProduct) => {
-    if (isLiked(product._id)) {
-      removeFromFavoris(product._id);
-    } else {
-      addToFavoris(product);
-    }
-  };
+
 
   return (
     <Pressable
