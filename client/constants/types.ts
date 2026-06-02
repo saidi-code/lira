@@ -120,12 +120,17 @@ export interface ICartContext {
 }
 export interface IFavorisItem {
   productId: string;
+  product?: IProduct;
 }
+
 export interface IFavorisContextValue {
   favorisItem: IFavorisItem[];
   isLiked: (productId: string) => boolean;
   addToFavoris: (product: IProduct) => void;
   removeFromFavoris: (productId: string) => void;
   toggleLike: (product: IProduct) => void;
+  getWishList?: () => Promise<any>;
+
   itemsCount: number;
 }
+

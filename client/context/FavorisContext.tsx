@@ -36,10 +36,14 @@ const getWishList = async () => {
       });
       if (data.success) {
         const wishList = data.data;
-        const itemsArray = Array.isArray(wishList?.items) ? wishList.items : [];  
+        const itemsArray = Array.isArray(wishList?.items) ? wishList.items : [];
+
+        // `items.product` is populated by the backend (name images price category)
         const mappedFavorisItems: IFavorisItem[] = itemsArray.map((item: any) => ({
           productId: item?.product?._id ?? "",
+          product: item?.product ?? undefined,
         }));
+
         setFavorisItem(mappedFavorisItems);
       } else {
         setFavorisItem([]);
@@ -58,6 +62,7 @@ const getWishList = async () => {
     setFavorisItem((prev) => prev.filter((f) => f.productId !== productId));
   };
   const itemsCount = favorisItem.length;
+
   return (
     <FavorisContext.Provider
       value={{
@@ -65,6 +70,8 @@ const getWishList = async () => {
         isLiked,
         addToFavoris,
         removeFromFavoris,
+        toggleLike,
+        getWishList,
         itemsCount,
       }}
     >

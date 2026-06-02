@@ -1,5 +1,5 @@
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
-import React from "react";
+import React, { useMemo } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { FavorisItemsProps } from "../constants/types";
@@ -8,19 +8,18 @@ import { useFavoris } from "../context/FavorisContext";
 
 const FavorisItem = ({ product }: FavorisItemsProps) => {
   const { addToCart } = useCart();
-  const { removeFromFavoris, isLiked, addToFavoris } = useFavoris();
+  const { toggleLike } = useFavoris();
 
-  const imageUri =
-    product?.type === "simple"
+  const imageUri = useMemo(() => {
+    if (!product) return undefined;
+    return product?.type === "simple"
       ? product?.images?.[0]
-      : product?.vcolors?.[0]?.images?.[0] ?? product?.colors?.[0]?.images?.[0];
+      : product?.colors?.[0]?.images?.[0];
+  }, [product]);
 
   const handleToggleLike = () => {
-    if (isLiked(product?._id)) {
-      removeFromFavoris(product?._id);
-    } else {
-      addToFavoris(product);
-    }
+    if (!product?._id) return;
+    toggleLike(product as any);
   };
 
   return (
@@ -36,10 +35,12 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
               <Ionicons name={"heart-sharp"} color={"#b89354"} size={20} />
             </TouchableOpacity>
 
-            <View className="flex-col  justify-start items-end">
-              <Text className="text-right text-body text-lg font-body">
-                {/* {product?.name} */}
-                Hello world!!
+            <View className="flex-col justify-start items-end">
+              <Text
+                className="text-right text-body text-lg font-body"
+                numberOfLines={1}
+              >
+                {product?.name}
               </Text>
             </View>
           </View>
@@ -54,12 +55,16 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
         {/* Button + Price */}
         <View className="self-stretch pt-4 flex-col justify-start items-start">
           <View className="self-stretch flex-row justify-between items-end">
-            <View className="px-4 py-2 bg-[#b89354] rounded-full flex-row justify-start items-center gap-1">
+            <TouchableOpacity
+              onPress={() => addToCart(product, null, null)}
+              activeOpacity={0.8}
+              className="px-4 py-2 bg-[#b89354] rounded-full flex-row justify-start items-center gap-1"
+            >
               <Text className="text-center text-white text-base font-body">
                 إضافة للحقيبة
               </Text>
               <SimpleLineIcons name={"handbag"} size={14} color={"#fff"} />
-            </View>
+            </TouchableOpacity>
 
             <View className="flex-col justify-start items-end">
               <Text className="text-right text-[#785920] text-base font-body">
