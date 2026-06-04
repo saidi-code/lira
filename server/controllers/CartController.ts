@@ -81,10 +81,14 @@ if(product.type==="simple"){
 
     const existingItem: any = cart.items.find(
       (item: any) =>
-        item.product?.toString?.() === productId && item.size === size && item.color === color,
+        item.product?.toString?.() === productId &&
+        item.size === size &&
+        item.color === color,
     );
 
-
+    // If the user changes size/color for the same product, we must create or update
+    // the item that matches the new variant (not the old one).
+    // So identity for a cart item is: (productId + size + color).
     if (existingItem) {
       existingItem.quantity += quantity;
       existingItem.price = product.price;

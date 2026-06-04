@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, Image, Pressable, Text, TouchableOpacity, View, } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
@@ -20,21 +20,32 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
     const firstColor = item?.product?.colors?.[0];
     if (!firstColor) return;
 
-    if (!selectedColor) {
+    // Default selected color is always the first color when nothing is selected yet.
+    if (selectedColor == null) {
+      setSelectedColor(firstColor?.name ?? null);
+    }
+
+    // Default selected size: if user hasn't picked a size yet (or color is still default),
+    // use variants[0].size for the first color.
+    if (selectedSize == null) {
       const defaultSize = firstColor?.variants?.[0]?.size ?? item?.size ?? null;
       setSelectedSize(defaultSize);
     }
-  }, [item, selectedColor]);
+  }, [item, selectedColor, selectedSize]);
 
   return (
     <Pressable
       onPress={() => {
         // Navigate to product details page using Expo Router's Link component
         // We can also use the useRouter hook for programmatic navigation
-        router.push({pathname:`/product/${item?.product?._id}`,params:{
-          color:selectedSize,
-          size:selectedColor
-        }});
+        router.push({
+          pathname: "/product/[id]",
+          params: {
+            id: item?.product?._id,
+            color: selectedColor,
+            size: selectedSize,
+          },
+        } as any);
       }}
       key={item?._id}
       style={{
@@ -104,15 +115,18 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
                       key={index}
                       onPress={(e) => {
                         e.stopPropagation();
-                        setSelectedColor(c?.name);
-                        // if size exists already, keep it; else use first available size for this color
+                        const colorName = c?.name ?? null;
                         const nextSize = c?.variants?.[0]?.size ?? item?.size ?? null;
+
+                        // Keep local UI state in sync with what we send to the backend.
+                        setSelectedColor(colorName);
                         setSelectedSize(nextSize);
+
                         updateItemQuantity(
                           item._id,
                           item.quantity,
                           nextSize,
-                          c?.name ?? null,
+                          colorName,
                         );
                       }}
                       className="w-4 h-4 rounded-full border"

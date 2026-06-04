@@ -35,7 +35,40 @@ const SingleProduct = () => {
  
   const { width } = Dimensions.get("screen");
   const [loading, setLoading] = useState(true);
-  const { id } = useLocalSearchParams();
+  const { id, color, size } = useLocalSearchParams();
+  console.log("Received route params:", { id, color, size });
+
+  // Make received route params the default selected color/size
+  useEffect(() => {
+    if (!product) return;
+    if (product.type !== "variable") return;
+
+    const routeColor = typeof color === "string" ? color : undefined;
+    const routeSize = typeof size === "string" ? size : undefined;
+
+    const colorList: any[] = (product as any)?.colors ?? [];
+
+    // Default color from params
+    const resolvedColorIndex =
+      routeColor != null
+        ? colorList.findIndex((c: any) => c?.name === routeColor)
+        : pColor ?? 0;
+
+    if (routeColor && resolvedColorIndex >= 0) {
+      setPColor(resolvedColorIndex);
+    }
+
+    // Default size from params (relative to resolved color)
+    if (routeSize) {
+      const variants = colorList?.[resolvedColorIndex]?.variants ?? [];
+      const sizeIndex = variants.findIndex(
+        (v: any) => String(v?.size) === String(routeSize),
+      );
+      if (sizeIndex >= 0) {
+        setPSize(sizeIndex);
+      }
+    }
+  }, [product, color, size, pColor, setPColor, setPSize]);
   const fetchProduct = async (id: string) => {
     try {
       const { data } = await axios.get(`/products/${id}`);
