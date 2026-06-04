@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Pressable, Text, TouchableOpacity, View, } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
@@ -11,16 +11,30 @@ import { useCart } from "../context/CartContext";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
   //  console.log(item.product.vcolors?.[0]?.variants?.[0]?.sizes?.[0],"cart item image")
-  const [selectedSize, setSelectedSize] = useState<any>( null);
-  const [selectedColor, setSelectedColor] = useState<any>( null);
+  const [selectedSize, setSelectedSize] = useState<any>(null);
+  const [selectedColor, setSelectedColor] = useState<any>(null);
 
+  // Default selected size: if user hasn't picked a color yet, use variants[0].size
+  // for the first color in the product.colors array.
+  React.useEffect(() => {
+    const firstColor = item?.product?.colors?.[0];
+    if (!firstColor) return;
+
+    if (!selectedColor) {
+      const defaultSize = firstColor?.variants?.[0]?.size ?? item?.size ?? null;
+      setSelectedSize(defaultSize);
+    }
+  }, [item, selectedColor]);
 
   return (
     <Pressable
       onPress={() => {
         // Navigate to product details page using Expo Router's Link component
         // We can also use the useRouter hook for programmatic navigation
-        router.push(`/product/${item?.product?._id}`);
+        router.push({pathname:`/product/${item?.product?._id}`,params:{
+          color:selectedSize,
+          size:selectedColor
+        }});
       }}
       key={item?._id}
       style={{

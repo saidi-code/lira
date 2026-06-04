@@ -88,7 +88,7 @@ const Wishlist = () => {
                 keyExtractor={(item: any, index) => String(item?._id ?? index)}
                 scrollEnabled={false}
                 renderItem={({ item }) => (
-                  <FavorisItem key={item?._id} product={item} />
+                  <FavorisItem key={item?.productId ?? item?._id} product={item?.product} />
                 )}
               />
             </View>

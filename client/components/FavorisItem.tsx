@@ -12,9 +12,14 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
 
   const imageUri = useMemo(() => {
     if (!product) return undefined;
-    return product?.type === "simple"
-      ? product?.images?.[0]
-      : product?.colors?.[0]?.images?.[0];
+
+    // Backend in wishlist populates only: name, images, price, category
+    // So we primarily rely on `product.images`.
+    const firstImage = product?.images?.[0];
+    if (firstImage) return firstImage;
+
+    // Fallback for variable products if they ever arrive fully.
+    return product?.colors?.[0]?.images?.[0];
   }, [product]);
 
   const handleToggleLike = () => {
@@ -68,7 +73,7 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
 
             <View className="flex-col justify-start items-end">
               <Text className="text-right text-[#785920] text-base font-body">
-                {product?.price} {CURRENCY}
+                {product.price} {CURRENCY}
               </Text>
             </View>
           </View>
@@ -80,11 +85,10 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
         <Image
           className="w-28 h-32 rounded-lg"
           source={
-            imageUri
-              ? { uri: imageUri }
-              : require("../assets/images/productLoadingImage.png")
+
+               { uri: imageUri }
           }
-          defaultSource={require("../assets/images/productLoadingImage.png")}
+        style={{ width: 112, height: 128 }}
           resizeMode="cover"
         />
       </View>
