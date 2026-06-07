@@ -125,7 +125,7 @@ if(product.type==="simple"){
 // PUT /api/v1/cart/item/:productId
 export const updateCartItem = async (req: Request, res: Response) => {
   try {
-    const { quantity, size } = req.body;
+    const { quantity, size,color } = req.body;
     const { productId } = req.params;
  
     const cart = await Cart.findOne({ user: req.user._id });
@@ -152,6 +152,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
         (item) =>
           item.product.toString() !== productId.toString() ||
           item.size !== size,
+          item.color !== color
       );
     } else {
       const product = await Product.findById(productId);
@@ -170,39 +171,6 @@ export const updateCartItem = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-// Delete Cart Item
-// DELETE api/v1/cart/item/:productId
-// export const deleteCartItem = async (req: Request, res: Response) => {
-//   try {
-//     const size = req.query.size as string | undefined;
-//     const color = req.query.color as string | undefined;
-
-//     const cart = await Cart.findOne({ user: req.user._id });
-//     if (!cart) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Cart not found" });
-//     }
-
-//     // Simple products: identity is (productId + size). Color is ignored.
-//     // Variable products: identity is (productId + size + color).
-//     cart.items = cart.items.filter((item: any) => {
-//       const matchesProduct = item?.product?.toString?.() === req.params.productId;
-//       const matchesSize = item?.size === size;
-//       const matchesColor = color === undefined ? true : item?.color === color;
-
-//       return !(matchesProduct && matchesSize && matchesColor);
-//     });
-
-//     cart.calculateTotal();
-//     await cart.save();
-
-//     await cart.populate("items.product", "name images price stock");
-//     res.json({ success: true, data: cart });
-//   } catch (error: any) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
 
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
