@@ -80,27 +80,30 @@ if(product.type==="simple"){
    
 
     // identity for a cart item is: (productId + size + color)
+    // For simple products we normalize size/color to null so duplicates are merged correctly.
+    const normalizedSize = product.type === "simple" ? null : size ?? null;
+    const normalizedColor = product.type === "simple" ? null : color ?? null;
+
     const existingItem: any = cart.items.find(
       (item: any) =>
         item.product?.toString?.() === productId &&
-        item.size === size &&
-        item.color === color,
+        (item.size ?? null) === normalizedSize &&
+        (item.color ?? null) === normalizedColor,
     );
 
     if (existingItem) {
-      // Increment quantity of the existing matching variant
       existingItem.quantity += quantity;
       existingItem.price = product.price;
     } else {
-      // Add new variant line
       (cart.items as any).push({
         product: product._id,
         quantity,
         price: product.price,
-        size,
-        color,
+        size: normalizedSize,
+        color: normalizedColor,
       });
     }
+
 
     // Remove duplicate lines for safety (in case cart already contains duplicates)
     // Keep only the first occurrence per (product + size + color)
