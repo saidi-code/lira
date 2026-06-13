@@ -34,19 +34,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
   }, [item, selectedColor, selectedSize]);
 
   return (
-    <Pressable
-      onPress={() => {
-        // Navigate to product details page using Expo Router's Link component
-        // We can also use the useRouter hook for programmatic navigation
-        router.push({
-          pathname: "/product/[id]",
-          params: {
-            id: item?.product?._id,
-            color: selectedColor,
-            size: selectedSize,
-          },
-        } as any);
-      }}
+    <View
+     
       key={item?._id}
       style={{
         shadowColor: "rgba(120, 89, 32, 0.05)",
@@ -110,7 +99,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
               {/* Colors */}
               <View className="flex-row items-center gap-2 justify-end mt-1">
                 {
-                  item.product.colors.map((c: any, index: number) => (
+                  (item.product.colors ?? []).map((c: any, index: number) => (
+
                     <Pressable
                       key={index}
                       onPress={(e) => {
@@ -139,9 +129,9 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
               {/* Sizes (based on selected color) */}
               <View className="flex-row items-center gap-2 justify-end mt-1">
                 {(() => {
-                  const selectedColorObj = item.product.colors.find((c: any) => c.name === selectedColor) ??
-                    item.product.colors[0];
-                  const variants = selectedColorObj?.variants ?? [];
+                    const colors = item.product?.colors ?? [];
+                    const selectedColorObj = colors.find((c: any) => c.name === selectedColor) ?? colors[0];
+                    const variants = selectedColorObj?.variants ?? [];
                   return variants.map((v: any, index: number) => (
                     <Pressable
                       key={index}
@@ -215,8 +205,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
                   updateItemQuantity(
                     item._id,
                     item.quantity + 1,
-                    item?.size || null,
-                    item?.color || null,
+                    item.size ?? null,
+                    item.color ?? null,
                   )
                 }
                 activeOpacity={0.7}
@@ -224,10 +214,25 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
               >
                 <Ionicons name="add-outline" color="#785920" size={12} />
               </TouchableOpacity>
+
             </View>
           </View>
         </View>
         {/* Product Image - responsive using aspect ratio (3:4 = 0.75) */}
+        <Pressable  onPress={() => {
+        // Navigate to product details page using Expo Router's Link component
+        // We can also use the useRouter hook for programmatic navigation
+        router.push({
+          pathname: "/product/[id]",
+          params: {
+            id: item?.product?._id,
+            color: selectedColor,
+            size: selectedSize,
+          },
+        } as any);
+      }}>
+
+      
         <View className="rounded-lg overflow-hidden bg-gray-100">
           <Image
             //  source={{
@@ -245,8 +250,9 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
             resizeMode="cover"
           />
         </View>
+          </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 };
 
