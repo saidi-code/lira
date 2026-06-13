@@ -161,12 +161,8 @@ const SingleProduct = () => {
       return;
     }
 
-    // Else -> add new
-    addToCart(
-      product,
-      currentVariant.size,
-      currentVariant.color,
-    );
+    // Else -> add new variant line
+    addToCart(product, currentVariant.size, currentVariant.color);
   };
 
   if (loading) {
