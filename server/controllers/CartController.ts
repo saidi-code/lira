@@ -79,6 +79,7 @@ if(product.type==="simple"){
     }
    
 
+    // identity for a cart item is: (productId + size + color)
     const existingItem: any = cart.items.find(
       (item: any) =>
         item.product?.toString?.() === productId &&
@@ -86,15 +87,12 @@ if(product.type==="simple"){
         item.color === color,
     );
 
-    // If the user changes size/color for the same product, we must create or update
-    // the item that matches the new variant (not the old one).
-    // So identity for a cart item is: (productId + size + color).
     if (existingItem) {
+      // Increment quantity of the existing matching variant
       existingItem.quantity += quantity;
       existingItem.price = product.price;
     } else {
-      // Typescript in this repo expects `ICartItem` shape including `_id`.
-      // Mongoose will generate `_id` for embedded subdocuments, so we cast here to unblock build.
+      // Add new variant line
       (cart.items as any).push({
         product: product._id,
         quantity,
@@ -104,9 +102,18 @@ if(product.type==="simple"){
       });
     }
 
-
+    // Remove duplicate lines for safety (in case cart already contains duplicates)
+    // Keep only the first occurrence per (product + size + color)
+    const seen = new Set<string>();
+    cart.items = (cart.items as any).filter((it: any) => {
+      const key = `${it.product?.toString?.() ?? ""}::${it.size ?? ""}::${it.color ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     cart.calculateTotal();
+
     await cart.save();
 
     // remove corrupted cart items (where product reference is null/undefined)
