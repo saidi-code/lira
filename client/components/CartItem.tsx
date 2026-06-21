@@ -6,22 +6,10 @@ import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
-  const [selectedSize, setSelectedSize] = React.useState<any>(null);
-  const [selectedColor, setSelectedColor] = React.useState<any>(null);
+ console.log("Rendering CartItem", item);
+ console.log("Rendering CartItem color",JSON.stringify(item?.colors));
 
-  React.useEffect(() => {
-    const firstColor = item?.product?.colors?.[0];
-    if (!firstColor) return;
 
-    if (selectedColor == null) {
-      setSelectedColor(firstColor?.name ?? null);
-    }
-
-    if (selectedSize == null) {
-      const defaultSize = firstColor?.variants?.[0]?.size ?? item?.size ?? null;
-      setSelectedSize(defaultSize);
-    }
-  }, [item, selectedColor, selectedSize]);
 
   const isVariable = (item?.product as any)?.type === "variable";
 
