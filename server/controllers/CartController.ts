@@ -157,53 +157,86 @@ if(product.type==="simple"){
 // PUT /api/v1/cart/item/:productId
 export const updateCartItem = async (req: Request, res: Response) => {
   try {
-    const { quantity, size,color } = req.body;
+    const { quantity, size, color } = req.body;
     const { productId } = req.params;
- 
-    const cart = await Cart.findOne({ user: req.user._id, });
-    if (!cart) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found" });
+
+    if (!productId) {
+      return res.status(400).json({ success: false, message: "productId is required" });
     }
-    //find item in cart
+
+    if (quantity === undefined || quantity === null) {
+      return res.status(400).json({ success: false, message: "quantity is required" });
+    }
+
+    const cart = await Cart.findOne({ user: req.user._id });
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // normalize like addToCart (so simple/variable match properly)
+    const normalizedSize = product.type === "simple" ? null : (size ?? null);
+    const normalizedColor = product.type === "simple" ? null : (color ?? null);
 
     const item = cart.items.find(
-      (item) =>
-        item.product._id === productId.toString() &&
-        (item.size ?? null) === (size ?? null) &&
-        (item.color ?? null) === (color ?? null),
+      (it) =>
+        it.product.toString() === productId.toString() &&
+        (it.size ?? null) === normalizedSize &&
+        (it.color ?? null) === normalizedColor,
     );
 
-   
     if (!item) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Item not in cart" });
+      return res.status(404).json({ success: false, message: "Item not in cart" });
     }
-    
-    if (quantity <= 0) {
-      cart.items = cart.items.filter(
-        (item) => {
-          const sameProduct = item.product.toString() === productId.toString();
-          const sameSize = (item.size ?? null) === (size ?? null);
-          const sameColor = (item.color ?? null) === (color ?? null);
-          return !(sameProduct && sameSize && sameColor);
-        },
-      );
-    } else {
 
-      const product = await Product.findById(productId);
-      if (product!.stock < quantity) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Insufficent stock" });
+    if (quantity <= 0) {
+      cart.items = cart.items.filter((it) => {
+        const sameProduct = it.product.toString() === productId.toString();
+        const sameSize = (it.size ?? null) === normalizedSize;
+        const sameColor = (it.color ?? null) === normalizedColor;
+        return !(sameProduct && sameSize && sameColor);
+      });
+    } else {
+      // stock validation (simple vs variable)
+      if (product.type === "simple") {
+        if (product.stock < quantity) {
+          return res.status(400).json({ success: false, message: "Insufficent stock" });
+        }
       }
+
+      if (product.type === "variable") {
+        if (!color || !size) {
+          return res.status(400).json({
+            success: false,
+            message: "Size and color must be selected for variable products",
+          });
+        }
+
+        const variant = product.colors?.find((c) => c.hex === color)?.variants?.find((v) => {
+          const variantSizes = (v as any)?.size;
+          return Array.isArray(variantSizes) ? variantSizes.includes(size) : String(variantSizes) === String(size);
+        });
+
+        if (!variant || !variant.isActive) {
+          return res.status(400).json({ success: false, message: "Selected variant is not available" });
+        }
+
+        if ((variant as any).stock < quantity) {
+          return res.status(400).json({ success: false, message: "Insufficent stock for selected variant" });
+        }
+      }
+
       item.quantity = quantity;
+      item.price = product.price;
     }
+
     cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images price stock colors vcolors");
+    await cart.populate("items.product", "name images price stock colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
