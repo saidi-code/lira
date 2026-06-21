@@ -147,7 +147,7 @@ if(product.type==="simple"){
       (i: any) => i?.product !== null && i?.product !== undefined,
     );
 
-    await cart.populate("items.product", "name images price stock sizes colors ");
+    await cart.populate("items.product", "name images price stock sizes colors type ");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
