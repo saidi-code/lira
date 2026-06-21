@@ -1,12 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect } from "react";
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
-  const isVariable = (item?.product as any)?.type === "variable";
+  useEffect(() => {
+    // This effect runs when the component mounts or when the item prop changes.
+    // You can perform any necessary setup or cleanup here if needed.
+  }, [item]);
+  const isVariable = (item?.product as any)?.type === "variable"?true:false;
 
 
 
@@ -58,17 +62,17 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
             </Text>
 
             {/* Selected variant values (requested change) */}
-            {isVariable && (
+          
               <View className="gap-1">
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  اللون: {item?.color ?? (item as any)?.color ?? (item as any)?.product?.colors?.[0]?.name ?? ""}
+                  اللون: {item?.color }
                 </Text>
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  المقاس: {item?.size ?? (item as any)?.size ?? (item as any)?.product?.colors?.[0]?.variants?.[0]?.size ?? ""}
+                  المقاس: {item?.size ?? ""}
                 </Text>
 
               </View>
-            )}
+           
 
 
           </View>
