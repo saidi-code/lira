@@ -28,7 +28,7 @@ const Cart = () => {
     useCart();
 
 
-
+console.log("cartItems", cartItems);
 
 
   return (
@@ -94,6 +94,7 @@ const Cart = () => {
             <FlatList
               data={cartItems}
               keyExtractor={(item) => String(item._id)}
+
               scrollEnabled={false}
               renderItem={({ item }) => (
                 <CartItem

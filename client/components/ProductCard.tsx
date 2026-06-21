@@ -23,7 +23,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   const defaultColor = useMemo(() => {
     if (!isVariable) return null;
-    return (product as any)?.colors?.[0]?.name ?? null;
+    return (product as any)?.colors?.[0]?.hex ?? null;
   }, [isVariable, product]);
 
   const defaultSize = useMemo(() => {

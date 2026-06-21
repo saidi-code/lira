@@ -6,15 +6,9 @@ import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
-console.log("CartItem props:", { item, loading });
-  const isVariable = (item?.product as any)?.type === "variable"?true:false;
-
-
-
-
+  const isVariable = item?.product?.type === "variable";
   return (
     <View
-      key={item?._id}
       style={{
         shadowColor: "rgba(120, 89, 32, 0.05)",
         shadowOffset: { width: 0, height: 4 },
@@ -58,18 +52,60 @@ console.log("CartItem props:", { item, loading });
               {item?.product?.subtitle}
             </Text>
 
-            {/* Selected variant values (requested change) */}
-          
+            {/* Selected variant values */}
+            {isVariable && (
               <View className="gap-1">
-                <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  اللون: {item?.color }
-                </Text>
-                <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  المقاس: {item?.size ?? ""}
-                </Text>
+                {/*
+                  item.color = color name coming from backend
+                  We find the color object inside product.colors to display its HEX.
+                */}
 
+                <View className=" items-center flex-row-reverse gap-1 ">
+                  <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
+                    اللون:
+                  </Text>
+
+                  <View
+                    className="h-4 w-4 rounded-md"
+                    style={{
+                      backgroundColor: 
+                        (item as any)?.product?.colors?.find(
+                          (c: any) => c?.name === item?.color
+                        )?.hex ?? "#000",
+                      outlineWidth: 1,
+                      outlineColor:"#B89354",
+                      shadowColor: "#fff",
+                      shadowOpacity: 0.2,
+                      shadowRadius: 6,
+                      elevation: 4,
+                      outlineOffset:1,
+                      margin: 4,
+                    }}
+                  />
+                </View>
+                <View className=" items-center flex-row-reverse gap-1 ">
+                  <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
+                    المقاس:
+                  </Text>
+                  <View
+                    className="h-4 w-4 rounded-sm items-center justify-center"
+                    style={{
+                      backgroundColor: "transparent",
+                      outlineWidth: 1,
+                      outlineColor:"#B89354",
+                      shadowColor: "#fff",
+                      shadowOpacity: 0.2,
+                      shadowRadius: 6,
+                      elevation: 4,
+                      outlineOffset:1,
+                      margin: 4,
+                    }}
+                  >
+                    <Text className="text-right text-primary-600 text-xs font-medium tracking-wide  uppercase">{item?.size ?? ""}</Text>
+                  </View>
+                </View>
               </View>
-           
+            )}
 
 
           </View>
@@ -105,7 +141,7 @@ console.log("CartItem props:", { item, loading });
                 onPress={() =>
                   updateItemQuantity(
                     item._id,
-                    item.quantity + 1,
+                    item.quantity = item.quantity + 1,
                     item.size ?? null,
                     item.color ?? null,
                   )
@@ -127,6 +163,7 @@ console.log("CartItem props:", { item, loading });
                 id: item?.product?._id,
                 color: item?.color,
                 size: item?.size,
+                quantity: item.quantity - 1,
               } as any,
             });
           }}

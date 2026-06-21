@@ -37,7 +37,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const itemsArray = Array.isArray(cart?.items) ? cart.items : [];
 
         const mappedCartItems: ICartItem[] = itemsArray.map((item: any) => ({
-          _id: item?.product?._id ?? "",
+          // Important: use a unique id per variant (product+size+color)
+          _id: `${item?.product?._id ?? ""}::${item?.size ?? ""}::${item?.color ?? ""}`,
           product: item?.product ?? null,
           quantity: item?.quantity ?? 0,
           size: item?.size ?? null,
