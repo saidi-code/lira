@@ -1,26 +1,43 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import {
-  Alert,
-  Image,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useMemo, useState } from "react";
+import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { IProduct, ProductCardProps } from "../constants/types";
+import ChooseColorSizeModal from "./ChooseColorSizeModal";
 import { useCart } from "../context/CartContext";
 import { useFavoris } from "../context/FavorisContext";
+
 const ProductCard = ({ product }: ProductCardProps) => {
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const { addToCart } = useCart();
-  const {  isLiked,toggleLike } = useFavoris();
+  const { isLiked, toggleLike } = useFavoris();
 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
+  const isVariable = product?.type === "variable";
+
+  const defaultColor = useMemo(() => {
+    if (!isVariable) return null;
+    return (product as any)?.colors?.[0]?.name ?? null;
+  }, [isVariable, product]);
+
+  const defaultSize = useMemo(() => {
+    if (!isVariable) return null;
+    const firstColor = (product as any)?.colors?.[0];
+    return firstColor?.variants?.[0]?.size ?? null;
+  }, [isVariable, product]);
+
+  const handleOpenVariableModal = () => {
+    // Pre-fill with first available color/size so the modal can be added immediately if desired
+    setSelectedColor(defaultColor);
+    setSelectedSize(defaultSize ? String(defaultSize) : null);
+    setShowModal(true);
+  };
 
   return (
     <Pressable
@@ -39,30 +56,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
         rounded-2xl overflow-hidden"
         >
           <Image
-             source={{
-                   uri:  product?.images?.[0]
-                   ?? product?.colors?.[0]?.images?.[0]
-                 }}
+            source={{
+              uri: product?.images?.[0] ?? (product as any)?.colors?.[0]?.images?.[0],
+            }}
             defaultSource={require("../assets/images/productLoadingImage.png")}
             style={{ width: "100%", height: "100%" }}
-            
             resizeMode="cover"
           />
 
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
-              toggleLike(product);
+              toggleLike(product as any);
             }}
             className="absolute left-3 top-3"
           >
-            {isLiked(product._id) ? (
+            {isLiked((product as any)._id) ? (
               <Ionicons name="heart-sharp" size={20} color={"#b89354"} />
             ) : (
               <Ionicons name="heart-outline" size={20} color={"#b89354"} />
             )}
-
-            {/* <View className="w-[19px] h-[17.18px] bg-[#b89354]" /> */}
           </TouchableOpacity>
         </View>
 
@@ -83,24 +96,38 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Price and cart button */}
         <View className="pt-2 flex-row justify-between items-center">
           <TouchableOpacity
-            onPress={async () => {
-            //  product.type === "variable" ? 
-            //  await addToCart(product, product.colors?.[0]?.variants?.[0]?.size.toString() , product.colors?.[0]?.name ) 
-            //  : await addToCart(product,null,null);
-            }
-            }
+            onPress={() => {
+              if (!product) return;
+
+              if (product.type === "variable") {
+                handleOpenVariableModal();
+                return;
+              }
+
+              // Simple product: add directly
+              addToCart(product as IProduct, null, null);
+            }}
             className="w-10 h-10 bg-[#b89354] rounded-full justify-center items-center"
           >
             <Ionicons name="add-outline" size={18} color={"#ffffff"} />
-            {/* <View className="w-[7.58px] h-[7.58px] bg-white" /> */}
           </TouchableOpacity>
+
           <Text className="text-right text-[#b89354] text-base font-bold font-work-sans">
             {product.price} {CURRENCY}
           </Text>
         </View>
+
+        <ChooseColorSizeModal
+          show={showModal}
+          setShow={setShowModal}
+          product={(product as any) ?? null}
+          selectedSize={selectedSize}
+          selectedColor={selectedColor}
+        />
       </View>
     </Pressable>
   );
 };
 
 export default ProductCard;
+
