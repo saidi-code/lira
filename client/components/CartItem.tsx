@@ -6,7 +6,6 @@ import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
-  console.log("Rendering Item product Type:", item?.product?.type);
   const isVariable = item?.product?.type === "variable";
   return (
     <View
