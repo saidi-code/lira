@@ -59,30 +59,40 @@ if(product.type==="simple"){
     if (!cart) {
       cart = new Cart({ user: req.user._id, items: [] });
     }
-    if( color && size){
-      const variant = product.colors?.find((c) => c.name === color)?.variants?.find((v) => v.size.toString() === size);
+    if (product.type === "variable") {
+      if (!color || !size) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Size and color must be selected for variable products",
+          });
+      }
+
+      const variant = product.colors?.find((c) => c.name === color)?.variants?.find((v) => {
+        const variantSizes = (v as any)?.size;
+        return Array.isArray(variantSizes) ? variantSizes.includes(size) : String(variantSizes) === String(size);
+      });
+
+
+
       if (!variant || !variant.isActive) {
         return res
           .status(400)
           .json({ success: false, message: "Selected variant is not available" });
       }
-      if (variant.stock < quantity) {
+      if ((variant as any).stock < quantity) {
         return res
           .status(400)
           .json({ success: false, message: "Insufficent stock for selected variant" });
       }
-
-    } else if (product.type === "variable") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Size and color must be selected for variable products" });
     }
-   
 
     // identity for a cart item is: (productId + size + color)
     // For simple products we normalize size/color to null so duplicates are merged correctly.
     const normalizedSize = product.type === "simple" ? null : size ?? null;
     const normalizedColor = product.type === "simple" ? null : color ?? null;
+
 
     const existingItem: any = cart.items.find(
       (item: any) =>
@@ -148,8 +158,11 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
     const item = cart.items.find(
       (item) =>
-        item.product.toString() === productId.toString() && item.size === size,
+        item.product.toString() === productId.toString() &&
+        (item.size ?? null) === (size ?? null) &&
+        (item.color ?? null) === (color ?? null),
     );
+
    
     if (!item) {
       return res
@@ -159,12 +172,15 @@ export const updateCartItem = async (req: Request, res: Response) => {
     
     if (quantity <= 0) {
       cart.items = cart.items.filter(
-        (item) =>
-          item.product.toString() !== productId.toString() ||
-          item.size !== size,
-          item.color !== color
+        (item) => {
+          const sameProduct = item.product.toString() === productId.toString();
+          const sameSize = (item.size ?? null) === (size ?? null);
+          const sameColor = (item.color ?? null) === (color ?? null);
+          return !(sameProduct && sameSize && sameColor);
+        },
       );
     } else {
+
       const product = await Product.findById(productId);
       if (product!.stock < quantity) {
         return res

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import {IUser} from "../types/index.js";
+
 const userSchema = new mongoose.Schema<IUser>({
    
     clerkId: { type: String,  unique: true,sparse: true },

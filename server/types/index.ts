@@ -1,5 +1,6 @@
 import { Document, Types } from "mongoose";
 export interface IUser {
+  clerkId?: string;
   _id: string;
   name: string;
   email: string;
@@ -12,6 +13,7 @@ export interface IUser {
     zipCode: string;
     country: string;
   };
+  image?: string;
   createdAt: string;
 }
 
