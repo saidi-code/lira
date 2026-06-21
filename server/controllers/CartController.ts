@@ -90,8 +90,19 @@ if(product.type==="simple"){
 
     // identity for a cart item is: (productId + size + color)
     // For simple products we normalize size/color to null so duplicates are merged correctly.
-    const normalizedSize = product.type === "simple" ? null : size ?? null;
-    const normalizedColor = product.type === "simple" ? null : color ?? null;
+    // For variable products we MUST persist the chosen color name and size.
+    const normalizedSize = product.type === "simple" ? null : (size ?? null);
+    const normalizedColor = product.type === "simple" ? null : (color ?? null);
+
+    console.log("addToCart normalized:", {
+      productId,
+      productType: product.type,
+      size,
+      color,
+      normalizedSize,
+      normalizedColor,
+    });
+
 
 
     const existingItem: any = cart.items.find(

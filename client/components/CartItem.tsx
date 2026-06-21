@@ -8,11 +8,7 @@ import { router } from "expo-router";
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
   const isVariable = (item?.product as any)?.type === "variable";
 
-  // For variable products, show the selected color/size (fallback to the first available)
-  const selectedColor =
-    item?.color ?? (item?.product as any)?.colors?.[0]?.name ?? "";
-  const selectedSize =
-    item?.size ?? (item?.product as any)?.colors?.[0]?.variants?.[0]?.size ?? "";
+
 
 
   return (
@@ -62,19 +58,19 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
             </Text>
 
             {/* Selected variant values (requested change) */}
-            {isVariable &&  (
+            {isVariable && (
               <View className="gap-1">
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  اللون: {selectedColor || item?.color || ""}
+                  اللون: {item?.color ?? (item as any)?.color ?? (item as any)?.product?.colors?.[0]?.name ?? ""}
                 </Text>
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  المقاس: {selectedSize || item?.size || ""}
+                  المقاس: {item?.size ?? (item as any)?.size ?? (item as any)?.product?.colors?.[0]?.variants?.[0]?.size ?? ""}
                 </Text>
 
-
-               
               </View>
-            ) }
+            )}
+
+
           </View>
 
           {/* Price & Quantity Row */}
@@ -128,8 +124,8 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
               pathname: "/product/[id]",
               params: {
                 id: item?.product?._id,
-                color: selectedColor,
-                size: selectedSize,
+                color: item?.color,
+                size: item?.size,
               } as any,
             });
           }}
