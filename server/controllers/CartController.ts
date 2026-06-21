@@ -160,7 +160,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     const { quantity, size,color } = req.body;
     const { productId } = req.params;
  
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ user: req.user._id, });
     if (!cart) {
       return res
         .status(404)
@@ -170,7 +170,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
     const item = cart.items.find(
       (item) =>
-        item.product.toString() === productId.toString() &&
+        item.product._id === productId.toString() &&
         (item.size ?? null) === (size ?? null) &&
         (item.color ?? null) === (color ?? null),
     );
