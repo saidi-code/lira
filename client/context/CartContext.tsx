@@ -41,8 +41,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           product: item?.product ?? null,
           quantity: item?.quantity ?? 0,
           size: item?.size ?? null,
+          color: item?.color ?? null,
           price: item?.price ?? 0,
         }));
+
 
         setCartItems(mappedCartItems);
         setCartTotal(cart?.totalAmount ?? 0);

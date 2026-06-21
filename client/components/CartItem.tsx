@@ -6,10 +6,7 @@ import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
-  useEffect(() => {
-    // This effect runs when the component mounts or when the item prop changes.
-    // You can perform any necessary setup or cleanup here if needed.
-  }, [item]);
+console.log("CartItem props:", { item, loading });
   const isVariable = (item?.product as any)?.type === "variable"?true:false;
 
 
