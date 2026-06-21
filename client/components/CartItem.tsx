@@ -6,12 +6,14 @@ import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
- console.log("Rendering CartItem", item);
- console.log("Rendering CartItem color",JSON.stringify(item?.colors));
-
-
-
   const isVariable = (item?.product as any)?.type === "variable";
+
+  // For variable products, show the selected color/size (fallback to the first available)
+  const selectedColor =
+    item?.color ?? (item?.product as any)?.colors?.[0]?.name ?? "";
+  const selectedSize =
+    item?.size ?? (item?.product as any)?.colors?.[0]?.variants?.[0]?.size ?? "";
+
 
   return (
     <View
@@ -60,78 +62,19 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
             </Text>
 
             {/* Selected variant values (requested change) */}
-            {isVariable ? (
+            {isVariable &&  (
               <View className="gap-1">
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  اللون: {item?.color ?? selectedColor ?? ""}
+                  اللون: {selectedColor || item?.color || ""}
                 </Text>
                 <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  المقاس: {item?.size ?? selectedSize ?? ""}
+                  المقاس: {selectedSize || item?.size || ""}
                 </Text>
 
-                <View className="mt-2">
-                  {/* Colors */}
-                  <View className="flex-row items-center gap-2 justify-end mt-1">
-                    {(item.product.colors ?? []).map((c: any, index: number) => (
-                      <Pressable
-                        key={index}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          const colorName = c?.name ?? null;
-                          const nextSize = c?.variants?.[0]?.size ?? item?.size ?? null;
-                          setSelectedColor(colorName);
-                          setSelectedSize(nextSize);
-                          updateItemQuantity(item._id, item.quantity, nextSize, colorName);
-                        }}
-                        className="w-4 h-4 rounded-full border"
-                        style={{ backgroundColor: c?.hex, borderColor: "#785920" }}
-                      />
-                    ))}
-                  </View>
 
-                  {/* Sizes based on selected color */}
-                  <View className="flex-row items-center gap-2 justify-end mt-1">
-                    {(() => {
-                      const colors = item.product?.colors ?? [];
-                      const selectedColorObj =
-                        colors.find((c: any) => c.name === selectedColor) ?? colors[0];
-                      const variants = selectedColorObj?.variants ?? [];
-
-                      return variants.map((v: any, index: number) => (
-                        <Pressable
-                          key={index}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            setSelectedSize(v?.size ?? null);
-                            updateItemQuantity(
-                              item._id,
-                              item.quantity,
-                              v?.size ?? null,
-                              selectedColorObj?.name ?? null,
-                            );
-                          }}
-                          className="h-5 w-5 items-center justify-center rounded-md border"
-                          style={{
-                            borderColor: selectedSize === v?.size ? "#785920" : "#e6e6e6",
-                          }}
-                        >
-                          <Text className="text-primay-600 text-xs font-medium tracking-wide">
-                            {v?.size}
-                          </Text>
-                        </Pressable>
-                      ));
-                    })()}
-                  </View>
-                </View>
+               
               </View>
-            ) : (
-              <View className="gap-1">
-                <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                  {item?.size ? `المقاس: ${item.size}` : ""}
-                  {item?.color ? `${item.size ? " • " : ""}اللون: ${item.color}` : ""}
-                </Text>
-              </View>
-            )}
+            ) }
           </View>
 
           {/* Price & Quantity Row */}
