@@ -84,9 +84,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <View className="pt-2 flex-row justify-between items-center">
           <TouchableOpacity
             onPress={async () => {
-             product.type === "variable" ? 
-             await addToCart(product, product.colors?.[0]?.variants?.[0]?.size.toString() , product.colors?.[0]?.name ) 
-             : await addToCart(product,null,null);
+            //  product.type === "variable" ? 
+            //  await addToCart(product, product.colors?.[0]?.variants?.[0]?.size.toString() , product.colors?.[0]?.name ) 
+            //  : await addToCart(product,null,null);
             }
             }
             className="w-10 h-10 bg-[#b89354] rounded-full justify-center items-center"

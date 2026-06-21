@@ -446,13 +446,21 @@ const SingleProduct = () => {
       <View className=" px-6 pt-4 pb-12 absolute left-0 bottom-0 bg-stone-50/90 shadow-md border-t border-amber-900/10 backdrop-blur-md flex-row justify-start items-center gap-4">
         <TouchableOpacity
           onPress={handleAddOrUpdate}
-          className="flex-1 h-[59px] bg-[#785920] rounded-xl flex-row justify-center items-center gap-2"
+          disabled={product?.type === "variable" && (!routeColor || !routeSize)}
+          className="flex-1 h-[59px] rounded-xl flex-row justify-center items-center gap-2"
+          style={{
+            backgroundColor:
+              product?.type === "variable" && (!routeColor || !routeSize)
+                ? "#cfcfcf"
+                : "#785920",
+          }}
         >
           <MaterialIcons name="add-shopping-cart" size={16} color="white" />
           <Text className="text-center text-white text-base font-tajwal">
             إضافة إلى الحقيبة
           </Text>
         </TouchableOpacity>
+
 
         <View className="px-4 h-[59px] w-[59px] border border-[#785920] rounded-[12px] flex justify-center items-center">
           <Ionicons name="share-social-outline" size={16} color="#785920" />
