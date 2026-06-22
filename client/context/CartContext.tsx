@@ -177,6 +177,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       );
       if (data.success) {
         await fetchCartItems();
+      }else{
+        console.error("Update cart item failed:", data.message);
       }
 
       setLoading(false);

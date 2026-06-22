@@ -1,11 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
+import React, { useEffect,useState } from "react";
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
+  const [quantity, setQuantity] = useState(item?.quantity ?? 1);
+const addQuantity = () => {
+  const newQuantity = quantity + 1;
+  setQuantity(newQuantity);
+  updateItemQuantity( item._id, newQuantity, item.size ?? null, item.color ?? null);
+}
+const subtractQuantity = () => {
+  if (quantity <= 1) return;
+  const newQuantity = quantity - 1;
+  setQuantity(newQuantity);
+  updateItemQuantity( item._id, newQuantity, item.size ?? null, item.color ?? null);
+} 
+
+useEffect(() => {
+  setQuantity(item?.quantity ?? 1);
+}, [item?.quantity]);
+
+
   const isVariable = item?.product?.type === "variable";
   return (
     <View
@@ -119,12 +137,7 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
             <View className="px-2 py-1 bg-[#fdf1ea] rounded-full flex-row justify-center items-center gap-4">
               <TouchableOpacity
                 onPress={() =>
-                  updateItemQuantity(
-                    item._id,
-                    item.quantity - 1,
-                    item.size ?? null,
-                    item.color ?? null,
-                  )
+                 subtractQuantity()
                 }
                 activeOpacity={0.7}
                 className="w-5 h-5 rounded-full items-center justify-center"
@@ -139,12 +152,7 @@ const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemPro
 
               <TouchableOpacity
                 onPress={() =>
-                  updateItemQuantity(
-                    item._id,
-                    item.quantity = item.quantity + 1,
-                    item.size ?? null,
-                    item.color ?? null,
-                  )
+                  addQuantity()
                 }
                 activeOpacity={0.7}
                 className="w-5 h-5 rounded-full items-center justify-center"
