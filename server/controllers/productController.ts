@@ -6,7 +6,7 @@ export const getProducts = async (req: Request, res: Response) => {
   let query = { isActive: true };
   try {
     const { page = 1, limit = 10, category } = req.query;
-
+console.log("_id",req.params);
     if (category && typeof category === "string" && category !== "الكل") {
       // assuming your schema uses `category` field (based on client filters)
       query = { ...query, category };
