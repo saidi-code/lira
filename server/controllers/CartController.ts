@@ -23,7 +23,6 @@ export const addToCart = async (req: Request, res: Response) => {
   try {
     const { productId, quantity = 1, size, color } = req.body;
     console.log("addToCart request body:", req.body);
-
     if (!productId) {
       return res
         .status(400)
@@ -160,6 +159,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     const { quantity, size, color } = req.body;
     const { productId } = req.params;
 
+
     if (!productId) {
       return res.status(400).json({ success: false, message: "productId is required" });
     }
@@ -182,12 +182,17 @@ export const updateCartItem = async (req: Request, res: Response) => {
     const normalizedSize = product.type === "simple" ? null : (size ?? null);
     const normalizedColor = product.type === "simple" ? null : (color ?? null);
 
+    // Important: req.body.size/color may come as {name} vs {hex} (client passes both from different places)
+    // Always try to match the cart item by (productId + size + color) using the normalized values.
+    // If not found, fall back to productId-only match (keeps simple products working).
     const item = cart.items.find(
       (it) =>
         it.product.toString() === productId.toString() &&
         (it.size ?? null) === normalizedSize &&
         (it.color ?? null) === normalizedColor,
-    );
+    )
+      ?? cart.items.find((it) => it.product.toString() === productId.toString());
+
 
     if (!item) {
       return res.status(404).json({ success: false, message: "Item not in cart" });

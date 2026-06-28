@@ -162,7 +162,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       const token = await getToken();
       const { data } = await axios.put(
-        `/cart/item/${itemId}`,
+        `/cart/item/${itemId.split("::")[0]}`,
         {
           quantity,
           size,
@@ -175,6 +175,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           },
         },
       );
+
       if (data.success) {
         await fetchCartItems();
       }else{
