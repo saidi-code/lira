@@ -9,15 +9,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useCart } from "../context/CartContext";
-import { IProduct } from "../constants/types";
 
+import {useCart} from "../../context/CartContext"
 type Props = {
   show: boolean;
   setShow: (v: boolean) => void;
   product: IProduct | null;
   selectedSize: string | null;
   selectedColor: string | null;
+  setSelectedSize: (size: string | null) => void;
+  setSelectedColor: (color: string | null) => void;
 };
 
 const ChooseColorSizeModal = ({
@@ -26,14 +27,15 @@ const ChooseColorSizeModal = ({
   product,
   selectedSize,
   selectedColor,
+  setSelectedSize,
+  setSelectedColor,
 }: Props) => {
-  const { addToCart, loading } = useCart();
-
+  const { addToCart } = useCart();
+const [uiColor, setUiColor] = useState<string | null>(selectedColor);
+  const [uiSize, setUiSize] = useState<string | null>(selectedSize);
   const isVariable = product?.type === "variable";
 
-  // Local selection UI state (so the user can pick and then press add)
-  const [uiColor, setUiColor] = useState<string | null>(selectedColor);
-  const [uiSize, setUiSize] = useState<string | null>(selectedSize);
+  
 
   // Keep UI state in sync when parent changes (first open / reset)
   React.useEffect(() => {
@@ -60,10 +62,7 @@ const ChooseColorSizeModal = ({
     return Array.from(new Set(allSizes));
   }, [activeColorObj, isVariable]);
 
-  const isValidSelection = useMemo(() => {
-    if (!isVariable) return true;
-    return Boolean(uiColor) && Boolean(uiSize);
-  }, [isVariable, uiColor, uiSize]);
+
 
   return (
     <Modal
@@ -89,7 +88,7 @@ const ChooseColorSizeModal = ({
                 <Image
                   style={{ height: 48, width: 48 }}
                   resizeMode="contain"
-                  source={require("../assets/images/logo2.png")}
+                  source={require("../../assets/images/logo2.png")}
                 />
               </View>
 
@@ -97,11 +96,11 @@ const ChooseColorSizeModal = ({
                 إضافة إلى الحقيبة
               </Text>
 
-              {isVariable && !isValidSelection && (
+              
                 <Text className="text-gray-500 text-sm font-tajwal mt-2 text-center">
                   اختر اللون والمقاس أولاً
                 </Text>
-              )}
+              
             </View>
 
             {isVariable && (
@@ -122,9 +121,10 @@ const ChooseColorSizeModal = ({
                     return (
                       <Pressable
                         onPress={() => {
+                          setSelectedColor(colorName);
                           setUiColor(colorName);
-                          // When switching color, reset size; user chooses again
-                          setUiSize(null);
+                          // // When switching color, reset size; user chooses again
+                          // setUiSize(null);
                         }}
                         className="h-8 w-8 rounded-full"
                         style={{
@@ -156,7 +156,7 @@ const ChooseColorSizeModal = ({
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ padding: 2, gap: 12, flexGrow: 0 }}
                   renderItem={({ item: size }: any) => {
-                    const isSelected = uiSize === String(size);
+                    const isSelected = selectedSize === String(size);
                     return (
                       <Pressable
                         onPress={() => setUiSize(String(size))}
@@ -188,21 +188,16 @@ const ChooseColorSizeModal = ({
 
             <TouchableOpacity
               onPress={async () => {
-                if (!product) return;
-                if (!isValidSelection) return;
-                await addToCart(product, uiSize, uiColor);
+             
+                await addToCart(product, selectedSize, selectedColor);
                 setShow(false);
               }}
               activeOpacity={0.8}
-              disabled={!isValidSelection || loading}
-              className={`w-full py-4 rounded-full items-center mt-1 ${
-                !isValidSelection || loading ? "bg-gray-300" : "bg-[#785920]"
-              }`}
+            
+              className={`w-full py-4 rounded-full items-center mt-1  `}
             >
               <Text
-                className={`text-lg font-bold font-tajwal ${
-                  !isValidSelection || loading ? "text-gray-600" : "text-white"
-                }`}
+                className={`text-lg font-bold font-tajwal text-white`}
               >
                 إضافة إلى الحقيبة
               </Text>

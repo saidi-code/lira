@@ -1,349 +1,284 @@
-import { Ionicons, MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import React, { useCallback,useState,useRef } from 'react';
 import {
-  Dimensions,
   FlatList,
-  Image,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../components/Header";
-import ProductCard from "../../components/ProductCard";
-import { CATEGORIES, COLLECTIONS, COLORS } from "../../constants/index";
-import { ICollection, IProduct } from "../../constants/types";
-import { useRouter } from "expo-router";
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../../components/Header'
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProducts } from '../../hooks/useProdoucts.js';
+import { api } from '../../config/apiQuery.js';
+import { CURRENCY } from '../../constants';
+import ProductCard from "@/components/ProductCard";
+import { COLORS } from '../../constants';
+const defaultSource = require('../../assets/images/productLoadingImage.png');
+const placeholderSource = require('../../assets/images/productLoadingImage.svg');
 export default function Index() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [collections, setCollections] = useState<ICollection[]>([]);
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+   const [valueBrand, setValueBrand] = useState<string | null>(null);
+    const [openBrandMenu, setOpenBrandMenu] = useState(false);
+    const [searchText, setSearchText] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
+    const inputRef = useRef<TextInput | null>(null);
+    const [filterModal, setFilterModal] = useState(false);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useProducts();
 
-  const { width } = Dimensions.get("window");
+  const queryClient = useQueryClient();
 
-  const getIconName = (title: string) => {
-    switch (title) {
-      case "مجوهرات":
-        return "diamond-outline";
-      case "ساعات":
-        return "watch-outline";
-      case "عطور":
-        return "water-outline";
-      case "ملابس":
-        return "shirt-outline";
-      case "باخور":
-        return "flame-outline";
-      case "حقائب يد":
-        return "briefcase-outline";
-      case "إكسسوارات":
-        return "color-palette-outline";
-      case "أحذية":
-        return "";
-      default:
-        return "help-circle-outline";
-    }
-  };
-  const getIcon = (title: string) => {
-    switch (title) {
-      case "مجوهرات":
-        return (
-          <Ionicons name="diamond-outline" size={24} color={COLORS.primary} />
-        );
-      case "ساعات":
-        return (
-          <MaterialCommunityIcons
-            name="watch"
-            size={24}
-            color={COLORS.primary}
-          />
-        );
-      case "عطور":
-        return (
+  const handleProductHover = useCallback(
+    (productId: string) => {
+      queryClient.prefetchQuery({
+        queryKey: ['product', productId],
+        queryFn: () => api.get(`/products/${productId}`),
+        staleTime: 5 * 60 * 1000,
+      });
+    },
+    [queryClient],
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#B89354" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Error loading products</Text>
+      </View>
+    );
+  }
+
+  const allProducts = data?.pages.flatMap((page: any) => page.products) || [];
+
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const imageUri = item.images?.[0] ?? item.colors?.[0]?.images?.[0];
+   
+  
+    return (
+     
+      <TouchableOpacity
+        onPress={() => {
+          handleProductHover(item._id);
+          router.push(`/product/${item._id}`);
+        }}
+        activeOpacity={0.7}
+        style={styles.productCard}
+      >
+        <View style={styles.imageContainer}>
           <Image
-            resizeMode="center"
-            style={{
-              height: 28,
-              width: 28,
-            }}
-            source={require("../../assets/images/icons/spray_4648182.png")}
+            source={imageUri ? { uri: imageUri } : defaultSource}
+            style={styles.productImage}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority={index < 3 ? 'high' : 'normal'}
+            placeholder={placeholderSource}
+            placeholderContentFit="cover"
+            transition={300}
+
           />
-        );
-      case "ملابس":
-        return (
-          <Image
-            resizeMode="center"
-            style={{
-              height: 24,
-              width: 24,
-            }}
-            source={require("../../assets/images/icons/dress1.png")}
-          />
-        );
-      case "باخور":
-        return <Octicons name="flame" size={24} color={COLORS.primary} />;
-      case "حقائب يد":
-        return (
-          <Image
-            resizeMode="center"
-            style={{
-              height: 24,
-              width: 24,
-            }}
-            source={require("../../assets/images/icons/hand_bag.png")}
-          />
-        );
-      case "إكسسوارات":
-        return (
-          <Image
-            resizeMode="center"
-            style={{
-              height: 24,
-              width: 24,
-            }}
-            source={require("../../assets/images/icons/accessoires.png")}
-          />
-        );
-      case "مكياج":
-        return (
-          <Image
-            resizeMode="center"
-            style={{
-              height: 24,
-              width: 24,
-            }}
-            source={require("../../assets/images/icons/makeup.png")}
-          />
-        );
-      case "أحذية":
-        return (
-          <MaterialCommunityIcons
-            name="shoe-heel"
-            size={32}
-            color={COLORS.primary}
-          />
-        );
-      default:
-        return (
-          <Ionicons name="grid-outline" size={24} color={COLORS.primary} />
-        );
-    }
+          {/* <View style={styles.loadingOverlay} pointerEvents="none">
+            <ActivityIndicator size="small" color="#B89354" />
+          </View> */}
+          </View>
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productPrice}>
+          {item.price} {CURRENCY}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
-  const fetchCollections = () => {
-    // COLLECTIONS mock data is not perfectly typed vs IProduct/ICollection in constants/types.ts
-    setCollections(COLLECTIONS as unknown as ICollection[]);
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator size="small" color="#B89354" />
+      </View>
+    );
   };
-
-  useEffect(() => {
-    fetchCollections();
-  }, []);
-
+const handleClear = () => {
+    setSearchText("");
+    inputRef.current?.focus();
+  };
   return (
-    <SafeAreaView className="bg-surface flex-1" edges={["top"]}>
-      <Header showSearch showBack={false} />
+     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
+      <Header showBack />
+        <View
+        className={`mx-4 my-3 flex-row items-center bg-white rounded-xl overflow-hidden ${
+          isFocused ? "ring-2 ring-primary ring-opacity-50" : ""
+        }`}
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 3,
+          // transform: [{ scale: scaleAnim }],
+        }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={(e) => {
+          e.stopPropagation();
+           setFilterModal(true)
+          }}
+          className="p-4 pr-3 border-r border-stone-100"
+        >
+          <Ionicons name="filter-sharp" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+      {searchText.length > 0 && (
+          <TouchableOpacity activeOpacity={0.6} onPress={handleClear} className="p-2 ">
+            <Ionicons name="close-circle" size={24} color={COLORS.active} />
+          </TouchableOpacity>
+        )}
+        <TextInput
+          // onPressIn={(e) => e.stopPropagation()}
+          ref={inputRef}
+          className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
+          placeholder="ابحث عن مجموعتنا الحصرية..."
+          placeholderTextColor="#a8a29e"
+          value={searchText}
+          onChangeText={setSearchText}
+          // onFocus={() => setIsFocused(true)}
+          // onBlur={() => setIsFocused(false)}
+          textAlign="right"
+          textAlignVertical="center"
+          returnKeyType="search"
+          clearButtonMode="never"
+        />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Slider Section */}
-        <View className="mb-6">
-          <FlatList
-            data={collections}
-            keyExtractor={(item, index) => String(item._id ?? index)}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={width}
-            decelerationRate="fast"
-            onMomentumScrollEnd={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / width);
-              if (index !== activeBannerIndex) setActiveBannerIndex(index);
-            }}
-            renderItem={({ item }) => (
-              <View
-                className="flex-1 relative overflow-hidden"
-                style={{ width: width }}
-              >
-                <Image
-                  source={{ uri: item.banner }}
-                  style={{ width: 360, height: 196 }}
-                  resizeMode="contain"
-                />
-
-                <View className="absolute bottom-4 right-4 z-10">
-                  <Text className="text-white font-jazera text-2xl font-bold text-right">
-                    {item.title}
-                  </Text>
-                  <Text className="text-white font-tajwal text-sm font-medium">
-                    {item.subtitle}
-                  </Text>
-
-                  <TouchableOpacity className="mt-2 px-4 py-2 bg-white self-end rounded-lg">
-                    <Text className="text-primary text-right text-base">
-                      {item.cta}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="absolute inset-0 bg-black/20" />
-              </View>
-            )}
-          />
-
-          {/* Pagination Dots */}
-          <View className="flex-row justify-center -mt-4 gap-2">
-            {COLLECTIONS.map((_, index) => (
-              <View
-                key={index}
-                className={`h-2 rounded-full ${
-                  index === activeBannerIndex
-                    ? "w-6 bg-primary"
-                    : "w-2 bg-gray-300"
-                }`}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Categories sections */}
-        <View className="py-6">
-          <View className="flex-row items-center justify-between px-4 mb-6">
-            <Text className="font-tajwal text-sm text-primary">عرض المزيد</Text>
-            <Text className="font-tajwal text-2xl text-body">
-              الفئات الفاخرة
-            </Text>
-          </View>
-
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.title}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-              onPress={() => {
-                // Navigate to category page, e.g. /product/مجوهرات
-                router.push({
-                  pathname: "/product",
-                  params: { category: item.title },
-                });
-              }}
-                className="rounded-2xl mx-4 items-center justify-center"
-                activeOpacity={0.8}
-              >
-                <View className="w-[80px] h-[80px] rounded-full bg-[#FDF1EA] flex items-center justify-center outline -outline-offset-1 outline-[#B89354]/20 mb-2">
-                  {getIcon(item.title)}
-                  {/* <Ionicons
-                    name={getIconName(item.title)}
-                    size={24}
-                    color={COLORS.primary}
-                  /> */}
-                </View>
-                <Text className="font-tajwal text-base font-medium text-center text-gray-800">
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        {/* Collections Section */}
-        <View className="py-12 px-6">
-          {/* Title */}
-          <View className="items-center mb-8">
-            <Text className="text-center text-[#201b16] text-[32px] font-bold font-jazera leading-[38.4px]">
-              مجموعات مختارة
-            </Text>
-          </View>
-
-          <FlatList
-            data={COLLECTIONS}
-            keyExtractor={(item, index) => String(item._id ?? index)}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View className="mb-8 ">
-                {/* Banner with overlay */}
-                <View className="relative bg-white/0 rounded-3xl shadow-[0px_2px_4px_-2px_rgba(0,0,0,0.10)] overflow-hidden mb-4">
-                  <Image
-                    source={{ uri: item.banner }}
-                    resizeMode="cover"
-                    className="w-full h-[192px]"
-                    style={{ height: 192.38 }}
-                  />
-
-                  <View className="absolute inset-0 p-8 bg-black/20 justify-end" />
-                </View>
-                <View className="flex-1">
-                  {/* Products Grid - 2 columns */}
-                  <FlatList
-                    data={(item.products as IProduct[]).slice(0, 4)}
-                    keyExtractor={(product, index) =>
-                      String(product._id ?? index)
-                    }
-                    scrollEnabled={false}
-                    numColumns={2}
-                    columnWrapperStyle={{
-                      flex: 1,
-                      marginBottom: 16,
-                      columnGap: 16,
-                    }}
-                    renderItem={({ item: product }) => (
-                      <ProductCard product={product as IProduct} />
-                    )}
-                  />
-                </View>
-              </View>
-            )}
-          />
-        </View>
-
-        {/* News Letters Sections */}
-        <View className="px-2 mx-4 pt-[47px] pb-12 bg-[#b89354]/10 rounded-[40px] items-start gap-4 mb-12">
-          {/* Title */}
-          <View className="self-stretch items-center">
-            <Text className="text-center text-[#785920] text-2xl font-bold font-jazera">
-              مجلة ليرة الرقمية
-            </Text>
-          </View>
-
-          {/* Description */}
-          <View className="flex items-center justify-center mb-4">
-            <View className="mx-3">
-              <Text className="text-center text-[#4e4639] text-base font-bady">
-                اشترك لتصلك أحدث المقالات والمجموعات الحصرية من عالم الفخامة
-              </Text>
-            </View>
-          </View>
-
-          {/* Input + Button container */}
-          <View className="w-full max-w-[448px] relative">
-            <View className="relative w-full bg-white rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
-              <TextInput
-                className="w-full py-[23px] pl-[104px] pr-8 text-end text-gray-500 text-base font-normal font-tajawal"
-                placeholder="بريدك الإلكتروني"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                textAlign="right"
-                style={{ minHeight: 66 }}
-              />
-            </View>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              className="absolute left-[8px] top-1/2 -translate-y-1/2 px-6 py-3 bg-[#b89354] rounded-full justify-center items-center"
-              onPress={() => {
-                console.log("Subscribe with:", email);
-              }}
-            >
-              <Text className="text-center text-white text-base font-medium font-tajawal leading-6">
-                انضمام
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+  
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={(e) => {
+            e.stopPropagation();
+            // search logic not implemented in backend filter right now
+            // console.log("Search:", searchText);
+          //  setFilterModal(true)
+          // btn search logic not implemented in backend filter right now
+          }}
+          className="p-4 pl-3 border-l border-stone-100"
+        >
+          <Ionicons name="search-outline" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+    
+    </View>
+    <FlatList
+      data={allProducts}
+      renderItem={renderItem}
+      keyExtractor={(item, index) => `${item._id}_${index}`}
+      numColumns={2}
+      onEndReached={() => hasNextPage && fetchNextPage()}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={renderFooter}
+      windowSize={5}
+      maxToRenderPerBatch={5}
+      initialNumToRender={6}
+      removeClippedSubviews={true}
+      contentContainerStyle={styles.listContainer}
+      columnWrapperStyle={styles.columnWrapper}
+    />
+      </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF8F5',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#B89354',
+    fontFamily: 'Tajawal-Medium',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#B89354',
+    fontFamily: 'Tajawal-Medium',
+  },
+  listContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    backgroundColor: '#FFF8F5',
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  productCard: {
+    flex: 1,
+    marginHorizontal: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  imageContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: '#f5f5f5',
+    position: 'relative',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#201B16',
+    textAlign: 'right',
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    fontFamily: 'Tajawal-Medium',
+  },
+  productPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#B89354',
+    textAlign: 'right',
+    paddingHorizontal: 8,
+    paddingBottom: 12,
+    paddingTop: 4,
+    fontFamily: 'Tajawal-Medium',
+  },
+  footer: {
+    paddingVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

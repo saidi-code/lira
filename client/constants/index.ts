@@ -1,5 +1,6 @@
 export const COLORS = {
   primary: "#B89354",
+ 
   accent: "#785920",
   secondary: "#4B5563",
   canvas: "#FFF8F5",
@@ -26,7 +27,7 @@ export const CATEGORIES = [
 export const COLLECTIONS = [
   {
     _id: "1",
-    banner: "https://69f78dbca0be0e562864a507.imgix.net/afnen.png",
+    banner: "https://res.cloudinary.com/djauc4pmn/image/upload/afnen_qxipk5.png",
     cta: "استكشف الآن",
     title: "أفنان",
     subtitle: "On everything today",
@@ -45,7 +46,7 @@ export const COLLECTIONS = [
         stock: 100,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/parfum_ana_abiyedh_rouge.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/parfum_ana_abiyedh_rouge_yjkidy.png",
         ],
         isActive: true,
         createdAt: "2026-05-02T21:45:27.922+00:0",
@@ -62,7 +63,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/parfum_oud_lail_maleki.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/bakour_oud_wood_hr4vul.png",
         ],
         isActive: true,
         createdAt: "2026-05-03T21:45:27.922+00:0",
@@ -78,7 +79,7 @@ export const COLLECTIONS = [
         category: "عطور",
         stock: 10,
         isFeatured: true,
-        images: ["https://69f78dbca0be0e562864a507.imgix.net/parfum_assad.png"],
+        images: ["https://res.cloudinary.com/djauc4pmn/image/upload/parfum_assad_grtrlb.png"],
         isActive: true,
         createdAt: "2026-05-02T21:45:27.922+00:0",
       },
@@ -94,7 +95,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/parfum_24_carat_pure_gold.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/parfum_24_carat_pure_gold_mwgbf5.png",
         ],
         isActive: true,
         createdAt: "2026-05-01T21:45:27.922+00:0",
@@ -103,7 +104,7 @@ export const COLLECTIONS = [
   },
   {
     _id: "2",
-    banner: "https://69f78dbca0be0e562864a507.imgix.net/achwak.png",
+    banner: "https://res.cloudinary.com/djauc4pmn/image/upload/achwak_mxw9fj.png",
     cta: "استكشف الآن",
     title: "أشواق",
     subtitle: "On everything today",
@@ -123,7 +124,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/bakour_banafa_for_oud.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/bakour_banafa_for_oud_qfkeu4.png",
         ],
         isActive: true,
         createdAt: "2026-05-04T24:45:27.922+00:0",
@@ -141,7 +142,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/bakour_kwaiti.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/bakour_kwaiti_rnphuv.png",
         ],
         isActive: true,
         createdAt: "2026-05-03T24:45:27.922+00:0",
@@ -158,7 +159,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/bakour_oud_wood.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/bakour_oud_wood_hr4vul.png",
         ],
         isActive: true,
         createdAt: "2026-05-02T24:45:27.922+00:0",
@@ -175,7 +176,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/bakour_acheg_al_arab.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/bakour_acheg_al_arab_icisqq.png",
         ],
         isActive: true,
         createdAt: "2026-05-01T24:45:27.922+00:0",
@@ -184,7 +185,7 @@ export const COLLECTIONS = [
   },
   {
     _id: "3",
-    banner: "https://69f78dbca0be0e562864a507.imgix.net/rawnak.png",
+    banner: "https://res.cloudinary.com/djauc4pmn/image/upload/Gemini_Generated_Image_bx9auebx9auebx9a_pzwryw.png",
     cta: "استكشف الآن",
     title: "رونق",
     subtitle: "On everything today",
@@ -204,7 +205,7 @@ export const COLLECTIONS = [
         category: "ساعات",
         stock: 100,
         isFeatured: true,
-        images: ["https://69f78dbca0be0e562864a507.imgix.net/watch_luxury.png"],
+        images: ["https://res.cloudinary.com/djauc4pmn/image/upload/watch_luxury_s4x62p.png"],
         isActive: true,
         createdAt: "2026-05-04T24:45:27.922+00:0",
       },
@@ -214,14 +215,13 @@ export const COLLECTIONS = [
         type: "simple",
         subtitle: "ressence type 11",
         price: 80,
-
-        description: "",
+        description:"",
         sizes: null,
         category: "ساعات",
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/watch_ressence_type_11.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/clothes_lara_clemdx.png",
         ],
         isActive: true,
         createdAt: "2026-05-03T24:45:27.922+00:0",
@@ -232,14 +232,13 @@ export const COLLECTIONS = [
         type: "simple",
         subtitle: "inspiration one",
         price: 80,
-
         description: "",
         sizes: null,
         category: "ساعات",
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/watch_inspiration.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/watch_inspiration_tu6pj6.png",
         ],
         isActive: true,
         createdAt: "2026-05-02T24:45:27.922+00:0",
@@ -257,7 +256,7 @@ export const COLLECTIONS = [
         stock: 10,
         isFeatured: true,
         images: [
-          "https://69f78dbca0be0e562864a507.imgix.net/watch_patek_philip.png",
+          "https://res.cloudinary.com/djauc4pmn/image/upload/watch_patek_philip_oxfepp.png",
         ],
         isActive: true,
         createdAt: "2026-05-01T24:45:27.922+00:0",
@@ -267,13 +266,12 @@ export const COLLECTIONS = [
 
   {
     _id: "4",
-    banner: "https://69f78dbca0be0e562864a507.imgix.net/zina_arab.png",
+    banner: "https://res.cloudinary.com/djauc4pmn/image/upload/zina_arab_ake0eo.png",
     cta: "Discover now",
     title: "زينة العرب",
     subtitle: "On everything today",
     isFeatured: true,
     isActive: true,
-
     products: [
       {
         _id: "41",
@@ -291,7 +289,7 @@ export const COLLECTIONS = [
             name: "green",
             hex: "#797F69",
             images: [
-              "https://69f78dbca0be0e562864a507.imgix.net/clother_mayar.png",
+              "https://res.cloudinary.com/djauc4pmn/image/upload/clother_mayar_mcbwtu.png",
             ],
             variants: [
               {
@@ -323,7 +321,7 @@ export const COLLECTIONS = [
             name: "marron",
             hex: "#A88C6E",
             images: [
-              "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
+              "https://res.cloudinary.com/djauc4pmn/image/upload/clothes_lojan_ysmzli.png",
             ],
             variants: [
               { size: "s", sku: "TSH-MAR-S", isActive: true, stock: 5 },
@@ -333,7 +331,7 @@ export const COLLECTIONS = [
             name: "noir",
             hex: "#000000",
             images: [
-              "https://69f78dbca0be0e562864a507.imgix.net/clothes_lojan.png",
+              "https://res.cloudinary.com/djauc4pmn/image/upload/clothes_lojan_ysmzli.png",
             ],
             variants: [
               { size: "m", sku: "TSH-MAR-S", isActive: true, stock: 5 },
@@ -359,7 +357,7 @@ export const COLLECTIONS = [
             name: "rose",
             hex: "A58A83",
             images: [
-              "https://69f78dbca0be0e562864a507.imgix.net/clother_minyar.png",
+              "https://res.cloudinary.com/djauc4pmn/image/upload/clother_minyar_yp2wqq.png",
             ],
             variants: [
               {
@@ -391,7 +389,7 @@ export const COLLECTIONS = [
             name: "vert",
             hex: "#B8AA8E",
             images: [
-              "https://69f78dbca0be0e562864a507.imgix.net/clothes_lara.png",
+              "https://res.cloudinary.com/djauc4pmn/image/upload/clothes_lara_clemdx.png",
             ],
             variants: [
               {
@@ -528,7 +526,6 @@ export const DUMMY_RALATED_PRODUCTS_CART = [
     name: "بخور كويتي",
     subtitle: "بخور كويتي",
     price: 180,
-
     description: "",
     sizes: null,
     category: "باخور",
@@ -542,7 +539,6 @@ export const DUMMY_RALATED_PRODUCTS_CART = [
     _id: "5",
     name: "عود فاخر",
     price: 250,
-
     description: "",
     sizes: null,
     category: "باخور",
@@ -689,7 +685,6 @@ export const PRODUCTS = [
     name: "عود فاخر",
     type: "simple",
     price: 250,
-
     description: "",
     sizes: null,
     category: "باخور",
@@ -722,7 +717,6 @@ export const PRODUCTS = [
     type: "simple",
     subtitle: "luxury watch",
     price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
@@ -738,7 +732,6 @@ export const PRODUCTS = [
     type: "simple",
     subtitle: "ressence type 11",
     price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
@@ -756,7 +749,6 @@ export const PRODUCTS = [
     type: "simple",
     subtitle: "inspiration one",
     price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
@@ -774,7 +766,6 @@ export const PRODUCTS = [
     type: "simple",
     subtitle: "nautilus 5610p",
     price: 80,
-
     description: "",
     sizes: null,
     category: "ساعات",
@@ -924,7 +915,6 @@ export const PROFILE_MENU = [
   },
   { id: 4, title: "تقيماتي", icon: "star-outline", route: "/" },
   { id: 5, title: "طرق الدفع", icon: "cash-outline", route: "/" },
-
   { id: 6, title: "الإعدادات", icon: "settings-outline", route: "/settings" },
 ];
 export const ADDRESSES = [

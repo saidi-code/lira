@@ -25,6 +25,9 @@ useEffect(() => {
 
 
   const isVariable = item?.product?.type === "variable";
+ const isProductHasColors = item?.product?.colors?.length > 0 
+ const isProductHasSizes = item?.product?.colors?.sizes > 0
+
   return (
     <View
       style={{
@@ -77,8 +80,8 @@ useEffect(() => {
                   item.color = color name coming from backend
                   We find the color object inside product.colors to display its HEX.
                 */}
-
-                <View className=" items-center flex-row-reverse gap-1 ">
+              {
+                isProductHasColors && ( <View className=" items-center flex-row-reverse gap-1 ">
                   <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
                     اللون:
                   </Text>
@@ -100,8 +103,11 @@ useEffect(() => {
                       margin: 4,
                     }}
                   />
-                </View>
-                <View className=" items-center flex-row-reverse gap-1 ">
+                </View>)
+              }
+              {
+                isProductHasSizes && (
+<View className=" items-center flex-row-reverse gap-1 ">
                   <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
                     المقاس:
                   </Text>
@@ -122,6 +128,8 @@ useEffect(() => {
                     <Text className="text-right text-primary-600 text-xs font-medium tracking-wide  uppercase">{item?.size ?? ""}</Text>
                   </View>
                 </View>
+                )
+              }
               </View>
             )}
 

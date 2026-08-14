@@ -127,8 +127,13 @@ export default function Page() {
   // Display email code verification form
   if (showEmailCode) {
     return (
-      <>
-        <View className=" justify-center items-center w-16 h-16 rounded-full bg-[#b89354]/5 mb-2  ">
+      <View className="relative ">
+        <View className="justify-center items-center w-16 h-16 rounded-full bg-[#b89354]/5 
+        mb-2 absolute 
+        top-1/2 
+        left-1/2 
+        -translate-x-1/2 
+        -translate-y-1/2">
                            <Image
                              style={{
                                height: 48,
@@ -137,8 +142,8 @@ export default function Page() {
                              resizeMode="contain"
                            source={require("../../assets/images/logo2.png")}
                            />
-                         </View>
-        <SafeAreaView className="flex-1 bg-white">
+        </View>
+        <View className="flex-1 bg-white">
           <View className="flex  items-center ">
             <Text className="text-3xl  text-center font-bold  text-primary">
               تحقق من بريدك الإلكتروني
@@ -183,8 +188,8 @@ export default function Page() {
               <Text style={styles.buttonText}>تحقق</Text>
             )}
           </TouchableOpacity>
-        </SafeAreaView>
-      </>
+        </View>
+      </View>
     );
   }
 

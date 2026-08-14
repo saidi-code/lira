@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/clerk-expo";
 // Avoid token-cache which pulls expo-auth-session -> expo-crypto AES on Expo Go
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
@@ -10,11 +11,15 @@ import { toastConfig } from "../constants/config";
 import { CartProvider } from "../context/CartContext";
 import { FavorisProvider } from "../context/FavorisContext";
 import "../global.css";
+
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
   throw new Error("Add your Clerk Publishable Key to the .env file");
 }
+
+const queryClient = new QueryClient();
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "jazera-bold": require("../assets/fonts/Al-Jazeera-Arabic-Bold.ttf"),
@@ -27,18 +32,23 @@ export default function RootLayout() {
   }, [fontsLoaded]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
-        <CartProvider>
-          <FavorisProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            />
-            <Toast config={toastConfig} />
-          </FavorisProvider>
-        </CartProvider>
-      </ClerkProvider>
+      <QueryClientProvider client={queryClient}>
+        <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
+          <CartProvider>
+            <FavorisProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  // statusBarHidden:true,
+                  navigationBarHidden:true,
+                  statusBarHidden:false
+                }}
+              />
+              <Toast config={toastConfig} />
+            </FavorisProvider>
+          </CartProvider>
+        </ClerkProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }
