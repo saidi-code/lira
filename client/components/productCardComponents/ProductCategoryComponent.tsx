@@ -7,9 +7,16 @@ interface ProductCategoryProps {
 
 const ProductCategoryComponent = ({ productCategory }: ProductCategoryProps) => {
   return (
-    <View className="pt-3 items-end">
+    <View >
      
-      <Text className="text-right text-[#b89354] text-xs font-bold font-tajawal tracking-wide">
+      <Text style = {{ 
+    fontSize: 12, 
+    textAlign: 'right',
+   fontWeight: '500',
+    color: '#B89354',
+    // paddingTop: 3,
+    fontFamily: 'Tajawal-Medium'
+    }}> 
         {productCategory?.trim() || "إكسسوارات"} 
         </Text>
     </View>

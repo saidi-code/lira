@@ -15,25 +15,21 @@ import { CURRENCY } from "../constants/index";
 import { IProduct, ProductCardProps } from "../constants/types";
 import ChooseColorSizeModal from "./productCardComponents/ChooseColorSizeModal";
 import { useCart } from "../context/CartContext";
-import { useFavoris } from "../context/FavorisContext";
 import ProductCardCategoryComponent from "./productCardComponents/ProductCategoryComponent";
 import ProductNameComponent from "./productCardComponents/ProductNameComponent";
 import ProductPriceComponent from "./productCardComponents/ProductPriceComponent";
 import AddToCartBtn from "./productCardComponents/AddToCartBtn";
+import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
 const ProductCard = ({ product }: ProductCardProps) => {
   const placeholderSource = require("../assets/images/productLoadingImage.svg");
-  const defaultColor = product?.colors?.[0]?.hex ?? null;
-  const defaultSize = product?.colors?.[0]?.variants?.[0]?.size ?? null;
+  
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const { addToCart } = useCart();
-  const { isLiked, toggleLike } = useFavoris();
+
 
   const [showModal, setShowModal] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string | null>(defaultSize);
-  const [selectedColor, setSelectedColor] = useState<string | null>(
-    defaultColor,
-  );
+ 
 
   // const defaultColor = useMemo(() => {
   //   if (!isVariable) return null;
@@ -51,12 +47,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleOpenVariableModal = () => {
     setShowModal(true);
   };
-console.log(imageUri)
+
   return (
     <Pressable
       // className="flex-1"
       style={styles.productCard}
-      onPress={() => router.push(`/product/${product?._id}`)}
+      onPress={() => router.push(`/product/${product._id}`)}
     >
 
         {/* Image with gold badge */}
@@ -66,11 +62,13 @@ console.log(imageUri)
           // rounded-2xl overflow-hidden"
         >
           <Image
+          
            source={{ uri: imageUri }}
             // defaultSource={require("../assets/images/productLoadingImage.png")}
             style={styles.productImage}
-            placeholderContentFit="cover"
-            contentFit="cover"
+            // placeholderContentFit="cover"
+            // contentFit="cover"
+          
             
             transition={300}
             // cachePolicy="memory-disk"
@@ -80,22 +78,10 @@ console.log(imageUri)
             // transition={300}
           />
 
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              toggleLike(product as any);
-            }}
-            className="absolute left-3 top-3"
-          >
-            {isLiked((product as any)._id) ? (
-              <Ionicons name="heart-sharp" size={20} color={"#b89354"} />
-            ) : (
-              <Ionicons name="heart-outline" size={20} color={"#b89354"} />
-            )}
-          </TouchableOpacity>
+         <AddToFavorisBtn product={product} />
         </View>
       <View
-        className="p-4 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch"
+        className="p-3 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch"
         //   className="p-4 bg-white rounded-3xl
         // shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]
         // outline outline-1 outline-offset-[-1px]
@@ -107,7 +93,7 @@ console.log(imageUri)
         <ProductNameComponent productName={product.name} />
 
         {/* Price and cart button */}
-        <View className="pt-2 flex-row justify-between items-center">
+        <View className=" flex-row justify-between">
           {/* <TouchableOpacity
             onPress={() => {
               if (!product) return;
@@ -135,10 +121,6 @@ console.log(imageUri)
           show={showModal}
           setShow={setShowModal}
           product={(product as any) ?? null}
-          selectedSize={selectedSize}
-          selectedColor={selectedColor}
-          setSelectedSize={setSelectedSize}
-          setSelectedColor={setSelectedColor}
         />
       </View>
     </Pressable>
@@ -185,9 +167,10 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    aspectRatio: 1,
-    backgroundColor: "#f5f5f5",
+    // aspectRatio: 1,
+    backgroundColor: "#fcf9f1",
     position: "relative",
+    aspectRatio: "1 / 1",
   },
   productImage: {
     width: "100%",

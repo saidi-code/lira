@@ -15,22 +15,23 @@ type Props = {
   show: boolean;
   setShow: (v: boolean) => void;
   product: IProduct | null;
-  selectedSize: string | null;
-  selectedColor: string | null;
-  setSelectedSize: (size: string | null) => void;
-  setSelectedColor: (color: string | null) => void;
+ 
 };
 
 const ChooseColorSizeModal = ({
   show,
   setShow,
   product,
-  selectedSize,
-  selectedColor,
-  setSelectedSize,
-  setSelectedColor,
+
 }: Props) => {
   const { addToCart } = useCart();
+   const defaultColor = product?.colors?.[0]?.hex ?? null;
+     const defaultSize = product?.colors?.[0]?.variants?.[0]?.size ?? null;
+  const [selectedSize, setSelectedSize] = useState<string | null>(defaultSize);
+  const [selectedColor, setSelectedColor] = useState<string | null>(
+    defaultColor,
+  );
+    
 const [uiColor, setUiColor] = useState<string | null>(selectedColor);
   const [uiSize, setUiSize] = useState<string | null>(selectedSize);
   const isVariable = product?.type === "variable";
@@ -154,7 +155,7 @@ const [uiColor, setUiColor] = useState<string | null>(selectedColor);
                   keyExtractor={(s: any, index: number) => `${s ?? ""}-${index}`}
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ padding: 2, gap: 12, flexGrow: 0 }}
+                  contentContainerStyle={{ padding: 2, gap: 12, flexGrow: 0 ,alignItems:"flex-start",justifyContent:"flex-end"}}
                   renderItem={({ item: size }: any) => {
                     const isSelected = selectedSize === String(size);
                     return (
@@ -194,10 +195,10 @@ const [uiColor, setUiColor] = useState<string | null>(selectedColor);
               }}
               activeOpacity={0.8}
             
-              className={`w-full py-4 rounded-full items-center mt-1  `}
+              className={`w-full py-3 rounded-2xl items-center mt-1 border border-primary  `}
             >
               <Text
-                className={`text-lg font-bold font-tajwal text-white`}
+                className={`text-lg font-bold font-tajwal text-primary `}
               >
                 إضافة إلى الحقيبة
               </Text>
@@ -206,7 +207,7 @@ const [uiColor, setUiColor] = useState<string | null>(selectedColor);
             <TouchableOpacity
               onPress={() => setShow(false)}
               activeOpacity={0.8}
-              className="w-full items-center mt-3 py-2"
+              className="w-full items-center mt-3 py-3 border border-gray-500 rounded-2xl"
             >
               <Text className="text-gray-500 text-base font-tajwal">إلغاء</Text>
             </TouchableOpacity>

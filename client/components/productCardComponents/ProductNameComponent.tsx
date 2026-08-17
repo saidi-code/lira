@@ -7,8 +7,17 @@ interface ProductNameProps {
 const ProductNameComponent = ({ productName }: ProductNameProps) => {
   return (
     
-            <View className="items-end">
-              <Text className="text-right text-[#201b16] text-base font-medium font-tajawal line-clamp-1">
+            <View>
+              <Text style = {{ 
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#201B16',
+    textAlign: 'right',
+    // paddingHorizontal: 8,
+    // paddingTop: ,
+    fontFamily: 'Tajawal-Medium'
+    }}
+    >
                 {productName?.trim() || "اسم المنتج"}
               </Text>
             </View>
