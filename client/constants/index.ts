@@ -12,6 +12,14 @@ export const COLORS = {
 
 export const CURRENCY = "د.ت";
 
+
+// constants/icons.ts
+export const ICON_PATHS = {
+  DIAMOND: "../../assets/images/icons/diamon.svg",
+  WATCH: "../../assets/images/icons/watch.svg",
+  DRESS: "../../assets/images/icons/dress.svg",
+  // ... others
+} as const;
 export const CATEGORIES = [
   { title: "مجوهرات", icon: "../../assets/images/icons/diamon.svg" },
   { title: "ساعات", icon: "../../assets/images/icons/watch.svg" },

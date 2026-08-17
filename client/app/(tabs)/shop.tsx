@@ -18,7 +18,8 @@ import BannerCarousel from "../../components/ShopPage/BannerCarousel";
 import { useCollections } from "../../hooks/useCollections";
 import { CATEGORIES, COLLECTIONS, COLORS } from "../../constants/index";
 import { ICollection, IProduct } from "../../constants/types";
-
+import {useCategories} from "../../hooks/useCategories"
+import CategoriesSections from "../../components/ShopPage/CategoriesSections";
 export default function Index() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -31,69 +32,11 @@ export default function Index() {
     isFeatured: true,
   });
 
+  const { data: categoriesData, isLoading: isCategoriesLoading, isError: isCategoriesError, error: categoriesError } = useCategories()
   // Safely extract the collections array (use optional chaining)
   const collections = data|| [];
   const pagination = data?.pagination; // kept for future use
-console.log(data, "collections data");
-  // (Optional) If you need activeBannerIndex for something else, keep it; otherwise remove.
-  // const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-
-  // ─── Icon helpers (unchanged, keep as is) ───────────────────────────────
-  const getIcon = (title: string) => {
-    switch (title) {
-      case "مجوهرات":
-        return <Ionicons name="diamond-outline" size={24} color={COLORS.primary} />;
-      case "ساعات":
-        return <MaterialCommunityIcons name="watch" size={24} color={COLORS.primary} />;
-      case "عطور":
-        return (
-          <Image
-            resizeMode="center"
-            style={{ height: 28, width: 28 }}
-            source={require("../../assets/images/icons/spray_4648182.png")}
-          />
-        );
-      case "ملابس":
-        return (
-          <Image
-            resizeMode="center"
-            style={{ height: 24, width: 24 }}
-            source={require("../../assets/images/icons/dress1.png")}
-          />
-        );
-      case "باخور":
-        return <Octicons name="flame" size={24} color={COLORS.primary} />;
-      case "حقائب يد":
-        return (
-          <Image
-            resizeMode="center"
-            style={{ height: 24, width: 24 }}
-            source={require("../../assets/images/icons/hand_bag.png")}
-          />
-        );
-      case "إكسسوارات":
-        return (
-          <Image
-            resizeMode="center"
-            style={{ height: 24, width: 24 }}
-            source={require("../../assets/images/icons/accessoires.png")}
-          />
-        );
-      case "مكياج":
-        return (
-          <Image
-            resizeMode="center"
-            style={{ height: 24, width: 24 }}
-            source={require("../../assets/images/icons/makeup.png")}
-          />
-        );
-      case "أحذية":
-        return <MaterialCommunityIcons name="shoe-heel" size={32} color={COLORS.primary} />;
-      default:
-        return <Ionicons name="grid-outline" size={24} color={COLORS.primary} />;
-    }
-  };
-
+  
   // ─── Error state ──────────────────────────────────────────────────────────
   if (isError) {
     return (
@@ -129,7 +72,8 @@ console.log(data, "collections data");
         <BannerCarousel collections={collections} isLoading={isLoading} />
 
         {/* Categories section */}
-        <View className="py-6">
+        <CategoriesSections categories={categoriesData || []} isLoading={isCategoriesLoading} />
+        {/* <View className="py-6">
           <View className="flex-row items-center justify-between px-4 mb-6">
             <Text className="font-tajwal text-sm text-primary">عرض المزيد</Text>
             <Text className="font-tajwal text-2xl text-body">الفئات الفاخرة</Text>
@@ -160,7 +104,7 @@ console.log(data, "collections data");
               </TouchableOpacity>
             )}
           />
-        </View>
+        </View> */}
 
         {/* Collections Section – currently using static COLLECTIONS.
             If you want to use fetched collections, replace data with collections.
