@@ -117,7 +117,7 @@ export default function Index() {
           </View>
 
           <FlatList
-            data={COLLECTIONS} // ← consider using `collections` if it has the same structure
+            data={collections} // ← consider using `collections` if it has the same structure
             keyExtractor={(item, index) => String(item._id ?? index)}
             scrollEnabled={false}
             renderItem={({ item }) => (
