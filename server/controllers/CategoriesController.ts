@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Category, { ICategory } from '../models/Categories.ts';
+import Category, { ICategory } from '../models/Categories.js';
 
 // ============ GET all categories ============
 export const getCategories = async (req: Request, res: Response): Promise<Response> => {
