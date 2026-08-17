@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema({
  subtitle: { type: String, required: true },
  description: { type: String, required: true },
  sizes:[{type:String}],
- category:{type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true},
+ category:{type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: true},
  subCategory: { type: String, required: true,enum:["man","woman","kids"] },
   brand: { type: String, required: true },
   price:{type:Number,required:true,min:0},
