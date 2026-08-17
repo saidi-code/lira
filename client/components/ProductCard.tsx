@@ -88,7 +88,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         //  outline-[#b89354]/5 self-stretch"
       >
         {/* // product category component  */}
-        <ProductCardCategoryComponent productCategory={product.category} />
+        <ProductCardCategoryComponent productCategory={product.category.title} />
         {/* Product name */}
         <ProductNameComponent productName={product.name} />
 
