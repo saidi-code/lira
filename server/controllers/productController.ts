@@ -14,8 +14,8 @@ export const getProducts = async (req: Request, res: Response) => {
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
       .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit)).populate("category");
-
+      .limit(Number(limit))
+      .populate("products.category");
     res.json({
       success: true,
       data: products,
