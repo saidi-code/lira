@@ -22,7 +22,7 @@ import AddToCartBtn from "./productCardComponents/AddToCartBtn";
 import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
 const ProductCard = ({ product }: ProductCardProps) => {
   const placeholderSource = require("../assets/images/productLoadingImage.svg");
-  
+  console.log(product)
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const { addToCart } = useCart();
