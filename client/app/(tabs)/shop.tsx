@@ -32,11 +32,11 @@ export default function Index() {
     isFeatured: true,
   });
 
-  const { data: categoriesData, isLoading: isCategoriesLoading, isError: isCategoriesError, error: categoriesError } = useCategories()
+    const { data: categoriesData, isLoading:categoriesIsLoading} = useCategories();
   // Safely extract the collections array (use optional chaining)
   const collections = data|| [];
   const pagination = data?.pagination; // kept for future use
-  
+
   // ─── Error state ──────────────────────────────────────────────────────────
   if (isError) {
     return (
@@ -72,7 +72,7 @@ export default function Index() {
         <BannerCarousel collections={collections} isLoading={isLoading} />
 
         {/* Categories section */}
-        <CategoriesSections categories={categoriesData || []} isLoading={isCategoriesLoading} />
+        <CategoriesSections categories={categoriesData } isLoading={categoriesIsLoading} />
         {/* <View className="py-6">
           <View className="flex-row items-center justify-between px-4 mb-6">
             <Text className="font-tajwal text-sm text-primary">عرض المزيد</Text>

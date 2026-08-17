@@ -24,7 +24,6 @@ export const useCollections = (filters={}) => {
     if (filters?.isActive !== undefined) query.append('isActive', String(filters.isActive));
     if (filters?.isFeatured !== undefined) query.append('isFeatured', String(filters.isFeatured));
       const res = await api.get(`/collections?${query.toString()}`);
-     
       return res.data;
     }
   });

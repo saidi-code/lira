@@ -1,16 +1,19 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, UseQueryResult  } from '@tanstack/react-query';
 import { api } from '../config/apiQuery';
-
-export const useCategories = (filters: any = {}) => {
-  return useQuery({
-    queryKey: ['categories', filters],
-    queryFn: async () => {
-      const query = new URLSearchParams();
-      if (filters?.page) query.append('page', String(filters.page));    
-    if (filters?.limit) query.append('limit', String(filters.limit));
-        const res = await api.get(`/categories?${query.toString()}`);
-      
-        return res.data;
-    },
-  });
+interface ICategory {
+  _id: string;
+  title: string;
+  icon: string;
 }
+export const useCategories = (): UseQueryResult<ICategory[], Error> => {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await api.get('/categories');
+      return res.data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000,
+    retry: 2,
+  });
+};

@@ -58,7 +58,7 @@ import CategoriesSkeleton from './CategoriesSkeleton';
         return <Ionicons name="grid-outline" size={24} color={COLORS.primary} />;
     }
   };
-const CategoriesSections = ({categories,isLoading}:{categories:string[],isLoading:boolean}) => {
+const CategoriesSections = ({categories,isLoading}:{categories:any[],isLoading:boolean}) => {
   const router = useRouter()
 
 

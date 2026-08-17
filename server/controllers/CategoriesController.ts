@@ -5,7 +5,7 @@ import Category, { ICategory } from '../models/Categories.js';
 export const getCategories = async (req: Request, res: Response): Promise<Response> => {
   try {
     const categories: ICategory[] = await Category.find().sort({ title: 1 });
-    return res.status(200).json(categories);
+    return res.status(200).json({data:categories});
   } catch (error) {
     console.error('Error fetching categories:', error);
     return res.status(500).json({ message: 'Server error' });
