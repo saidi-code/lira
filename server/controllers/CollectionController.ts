@@ -56,7 +56,8 @@ export const getCollections = async (req: Request, res: Response) => {
       .populate('products','product.category') // populates product details
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate({ path: 'products', populate: { path: 'category' } });
 
     const total = await Collection.countDocuments(filter);
 
