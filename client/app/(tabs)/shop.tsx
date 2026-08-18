@@ -20,6 +20,7 @@ import { CATEGORIES, COLLECTIONS, COLORS } from "../../constants/index";
 import { ICollection, IProduct } from "../../constants/types";
 import {useCategories} from "../../hooks/useCategories"
 import CategoriesSections from "../../components/ShopPage/CategoriesSections";
+import CollectionsSections from "@/components/ShopPage/CollectionsSections";
 export default function Index() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -37,6 +38,7 @@ export default function Index() {
   const collections = data|| [];
   const pagination = data?.pagination; // kept for future use
 
+  console.log("Fetched collections:", collections[0].products?.[0]);
   // ─── Error state ──────────────────────────────────────────────────────────
   if (isError) {
     return (
@@ -109,7 +111,9 @@ export default function Index() {
         {/* Collections Section – currently using static COLLECTIONS.
             If you want to use fetched collections, replace data with collections.
             Also ensure the fetched collections have the 'products' array. */}
-        <View className="py-12 px-3">
+        <CollectionsSections collections={collections} />
+        
+        {/* <View className="py-12 px-3">
           <View className="items-center mb-8">
             <Text className="text-center text-[#201b16] text-[32px] font-bold font-jazera leading-[38.4px]">
               مجموعات مختارة
@@ -147,7 +151,7 @@ export default function Index() {
               </View>
             )}
           />
-        </View>
+        </View> */}
 
         {/* Newsletter Section (unchanged) */}
         <View className="px-2 mx-4 pt-[47px] pb-12 bg-[#b89354]/10 rounded-[40px] items-start gap-4 mb-12">
