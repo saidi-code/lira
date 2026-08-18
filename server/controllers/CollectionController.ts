@@ -53,7 +53,7 @@ export const getCollections = async (req: Request, res: Response) => {
     }
 
     const collections = await Collection.find(filter)
-      .populate('products') // populates product details
+      .populate('products','product.category') // populates product details
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });

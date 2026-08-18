@@ -38,7 +38,7 @@ export default function Index() {
   const collections = data|| [];
   const pagination = data?.pagination; // kept for future use
 
-  console.log("Fetched collections:", collections[0].products?.[0]);
+  // console.log("Fetched collections:", collections[0].products?.[0]);
   // ─── Error state ──────────────────────────────────────────────────────────
   if (isError) {
     return (
