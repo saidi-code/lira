@@ -5,12 +5,8 @@ import cloudinary from "../config/cloundinary.js";
 export const getProducts = async (req: Request, res: Response) => {
   let query = { isActive: true };
   try {
-    const { page = 1, limit = 10, category,searchText } = req.query;
-    if (category && typeof category === "string" && category !== "الكل") {
-      // assuming your schema uses `category` field (based on client filters)
-      query = { ...query, category };
-    }
-
+    const { page = 1, limit = 10 } = req.query;
+   
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
       .skip((Number(page) - 1) * Number(limit))
@@ -106,7 +102,7 @@ export const searchProducts = async (req: Request, res: Response) => {
     console.error('Search error:', error);
     res.status(500).json({ message: 'Server error' });
   }
-};s
+};
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const product = await Product.findById(req.params.id).populate("category",'title icon');
