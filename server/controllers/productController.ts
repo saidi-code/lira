@@ -32,65 +32,87 @@ export const getProducts = async (req: Request, res: Response) => {
 };
 
 
+import { Request, Response } from "express";
+import Product from "../models/Products.js";
+import Category from "../models/Category.js"; // 👈 import Category model
+import cloudinary from "../config/cloundinary.js";
+
 export const searchProducts = async (req: Request, res: Response) => {
   try {
     const {
-      q,                  // search query
+      q,
       page = 1,
       limit = 10,
-      category,
+      category,           // This is a title, e.g. "مجوهرات"
       minPrice,
       maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
 
-    // Build the filter object
+    // ---------- Build the filter ----------
     const filter: any = {};
 
-    // --- Text search (case‑insensitive) ---
+    // Text search
     if (q && typeof q === 'string' && q.trim()) {
-      const searchRegex = new RegExp(q.trim(), 'i'); // 'i' for case‑insensitive
+      const searchRegex = new RegExp(q.trim(), 'i');
       filter.$or = [
         { name: searchRegex },
         { description: searchRegex },
-        { brand: searchRegex },   // if you have brand field
-        { subtitle: searchRegex }, // if applicable
+        { brand: searchRegex },
+        { subtitle: searchRegex },
       ];
     }
 
-    // --- Additional filters ---
-    if (category) filter.category = category;
+    // ---------- Category filter (convert title → ObjectId) ----------
+    if (category && typeof category === 'string') {
+      // Find the category document with this title (case‑insensitive)
+      const categoryDoc = await Category.findOne({
+        title: { $regex: new RegExp(`^${category.trim()}$`, 'i') }
+      });
+
+      if (categoryDoc) {
+        filter.category = categoryDoc._id; // Use the ObjectId
+      } else {
+        // No category with that title → return empty results
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: { total: 0, page: Number(page), limit: Number(limit), totalPages: 0 },
+        });
+      }
+    }
+
+    // Price filter
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // --- Pagination ---
+    // ---------- Pagination ----------
     const pageNum = parseInt(page as string, 10) || 1;
     const limitNum = parseInt(limit as string, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    // --- Sorting ---
+    // ---------- Sorting ----------
     const sort: any = {};
     const sortField = (sortBy as string) || 'createdAt';
     const sortDirection = (sortOrder as string) === 'asc' ? 1 : -1;
     sort[sortField] = sortDirection;
 
-    // --- Execute query with population ---
+    // ---------- Execute query ----------
     const products = await Product.find(filter)
-      .populate('category', 'title icon') // only fetch needed fields
+      .populate('category', 'title icon')
       .skip(skip)
       .limit(limitNum)
       .sort(sort);
 
-    // --- Count total matches (for pagination) ---
     const total = await Product.countDocuments(filter);
 
     res.status(200).json({
-      success:true,
-      data:products,
+      success: true,
+      data: products,
       pagination: {
         total,
         page: pageNum,
@@ -100,7 +122,7 @@ export const searchProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Search error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 export const getProductById = async (req: Request, res: Response) => {
