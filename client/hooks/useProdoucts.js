@@ -1,6 +1,7 @@
 // hooks/useProducts.js
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { api, imageService } from '../config/apiQuery';
+// Search product 
 
 // Get products with infinite scroll
 export function useProducts(category = "", filters = {}) {

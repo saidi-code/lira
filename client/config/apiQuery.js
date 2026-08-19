@@ -1,27 +1,37 @@
-import { Image } from 'expo-image';
-const API_BASE ="https://lira-lilac.vercel.app/api/v1";
+// api/client.ts
+const API_BASE = "https://lira-lilac.vercel.app/api/v1";
 
-  // Fetch with caching headers
+// Helper to build query string from object
+const buildQuery = (params?: Record<string, any>): string => {
+  if (!params) return '';
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  });
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : '';
+};
+
 export const api = {
-  get: async (endpoint) => {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+  get: async (endpoint: string, options?: { signal?: AbortSignal; params?: Record<string, any> }) => {
+    const url = `${API_BASE}${endpoint}${buildQuery(options?.params)}`;
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Add cache control
         'Cache-Control': 'max-age=300',
       },
+      signal: options?.signal, // 👈 pass AbortSignal
     });
-    
-    if (!response.ok) throw new Error('API Error');
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'API Error');
+    }
     return response.json();
   },
-};
-// Image service with local caching
-export const imageService = {
-  prefetch: async (urls) => {
-    // expo-image prefetch returns a promise
-    const promises = urls.map(url => Image.prefetch(url).catch(() => null));
-    return Promise.all(promises);
-  },
-  // No need for AsyncStorage caching – expo-image handles it internally
+
+  // Optional: post, put, delete can be added similarly
 };

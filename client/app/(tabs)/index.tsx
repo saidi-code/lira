@@ -15,12 +15,13 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProducts } from '../../hooks/useProdoucts.js';
-import { api } from '../../config/apiQuery.js';
+
 import { CURRENCY } from '../../constants';
 import ProductCard from "@/components/ProductCard";
 import { COLORS } from '../../constants';
 import FilterProductsModal from '@/components/FilterProductsModal';
 import {api} from "../../config/apiQuery"
+import {useDebouncedSearch} from "../../hooks/useDebouncedSearch"
 const defaultSource = require('../../assets/images/productLoadingImage.png');
 const placeholderSource = require('../../assets/images/productLoadingImage.svg');
 export default function Index() {
@@ -43,7 +44,12 @@ export default function Index() {
     isLoading,
     isError,
   } = useProducts();
-
+const { inputValue, setInputValue, products:SearchProudctsData, isLoading:searchLoading } = useDebouncedSearch('', {
+  delay: 400,
+  category: 'مجوهرات',
+  minPrice: 100,
+  maxPrice: 500,
+});
   const queryClient = useQueryClient();
 
   const handleProductHover = useCallback(
@@ -103,42 +109,42 @@ export default function Index() {
   //     console.error("Error searching products:", error);
   //   }
   // };
-  const searchProducts = async (query) => {
-  const params = new URLSearchParams({
-    q: query,
-    page: 1,
-    limit: 10,
-    category: 'مجوهرات',
-    minPrice: 100,
-    maxPrice: 500,
-  });
-  const response = await fetch(`${api}/search?${params.toString()}`);
-  const data = await response.json();
-   setSearchResult(data.data);
-  console.log(data.products);
-};  
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      searchProducts(searchText);
-    }, 500);
-    return () => clearTimeout(delayDebounce);
-  }, [searchText]);
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#B89354" />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
+//   const searchProducts = async (query) => {
+//   const params = new URLSearchParams({
+//     q: query,
+//     page: 1,
+//     limit: 10,
+//     category: 'مجوهرات',
+//     minPrice: 100,
+//     maxPrice: 500,
+//   });
+//   const response = await fetch(`${api}/products/search?${params}`);
+//   const data = await response.json();
+//    setSearchResult(data.data);
+//   console.log(data.products);
+// };  
+  // useEffect(() => {
+  //   const delayDebounce = setTimeout(() => {
+  //     searchProducts(searchText);
+  //   }, 500);
+  //   return () => clearTimeout(delayDebounce);
+  // }, [searchText]);
+  // if (isLoading) {
+  //   return (
+  //     <View style={styles.center}>
+  //       <ActivityIndicator size="large" color="#B89354" />
+  //       <Text style={styles.loadingText}>Loading...</Text>
+  //     </View>
+  //   );
+  // }
 
-  if (isError) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>Error loading products</Text>
-      </View>
-    );
-  }
+  // if (isError) {
+  //   return (
+  //     <View style={styles.center}>
+  //       <Text style={styles.errorText}>Error loading products</Text>
+  //     </View>
+  //   );
+  // }
 
   const allProducts = data?.pages.flatMap((page: any) => page.products) || [];
 
@@ -216,7 +222,7 @@ const handleClear = () => {
         >
           <Ionicons name="filter-sharp" size={20} color={COLORS.primary} />
         </TouchableOpacity>
-      {searchText.length > 0 && (
+      {inputValue.length > 0 && (
           <TouchableOpacity activeOpacity={0.6} onPress={handleClear} className="p-2 ">
             <Ionicons name="close-circle" size={24} color={COLORS.active} />
           </TouchableOpacity>
@@ -227,8 +233,8 @@ const handleClear = () => {
           className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
           placeholder="ابحث عن مجموعتنا الحصرية..."
           placeholderTextColor="#a8a29e"
-          value={searchText}
-          onChangeText={setSearchText}
+          value={inputValue}
+          onChangeText={setInputValue}
           // onFocus={() => setIsFocused(true)}
           // onBlur={() => setIsFocused(false)}
           textAlign="right"
@@ -253,7 +259,7 @@ const handleClear = () => {
         </TouchableOpacity>
     
     </View>
-    <FlatList
+    {/* <FlatList
       data={allProducts}
       renderItem={renderItem}
       keyExtractor={(item, index) => `${item._id}_${index}`}
@@ -267,7 +273,7 @@ const handleClear = () => {
       removeClippedSubviews={true}
       contentContainerStyle={styles.listContainer}
       columnWrapperStyle={styles.columnWrapper}
-    />
+    /> */}
       <FilterProductsModal
         showFilterModal={showFilter}
         setShowFilterModal={setShowFilter}
