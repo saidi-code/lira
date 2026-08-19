@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../models/Products.js";
+import Category from "../models/Categories.js"
 import cloudinary from "../config/cloundinary.js";
 
 export const getProducts = async (req: Request, res: Response) => {
@@ -32,10 +33,7 @@ export const getProducts = async (req: Request, res: Response) => {
 };
 
 
-import { Request, Response } from "express";
-import Product from "../models/Products.js";
-import Category from "../models/Category.js"; // 👈 import Category model
-import cloudinary from "../config/cloundinary.js";
+
 
 export const searchProducts = async (req: Request, res: Response) => {
   try {
