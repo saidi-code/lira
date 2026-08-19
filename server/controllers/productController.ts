@@ -5,7 +5,7 @@ import cloudinary from "../config/cloundinary.js";
 export const getProducts = async (req: Request, res: Response) => {
   let query = { isActive: true };
   try {
-    const { page = 1, limit = 10, category } = req.query;
+    const { page = 1, limit = 10, category,searchText } = req.query;
     if (category && typeof category === "string" && category !== "الكل") {
       // assuming your schema uses `category` field (based on client filters)
       query = { ...query, category };
@@ -35,6 +35,78 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
+
+export const searchProducts = async (req: Request, res: Response) => {
+  try {
+    const {
+      q,                  // search query
+      page = 1,
+      limit = 10,
+      category,
+      minPrice,
+      maxPrice,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = req.query;
+
+    // Build the filter object
+    const filter: any = {};
+
+    // --- Text search (case‑insensitive) ---
+    if (q && typeof q === 'string' && q.trim()) {
+      const searchRegex = new RegExp(q.trim(), 'i'); // 'i' for case‑insensitive
+      filter.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { brand: searchRegex },   // if you have brand field
+        { subtitle: searchRegex }, // if applicable
+      ];
+    }
+
+    // --- Additional filters ---
+    if (category) filter.category = category;
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    // --- Pagination ---
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // --- Sorting ---
+    const sort: any = {};
+    const sortField = (sortBy as string) || 'createdAt';
+    const sortDirection = (sortOrder as string) === 'asc' ? 1 : -1;
+    sort[sortField] = sortDirection;
+
+    // --- Execute query with population ---
+    const products = await Product.find(filter)
+      .populate('category', 'title icon') // only fetch needed fields
+      .skip(skip)
+      .limit(limitNum)
+      .sort(sort);
+
+    // --- Count total matches (for pagination) ---
+    const total = await Product.countDocuments(filter);
+
+    res.status(200).json({
+      success:true,
+      data:products,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};s
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const product = await Product.findById(req.params.id).populate("category",'title icon');

@@ -1,4 +1,4 @@
-import React, { useCallback,useState,useRef } from 'react';
+import React, { useCallback,useState,useRef,useEffect } from 'react';
 import {
   FlatList,
   View,
@@ -19,17 +19,23 @@ import { api } from '../../config/apiQuery.js';
 import { CURRENCY } from '../../constants';
 import ProductCard from "@/components/ProductCard";
 import { COLORS } from '../../constants';
+import FilterProductsModal from '@/components/FilterProductsModal';
+import {api} from "../../config/apiQuery"
 const defaultSource = require('../../assets/images/productLoadingImage.png');
 const placeholderSource = require('../../assets/images/productLoadingImage.svg');
 export default function Index() {
   const router = useRouter();
-   const [valueBrand, setValueBrand] = useState<string | null>(null);
-    const [openBrandMenu, setOpenBrandMenu] = useState(false);
-    const [searchText, setSearchText] = useState("");
-    const [isFocused, setIsFocused] = useState(false);
-    const inputRef = useRef<TextInput | null>(null);
-    const [filterModal, setFilterModal] = useState(false);
-  const {
+   const [showFilter, setShowFilter] = useState(false);
+  const [category, setCategory] = useState('الكل');
+  const [color, setColor] = useState('');
+  const [size, setSize] = useState('');
+  const [brand, setBrand] = useState('');
+  const [price, setPrice] = useState<[number, number]>([150, 2500]);
+ const [searchText,setSearchText]= useState("")
+   const [isFocused, setIsFocused] = useState(false);
+   const [searchResult,setSearchResult]= useState([])
+   
+ const {
     data,
     fetchNextPage,
     hasNextPage,
@@ -50,7 +56,73 @@ export default function Index() {
     },
     [queryClient],
   );
+// -------- Handlers --------
+  const handleApply = () => {
+    // Parent can listen to onApply to fetch filtered products
+ console.log("apying filter function")
+    setShowFilter(false);
+  };
 
+  const handleReset = () => {
+    setCategory('الكل');
+    setColor('');
+    setSize('');
+    setBrand('');
+    setPrice([150, 2500]);
+  };
+  // const handleSearch = async () => {
+  //   let filter = {}
+  //   const query = new URLSearchParams(filter)
+  //   if(searchText){
+  //     filter = {...filter,q:searchText}
+  //   }
+  //   if(category){
+  //     filter = {...filter,category}
+  //   }
+  //   if(color){
+  //     filter = {...filter, color}
+  //   }
+  //   if(size){
+  //     filter = {...filter,size}
+  //   }
+  //   if(brand){
+  //     filter = {...filter,brand}
+  //   }
+  //   if(price){
+  //     filter = {...filter,minPrice:price[0]}
+  //   }
+  //   if(price){
+  //     filter = {...filter,maxPrice:price[1]}
+  //   }
+  //   try {
+  //     const { data } = await axios.get("/products/search", {
+  //       params: { search: query },
+  //     });
+  //     setSearchResult(data.data);
+  //   } catch (error) {
+  //     console.error("Error searching products:", error);
+  //   }
+  // };
+  const searchProducts = async (query) => {
+  const params = new URLSearchParams({
+    q: query,
+    page: 1,
+    limit: 10,
+    category: 'مجوهرات',
+    minPrice: 100,
+    maxPrice: 500,
+  });
+  const response = await fetch(`${api}/search?${params.toString()}`);
+  const data = await response.json();
+   setSearchResult(data.data);
+  console.log(data.products);
+};  
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      searchProducts(searchText);
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchText]);
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -72,39 +144,37 @@ export default function Index() {
 
   const renderItem = ({ item, index }: { item: any; index: number }) => {
     const imageUri = item.images?.[0] ?? item.colors?.[0]?.images?.[0];
-   
-  
     return (
-     
-      <TouchableOpacity
-        onPress={() => {
-          handleProductHover(item._id);
-          router.push(`/product/${item._id}`);
-        }}
-        activeOpacity={0.7}
-        style={styles.productCard}
-      >
-        <View style={styles.imageContainer}>
-          <Image
-            source={imageUri ? { uri: imageUri } : defaultSource}
-            style={styles.productImage}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            priority={index < 3 ? 'high' : 'normal'}
-            placeholder={placeholderSource}
-            placeholderContentFit="cover"
-            transition={300}
+     <ProductCard product={item} />
+      // <TouchableOpacity
+      //   onPress={() => {
+      //     handleProductHover(item._id);
+      //     router.push(`/product/${item._id}`);
+      //   }}
+      //   activeOpacity={0.7}
+      //   style={styles.productCard}
+      // >
+      //   <View style={styles.imageContainer}>
+      //     <Image
+      //       source={imageUri ? { uri: imageUri } : defaultSource}
+      //       style={styles.productImage}
+      //       contentFit="cover"
+      //       cachePolicy="memory-disk"
+      //       priority={index < 3 ? 'high' : 'normal'}
+      //       placeholder={placeholderSource}
+      //       placeholderContentFit="cover"
+      //       transition={300}
 
-          />
-          {/* <View style={styles.loadingOverlay} pointerEvents="none">
-            <ActivityIndicator size="small" color="#B89354" />
-          </View> */}
-          </View>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>
-          {item.price} {CURRENCY}
-        </Text>
-      </TouchableOpacity>
+      //     />
+      //     {/* <View style={styles.loadingOverlay} pointerEvents="none">
+      //       <ActivityIndicator size="small" color="#B89354" />
+      //     </View> */}
+      //     </View>
+      //   <Text style={styles.productName}>{item.name}</Text>
+      //   <Text style={styles.productPrice}>
+      //     {item.price} {CURRENCY}
+      //   </Text>
+      // </TouchableOpacity>
     );
   };
 
@@ -140,7 +210,7 @@ const handleClear = () => {
           activeOpacity={0.7}
           onPress={(e) => {
           e.stopPropagation();
-           setFilterModal(true)
+           setShowFilter(true)
           }}
           className="p-4 pr-3 border-r border-stone-100"
         >
@@ -153,7 +223,7 @@ const handleClear = () => {
         )}
         <TextInput
           // onPressIn={(e) => e.stopPropagation()}
-          ref={inputRef}
+        
           className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
           placeholder="ابحث عن مجموعتنا الحصرية..."
           placeholderTextColor="#a8a29e"
@@ -198,6 +268,21 @@ const handleClear = () => {
       contentContainerStyle={styles.listContainer}
       columnWrapperStyle={styles.columnWrapper}
     />
+      <FilterProductsModal
+        showFilterModal={showFilter}
+        setShowFilterModal={setShowFilter}
+        selectedCategory={category}
+        setSelectedCategory={setCategory}
+        selectedColor={color}
+        setSelectedColor={setColor}
+        selectedSize={size}
+        setSelectedSize={setSize}
+        selectedBrand={brand}
+        setSelectedBrand={setBrand}
+        priceRange={price}
+        setPriceRange={setPrice}
+        onApply={handleApply}
+      />
       </SafeAreaView>
   );
 }

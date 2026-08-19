@@ -21,9 +21,9 @@ import { ICollection, IProduct } from "../../constants/types";
 import {useCategories} from "../../hooks/useCategories"
 import CategoriesSections from "../../components/ShopPage/CategoriesSections";
 import CollectionsSections from "@/components/ShopPage/CollectionsSections";
+import NewsLetterSection from "@/components/ShopPage/NewsLetterSection";
 export default function Index() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
 
   // Fetch collections – note the destructuring
   const { data, isLoading, isError, error } = useCollections({
@@ -65,6 +65,27 @@ export default function Index() {
   }
 
   // ─── Main UI ──────────────────────────────────────────────────────────────
+
+  if( isLoading || categoriesIsLoading){
+    return (
+      <SafeAreaView className="bg-surface flex-1" edges={["top"]}>
+        <Header showSearch showBack={false} />
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          {/* Banner Carousel – handles loading skeleton internally */}
+          <BannerCarousel collections={[]} isLoading={true} />
+
+          {/* Categories section */}
+          <CategoriesSections categories={[]} isLoading={true} />
+
+          {/* Collections section */}
+          <CollectionsSections collections={[]} isLoading={true} />
+          
+          {/* Newsletter Section (unchanged) */}
+          <NewsLetterSection isLoading={isLoading || categoriesIsLoading}/>
+          </ScrollView>
+        </SafeAreaView>
+      );
+    }
   return (
     <SafeAreaView className="bg-surface flex-1" edges={["top"]}>
       <Header showSearch showBack={false} />
@@ -75,138 +96,14 @@ export default function Index() {
 
         {/* Categories section */}
         <CategoriesSections categories={categoriesData } isLoading={categoriesIsLoading} />
-        {/* <View className="py-6">
-          <View className="flex-row items-center justify-between px-4 mb-6">
-            <Text className="font-tajwal text-sm text-primary">عرض المزيد</Text>
-            <Text className="font-tajwal text-2xl text-body">الفئات الفاخرة</Text>
-          </View>
 
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.title}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  router.push({
-                    pathname: "/product",
-                    params: { category: item.title },
-                  });
-                }}
-                className="rounded-2xl mx-4 items-center justify-center"
-                activeOpacity={0.8}
-              >
-                <View className="w-[80px] h-[80px] rounded-full bg-[#FDF1EA] flex items-center justify-center outline -outline-offset-1 outline-[#B89354]/20 mb-2">
-                  {getIcon(item.title)}
-                </View>
-                <Text className="font-tajwal text-base font-medium text-center text-gray-800">
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View> */}
-
-        {/* Collections Section – currently using static COLLECTIONS.
-            If you want to use fetched collections, replace data with collections.
-            Also ensure the fetched collections have the 'products' array. */}
-        <CollectionsSections collections={collections} />
+        {/* Collections section */}
+        <CollectionsSections collections={collections} isLoading={isLoading} />
         
-        {/* <View className="py-12 px-3">
-          <View className="items-center mb-8">
-            <Text className="text-center text-[#201b16] text-[32px] font-bold font-jazera leading-[38.4px]">
-              مجموعات مختارة
-            </Text>
-          </View>
-
-          <FlatList
-            data={collections} // ← consider using `collections` if it has the same structure
-            keyExtractor={(item, index) => String(item._id ?? index)}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View className="mb-8">
-                <View className="relative bg-white/0 rounded-3xl shadow-[0px_2px_4px_-2px_rgba(0,0,0,0.10)] overflow-hidden mb-4">
-                  <Image
-                    source={{ uri: item.banner }}
-                    resizeMode="cover"
-                    className="w-full h-[192px]"
-                    style={{ height: 192.38 }}
-                  />
-                  <View className="absolute inset-0 p-8 bg-black/20 justify-end" />
-                </View>
-                <View className="flex-1">
-                  <FlatList
-                    data={(item.products as IProduct[]).slice(0, 4)}
-                    renderItem={({ item: product }) => (
-                      <ProductCard product={product as IProduct} />
-                    )}
-                    keyExtractor={(product, index) => String(product._id ?? index)}
-                    numColumns={2}
-                    scrollEnabled={false}
-                    contentContainerStyle={styles.listContainer}
-                    columnWrapperStyle={styles.columnWrapper}
-                  />
-                </View>
-              </View>
-            )}
-          />
-        </View> */}
-
         {/* Newsletter Section (unchanged) */}
-        <View className="px-2 mx-4 pt-[47px] pb-12 bg-[#b89354]/10 rounded-[40px] items-start gap-4 mb-12">
-          <View className="self-stretch items-center">
-            <Text className="text-center text-[#785920] text-2xl font-bold font-jazera">
-              مجلة ليرة الرقمية
-            </Text>
-          </View>
-          <View className="flex items-center justify-center mb-4">
-            <View className="mx-3">
-              <Text className="text-center text-[#4e4639] text-base font-bady">
-                اشترك لتصلك أحدث المقالات والمجموعات الحصرية من عالم الفخامة
-              </Text>
-            </View>
-          </View>
-          <View className="w-full max-w-[448px] relative">
-            <View className="relative w-full bg-white rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
-              <TextInput
-                className="w-full py-[23px] pl-[104px] pr-8 text-end text-gray-500 text-base font-normal font-tajawal"
-                placeholder="بريدك الإلكتروني"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                textAlign="right"
-                style={{ minHeight: 66 }}
-              />
-            </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              className="absolute left-[8px] top-1/2 -translate-y-1/2 px-6 py-3 bg-[#b89354] rounded-full justify-center items-center"
-              onPress={() => {
-                console.log("Subscribe with:", email);
-              }}
-            >
-              <Text className="text-center text-white text-base font-medium font-tajawal leading-6">
-                انضمام
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+       <NewsLetterSection isLoading={false}/>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  // ... keep your existing styles (unchanged) ...
-  listContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    backgroundColor: '#FFF8F5',
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  // (Include the rest of your styles as they were)
-});

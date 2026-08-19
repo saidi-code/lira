@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState,useCallback } from "react";
 import { Image } from "expo-image";
 import {
 
@@ -20,6 +20,8 @@ import ProductNameComponent from "./productCardComponents/ProductNameComponent";
 import ProductPriceComponent from "./productCardComponents/ProductPriceComponent";
 import AddToCartBtn from "./productCardComponents/AddToCartBtn";
 import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
+import { useQueryClient } from '@tanstack/react-query';
+import api from "@/config/api";
 const ProductCard = ({ product }: ProductCardProps) => {
   const placeholderSource = require("../assets/images/productLoadingImage.svg");
   const { isSignedIn } = useAuth();
@@ -46,12 +48,24 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleOpenVariableModal = () => {
     setShowModal(true);
   };
-
+  const queryClient = useQueryClient();
+  const handleProductHover = useCallback(
+    (productId: string) => {
+      queryClient.prefetchQuery({
+        queryKey: ['product', productId],
+        queryFn: () => api.get(`/products/${productId}`),
+        staleTime: 5 * 60 * 1000,
+      });
+    },
+    [queryClient],
+  );
   return (
     <Pressable
       // className="flex-1"
       style={styles.productCard}
-      onPress={() => router.push(`/product/${product._id}`)}
+      onPress={() => {
+        handleProductHover(product._id)
+        router.push(`/product/${product._id}`)}}
     >
 
         {/* Image with gold badge */}

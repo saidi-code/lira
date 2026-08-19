@@ -3,8 +3,9 @@ import React from 'react'
 import { FlatList, Image, StyleSheet ,View,Text} from 'react-native';
 import ProductCard from "../../components/ProductCard"
 import { IProduct } from '../../constants/types';
-const CollectionsSections = ({collections}:{collections:any[]}) => {
-  return (
+import CollectionsSkeleton from '../ShopPage/CollectionsSkeleton';
+const CollectionsSections = ({collections,isLoading}:{collections:any[],isLoading:boolean}) => {
+  return isLoading ? <CollectionsSkeleton /> : (
     <View className="py-12 px-3">
           <View className="items-center mb-8">
             <Text className="text-center text-[#201b16] text-[32px] font-bold font-jazera leading-[38.4px]">
@@ -45,8 +46,8 @@ const CollectionsSections = ({collections}:{collections:any[]}) => {
           />
         </View>
   )
-}
 
+}
 export default CollectionsSections
 
 const styles = StyleSheet.create({
