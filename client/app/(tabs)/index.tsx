@@ -50,6 +50,7 @@ const { inputValue, setInputValue, products:SearchProudctsData, isLoading:search
   minPrice: 100,
   maxPrice: 500,
 });
+console.log("search products data",SearchProudctsData)
   const queryClient = useQueryClient();
 
   const handleProductHover = useCallback(
@@ -129,22 +130,22 @@ const { inputValue, setInputValue, products:SearchProudctsData, isLoading:search
   //   }, 500);
   //   return () => clearTimeout(delayDebounce);
   // }, [searchText]);
-  // if (isLoading) {
-  //   return (
-  //     <View style={styles.center}>
-  //       <ActivityIndicator size="large" color="#B89354" />
-  //       <Text style={styles.loadingText}>Loading...</Text>
-  //     </View>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#B89354" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
-  // if (isError) {
-  //   return (
-  //     <View style={styles.center}>
-  //       <Text style={styles.errorText}>Error loading products</Text>
-  //     </View>
-  //   );
-  // }
+  if (isError) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Error loading products</Text>
+      </View>
+    );
+  }
 
   const allProducts = data?.pages.flatMap((page: any) => page.products) || [];
 
@@ -194,7 +195,7 @@ const { inputValue, setInputValue, products:SearchProudctsData, isLoading:search
   };
 const handleClear = () => {
     setSearchText("");
-    inputRef.current?.focus();
+    // inputRef.current?.focus();
   };
   return (
      <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
@@ -259,7 +260,7 @@ const handleClear = () => {
         </TouchableOpacity>
     
     </View>
-    {/* <FlatList
+    <FlatList
       data={allProducts}
       renderItem={renderItem}
       keyExtractor={(item, index) => `${item._id}_${index}`}
@@ -273,7 +274,7 @@ const handleClear = () => {
       removeClippedSubviews={true}
       contentContainerStyle={styles.listContainer}
       columnWrapperStyle={styles.columnWrapper}
-    /> */}
+    />
       <FilterProductsModal
         showFilterModal={showFilter}
         setShowFilterModal={setShowFilter}

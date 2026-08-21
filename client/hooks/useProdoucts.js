@@ -23,7 +23,7 @@ export function useProducts(category = "", filters = {}) {
         .slice(0, 5); // Prefetch first 5 images
 
       // Don't await - let it run in background
-      imageService.prefetch(imageUrls);
+      // imageService.prefetch(imageUrls);
 
       return {
         products,
