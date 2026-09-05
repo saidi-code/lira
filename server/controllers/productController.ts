@@ -13,17 +13,17 @@ export const getProducts = async (req: Request, res: Response) => {
     const limit = Number(req.query.limit) || 10;
     
     // 2. Construire la clé de cache UNIQUE pour cette page
-    const cacheKey = `products:list:page:${page}:limit:${limit}`;
+    // const cacheKey = `products:list:page:${page}:limit:${limit}`;
     
     // 3. Essayer de récupérer depuis le cache
 
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      console.log(`✅ Cache hit pour ${cacheKey}`);
-      return res.json(cachedData);
-    }
+    // const cachedData = cache.get(cacheKey);
+    // if (cachedData) {
+    //   console.log(`✅ Cache hit pour ${cacheKey}`);
+    //   return res.json(cachedData);
+    // }
     
-    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
     
     // 4. Requête en base de données
     const query = { isActive: true };
@@ -45,7 +45,7 @@ export const getProducts = async (req: Request, res: Response) => {
     };
     
     // 6. Mettre en cache pour 1 heure (3600 secondes)
-    cache.set(cacheKey, responseData, 3600);
+    // cache.set(cacheKey, responseData, 3600);
     
     // 7. Renvoyer la réponse
     res.json(responseData);

@@ -60,7 +60,7 @@ export default function Index() {
     isLoading: isSearchLoading,
     isError: isSearchError,
   } = useDebouncedSearch(
-    '/products/search',
+    '',
     {
       delay: 400,
       q: inputValue, // 👈 explicitly send the search text
