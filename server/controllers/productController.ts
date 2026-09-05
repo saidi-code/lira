@@ -158,16 +158,16 @@ export const searchProducts = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const cacheKey = `product:${id}`;
+    // const cacheKey = `product:${id}`;
 
-    // 1. Essayer de récupérer depuis le cache
-    const cachedProduct = cache.get(cacheKey);
-    if (cachedProduct) {
-      console.log(`✅ Cache hit pour ${cacheKey}`);
-      return res.json({ success: true, data: cachedProduct });
-    }
+    // // 1. Essayer de récupérer depuis le cache
+    // const cachedProduct = cache.get(cacheKey);
+    // if (cachedProduct) {
+    //   console.log(`✅ Cache hit pour ${cacheKey}`);
+    //   return res.json({ success: true, data: cachedProduct });
+    // }
 
-    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
 
     // 2. Requête en base de données
     const product = await Product.findById(id).populate('category', 'title icon');
@@ -178,7 +178,7 @@ export const getProductById = async (req: Request, res: Response) => {
     }
 
     // 4. Mettre en cache pour 1 heure (3600 secondes)
-    cache.set(cacheKey, product, 3600);
+    // cache.set(cacheKey, product, 3600);
 
     // 5. Renvoyer la réponse
     res.json({ success: true, data: product || [] });
