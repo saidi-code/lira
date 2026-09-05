@@ -17,13 +17,13 @@ export const getProducts = async (req: Request, res: Response) => {
     
     // 3. Essayer de récupérer depuis le cache
 
-    // const cachedData = cache.get(cacheKey);
-    // if (cachedData) {
-    //   console.log(`✅ Cache hit pour ${cacheKey}`);
-    //   return res.json(cachedData);
-    // }
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      console.log(`✅ Cache hit pour ${cacheKey}`);
+      return res.json(cachedData);
+    }
     
-    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
     
     // 4. Requête en base de données
     const query = { isActive: true };
@@ -161,13 +161,13 @@ export const getProductById = async (req: Request, res: Response) => {
     const cacheKey = `product:${id}`;
 
     // 1. Essayer de récupérer depuis le cache
-    // const cachedProduct = cache.get(cacheKey);
-    // if (cachedProduct) {
-    //   console.log(`✅ Cache hit pour ${cacheKey}`);
-    //   return res.json({ success: true, data: cachedProduct });
-    // }
+    const cachedProduct = cache.get(cacheKey);
+    if (cachedProduct) {
+      console.log(`✅ Cache hit pour ${cacheKey}`);
+      return res.json({ success: true, data: cachedProduct });
+    }
 
-    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
 
     // 2. Requête en base de données
     const product = await Product.findById(id).populate('category', 'title icon');

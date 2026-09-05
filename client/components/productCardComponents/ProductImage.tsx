@@ -8,6 +8,7 @@ const ProductImage = ({ product}:{product:any}) => {
   const [error, setError] = useState(false);
   const blurhash ='LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
   const imageUri = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
+  console.log('imageUri:', imageUri);
   return (
     <View style={{ position: 'relative', width: 150, height: 150 }}>
       {!loaded && !error && (
