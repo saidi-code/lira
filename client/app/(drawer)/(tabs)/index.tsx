@@ -9,21 +9,21 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../components/Header'
+import Header from '../../../components/Header'
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useProducts } from '../../hooks/useProdoucts.js';
+import { useProducts } from '../../../hooks/useProdoucts.js';
 
-import { CURRENCY } from '../../constants';
+import { CURRENCY } from '../../../constants';
 import ProductCard from "@/components/ProductCard";
-import { COLORS } from '../../constants';
+import { COLORS } from '../../../constants';
 import FilterProductsModal from '@/components/FilterProductsModal';
-import {api} from "../../config/apiQuery"
-import {useDebouncedSearch} from "../../hooks/useDebouncedSearch"
-const defaultSource = require('../../assets/images/productLoadingImage.png');
-const placeholderSource = require('../../assets/images/productLoadingImage.svg');
+import {api} from "../../../config/apiQuery"
+import {useDebouncedSearch} from "../../../hooks/useDebouncedSearch"
+const defaultSource = require('../../../assets/images/productLoadingImage.png');
+const placeholderSource = require('../../../assets/images/productLoadingImage.svg');
 export default function Index() {
   const router = useRouter();
    const [showFilter, setShowFilter] = useState(false);
@@ -43,7 +43,10 @@ export default function Index() {
     isFetchingNextPage,
     isLoading,
     isError,
-  } = useProducts();
+  } = useProducts({
+    page:1,
+    category:""
+  });
 const { inputValue, setInputValue, products:SearchProudctsData, isLoading:searchLoading } = useDebouncedSearch('', {
   delay: 400,
   category: 'مجوهرات',
@@ -235,7 +238,7 @@ const handleClear = () => {
           placeholder="ابحث عن مجموعتنا الحصرية..."
           placeholderTextColor="#a8a29e"
           value={inputValue}
-          onChangeText={setInputValue}
+          onChangeText={(value)=>setInputValue(value)}
           // onFocus={() => setIsFocused(true)}
           // onBlur={() => setIsFocused(false)}
           textAlign="right"

@@ -6,6 +6,8 @@ import { COLORS } from "../constants/index";
 import { HeaderProps } from "../constants/types";
 import { useCart } from "../context/CartContext";
 import { useFavoris } from "../context/FavorisContext";
+import { DrawerToggleButton } from "@react-navigation/drawer";
+import OpenNavMenuBtn from "./OpenNavMenuBtn";
 const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
   const { itemCount } = useCart();
   const { itemsCount: favorisCount } = useFavoris();
@@ -36,13 +38,14 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
             className="
          bg-primary/10 rounded-full p-2"
           >
-            <TouchableOpacity>
+          <OpenNavMenuBtn/>
+            {/* <TouchableOpacity>
               <Ionicons
                 name="search-outline"
                 size={20}
                 color={COLORS.primary}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         )}
         <View className="flex-row gap-4 bg-primary/10 rounded-full px-4 py-2">

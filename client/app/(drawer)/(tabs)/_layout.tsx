@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { COLORS } from "../../constants/index";
+import { COLORS } from "../../../constants/index";
 import { View } from "react-native";
 
 function TabIconWrapper({
@@ -42,7 +42,9 @@ export default function TabLayout() {
 
     <Tabs
       initialRouteName="shop"
+      
       screenOptions={{
+      
         headerShown: false,
         tabBarShowLabel: true,
         // tabBarActiveTintColor: COLORS.active,
@@ -80,6 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="wishlist"
         options={{
+         
           title: "المفضلة",
           tabBarIcon: ({ focused }) => (
             <TabIconWrapper focused={focused}>

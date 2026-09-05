@@ -12,14 +12,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import Header from "../../components/Header";
-import ProductCard from "../../components/ProductCard";
-import BannerCarousel from "../../components/ShopPage/BannerCarousel";
-import { useCollections } from "../../hooks/useCollections";
-import { CATEGORIES, COLLECTIONS, COLORS } from "../../constants/index";
-import { ICollection, IProduct } from "../../constants/types";
-import {useCategories} from "../../hooks/useCategories"
-import CategoriesSections from "../../components/ShopPage/CategoriesSections";
+import Header from "../../../components/Header";
+import ProductCard from "../../../components/ProductCard";
+import BannerCarousel from "../../../components/ShopPage/BannerCarousel";
+import { useCollections } from "../../../hooks/useCollections";
+import { CATEGORIES, COLLECTIONS, COLORS } from "../../../constants/index";
+import { ICollection, IProduct } from "../../../constants/types";
+import {useCategories} from "../../../hooks/useCategories"
+import CategoriesSections from "../../../components/ShopPage/CategoriesSections";
 import CollectionsSections from "@/components/ShopPage/CollectionsSections";
 import NewsLetterSection from "@/components/ShopPage/NewsLetterSection";
 export default function Index() {
@@ -33,7 +33,10 @@ export default function Index() {
     isFeatured: true,
   });
 
-    const { data: categoriesData, isLoading:categoriesIsLoading} = useCategories();
+    const { data: categoriesData, isLoading:categoriesIsLoading} = useCategories({
+      page:1,
+      limit:10
+    });
   // Safely extract the collections array (use optional chaining)
   const collections = data|| [];
   const pagination = data?.pagination; // kept for future use

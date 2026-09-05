@@ -2,35 +2,64 @@ import { Request, Response } from "express";
 import Product from "../models/Products.js";
 import Category from "../models/Categories.js"
 import cloudinary from "../config/cloundinary.js";
+// controllers/productController.ts
+import { Request, Response } from 'express';
+import Product from '../models/Product'; // adaptez
+import cache from '../utils/cache'; // Import du cache
 
 export const getProducts = async (req: Request, res: Response) => {
-  let query = { isActive: true };
   try {
-    const { page = 1, limit = 10 } = req.query;
-   
+    // 1. Récupérer les paramètres de pagination
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    
+    // 2. Construire la clé de cache UNIQUE pour cette page
+    const cacheKey = `products:list:page:${page}:limit:${limit}`;
+    
+    // 3. Essayer de récupérer depuis le cache
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      console.log(`✅ Cache hit pour ${cacheKey}`);
+      return res.json(cachedData);
+    }
+    
+    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    
+    // 4. Requête en base de données
+    const query = { isActive: true };
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit))
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate('category', 'title icon');
-      
-    res.json({
+    
+    // 5. Construire la réponse
+    const responseData = {
       success: true,
       data: products,
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(total / Number(limit)),
+        page,
+        pages: Math.ceil(total / limit),
       },
-    });
+    };
+    
+    // 6. Mettre en cache pour 1 heure (3600 secondes)
+    cache.set(cacheKey, responseData, 3600);
+    
+    // 7. Renvoyer la réponse
+    res.json(responseData);
+    
   } catch (error) {
+    console.error('Error fetching products:', error);
     res.status(500).json({
-      success: "false",
-      message: "Error fetching products",
-      error,
+      success: false,
+      message: 'Error fetching products',
+      error: error instanceof Error ? error.message : error,
     });
   }
 };
+
 
 
 
@@ -123,20 +152,45 @@ export const searchProducts = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+// controllers/productController.ts
+import { Request, Response } from 'express';
+import Product from '../models/Product';
+import cache from '../utils/cache';
+
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id).populate("category",'title icon');
+    const { id } = req.params;
+    const cacheKey = `product:${id}`;
 
-    if (!product || !product.isActive) {
-      return res.json({ success: false, message: "Product not found" });
+    // 1. Essayer de récupérer depuis le cache
+    const cachedProduct = cache.get(cacheKey);
+    if (cachedProduct) {
+      console.log(`✅ Cache hit pour ${cacheKey}`);
+      return res.json({ success: true, data: cachedProduct });
     }
+
+    console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+
+    // 2. Requête en base de données
+    const product = await Product.findById(id).populate('category', 'title icon');
+
+    // 3. Si le produit n'existe pas ou n'est pas actif, on ne le met pas en cache
+    if (!product || !product.isActive) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // 4. Mettre en cache pour 1 heure (3600 secondes)
+    cache.set(cacheKey, product, 3600);
+
+    // 5. Renvoyer la réponse
     res.json({ success: true, data: product });
+
   } catch (error) {
-    console.error("error fetching product by id", error);
+    console.error('Error fetching product by id:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching product",
-      error,
+      message: 'Error fetching product',
+      error: error instanceof Error ? error.message : error,
     });
   }
 };

@@ -10,11 +10,11 @@ import {
   View,ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CartItem from "../../components/CartItem";
-import Header from "../../components/Header";
-import OrderSummary from "../../components/OrderSummary";
+import CartItem from "../../../components/CartItem";
+import Header from "../../../components/Header";
+import OrderSummary from "../../../components/OrderSummary";
 
-import { useCart } from "../../context/CartContext";
+import { useCart } from "../../../context/CartContext";
 
 import { useAuth } from "@clerk/clerk-expo";
 import { COLORS } from "@/constants";

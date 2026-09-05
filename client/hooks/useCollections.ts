@@ -13,17 +13,12 @@ export const collectionKeys = {
 };
 
 // ------------------- Queries -------------------
-export const useCollections = (filters={}) => {
+export const useCollections = (filters) => {
   return useQuery({
     queryKey: ['collections', filters],
     // queryFn: () => collectionApi.getAll(params),
-    queryFn: async ({filters}) =>{
-       const query = new URLSearchParams();
-      if (filters?.page) query.append('page', String(filters.page));
-    if (filters?.limit) query.append('limit', String(filters.limit));
-    if (filters?.isActive !== undefined) query.append('isActive', String(filters.isActive));
-    if (filters?.isFeatured !== undefined) query.append('isFeatured', String(filters.isFeatured));
-      const res = await api.get(`/collections?${query.toString()}`);
+    queryFn: async () =>{
+      const res = await api.get(`/collections`,{params:{...filters}});
       return res.data;
     }
   });

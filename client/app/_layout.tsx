@@ -11,7 +11,6 @@ import { toastConfig } from "../constants/config";
 import { CartProvider } from "../context/CartContext";
 import { FavorisProvider } from "../context/FavorisContext";
 import "../global.css";
-
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
@@ -31,24 +30,27 @@ export default function RootLayout() {
     if (!fontsLoaded) return;
   }, [fontsLoaded]);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
         <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
           <CartProvider>
             <FavorisProvider>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  // statusBarHidden:true,
-                  navigationBarHidden:true,
-                  statusBarHidden:false
-                }}
-              />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack screenOptions={{headerShown:false,navigationBarHidden:true}}>
+              <Stack.Screen name="(drawer)" options={{headerShown:false}} />
+             
+               {/* // screenOptions={{
+              //     headerShown: false,
+              //     // statusBarHidden:true,
+              //     navigationBarHidden:true,
+              //     statusBarHidden:false
+              //   }} */}
+              
+              </Stack>
+    </GestureHandlerRootView>
               <Toast config={toastConfig} />
             </FavorisProvider>
           </CartProvider>
         </ClerkProvider>
       </QueryClientProvider>
-    </GestureHandlerRootView>
   );
 }

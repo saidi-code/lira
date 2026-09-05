@@ -5,11 +5,11 @@ interface ICategory {
   title: string;
   icon: string;
 }
-export const useCategories = (): UseQueryResult<ICategory[], Error> => {
+export const useCategories = (filters): UseQueryResult<ICategory[], Error> => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const res = await api.get('/categories');
+      const res = await api.get('/categories',{params:{...filters},});
       return res.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

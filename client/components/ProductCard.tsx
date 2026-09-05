@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState,useCallback } from "react";
+import { BlurView } from 'expo-blur';
 import { Image } from "expo-image";
 import {
 
@@ -9,7 +10,7 @@ import {
   Pressable,
   Text,
   TouchableOpacity,
-  View,
+  View,ActivityIndicator
 } from "react-native";
 import { CURRENCY } from "../constants/index";
 import { IProduct, ProductCardProps } from "../constants/types";
@@ -22,6 +23,7 @@ import AddToCartBtn from "./productCardComponents/AddToCartBtn";
 import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
 import { useQueryClient } from '@tanstack/react-query';
 import api from "@/config/api";
+import ProductImage from "./productCardComponents/ProductImage";
 const ProductCard = ({ product }: ProductCardProps) => {
   const placeholderSource = require("../assets/images/productLoadingImage.svg");
   const { isSignedIn } = useAuth();
@@ -32,19 +34,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [showModal, setShowModal] = useState(false);
  
 
-  // const defaultColor = useMemo(() => {
-  //   if (!isVariable) return null;
-  //   const firstColor =  (product as any)?.colors[0]
-  //   return firstColor.hex ?? null;
-  // }, [isVariable, product]);
 
-  // const defaultSize = useMemo(() => {
-  //   if (!isVariable) return null;
-  //   const firstColor = (product as any)?.colors?.[0];
-  //   return firstColor?.variants?.[0]?.size ?? null;
-  // }, [isVariable, product]);
-
-  const imageUri = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
   const handleOpenVariableModal = () => {
     setShowModal(true);
   };
@@ -67,32 +57,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
         handleProductHover(product._id)
         router.push(`/product/${product._id}`)}}
     >
-
-        {/* Image with gold badge */}
-        <View
-          style={styles.imageContainer}
-          //   className=" aspect-square relative bg-[#fcf9f1]
+       <View
+        style={{ position: 'relative'}}
+        // style={styles.imageContainer}
+          //  className=" aspect-square relative bg-[#fcf9f1]
           // rounded-2xl overflow-hidden"
-        >
-          <Image
-          
-           source={{ uri: imageUri }}
-            // defaultSource={require("../assets/images/productLoadingImage.png")}
-            style={styles.productImage}
-            // placeholderContentFit="cover"
-            // contentFit="cover"
-          
-            
-            transition={300}
-            // cachePolicy="memory-disk"
-            // priority={index < 3 ? 'high' : 'normal'}
-            // placeholder={placeholderSource}
-            // placeholderContentFit="cover"
-            // transition={300}
-          />
-
-         <AddToFavorisBtn product={product} />
-        </View>
+         >
+              <ProductImage product={product}/>
+              <AddToFavorisBtn product={product} />
+     </View>
       <View
         className="p-3 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch"
         //   className="p-4 bg-white rounded-3xl

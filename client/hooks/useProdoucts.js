@@ -4,11 +4,11 @@ import { api, imageService } from '../config/apiQuery';
 // Search product 
 
 // Get products with infinite scroll
-export function useProducts(category = "", filters = {}) {
+export function useProducts(filters) {
   return useInfiniteQuery({
-    queryKey: ['products', category, filters],
-    queryFn: async ({ pageParam = 1 }) => {
-      const res = await api.get(`/products?page=${pageParam}&category=${category}`);
+    queryKey: ['products',  filters],
+    queryFn: async () => {
+      const res = await api.get(`/products`,{params:filters});
 
       // Server response: { success: true, data: products[], pagination: { page, pages, total } }
       const products = res.data ?? [];
@@ -24,7 +24,7 @@ export function useProducts(category = "", filters = {}) {
 
       // Don't await - let it run in background
       // imageService.prefetch(imageUrls);
-
+     
       return {
         products,
         nextPage: currentPage < totalPages ? currentPage + 1 : undefined,
