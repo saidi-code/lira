@@ -2,10 +2,9 @@ import { Request, Response } from "express";
 import Product from "../models/Products.js";
 import Category from "../models/Categories.js"
 import cloudinary from "../config/cloundinary.js";
-// controllers/productController.ts
-import { Request, Response } from 'express';
-import Product from '../models/Product'; // adaptez
-import cache from '../utils/cache'; // Import du cache
+
+
+import cache from '../utils/cache.js'; // Import du cache
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -153,9 +152,7 @@ export const searchProducts = async (req: Request, res: Response) => {
   }
 };
 // controllers/productController.ts
-import { Request, Response } from 'express';
-import Product from '../models/Product';
-import cache from '../utils/cache';
+
 
 export const getProductById = async (req: Request, res: Response) => {
   try {
