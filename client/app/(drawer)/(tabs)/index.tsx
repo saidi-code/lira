@@ -1,4 +1,4 @@
-import React, { useCallback,useState,useRef,useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   FlatList,
   View,
@@ -9,54 +9,74 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../../components/Header'
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
-import { Image } from 'expo-image';
+import Header from '../../../components/Header';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProducts } from '../../../hooks/useProdoucts.js';
-
-import { CURRENCY } from '../../../constants';
-import ProductCard from "@/components/ProductCard";
 import { COLORS } from '../../../constants';
+import ProductCard from '@/components/ProductCard';
 import FilterProductsModal from '@/components/FilterProductsModal';
-import {api} from "../../../config/apiQuery"
-import {useDebouncedSearch} from "../../../hooks/useDebouncedSearch"
+import { api } from '../../../config/apiQuery';
+import { useDebouncedSearch } from '../../../hooks/useDebouncedSearch';
+
+// Placeholder assets (unchanged)
 const defaultSource = require('../../../assets/images/productLoadingImage.png');
 const placeholderSource = require('../../../assets/images/productLoadingImage.svg');
+
 export default function Index() {
   const router = useRouter();
-   const [showFilter, setShowFilter] = useState(false);
+  const queryClient = useQueryClient();
+
+  // ----- Filter state -----
+  const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState('الكل');
   const [color, setColor] = useState('');
   const [size, setSize] = useState('');
   const [brand, setBrand] = useState('');
-  const [price, setPrice] = useState<[number, number]>([150, 2500]);
- const [searchText,setSearchText]= useState("")
-   const [isFocused, setIsFocused] = useState(false);
-   const [searchResult,setSearchResult]= useState([])
-   
- const {
-    data,
+  const [price, setPrice] = useState<[number, number]>([0, 2500]);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // ----- 1. Main product list (infinite scroll) -----
+  const {
+    data: productsData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
-    isError,
+    isLoading: isInitialLoading,
+    isError: isInitialError,
   } = useProducts({
-    page:1,
-    category:""
+    page: 1,
+    category: '', // adjust if you need an initial category
   });
-const { inputValue, setInputValue, products:SearchProudctsData, isLoading:searchLoading } = useDebouncedSearch('?page=1?limit=10?q=""?category=""?minPrice=""?maxPrice=""', {
-  delay: 400,
-  category: category,
-  minPrice: price[0],
-  maxPrice: price[1],
-  q:searchText,
-});
-console.log("search products data",SearchProudctsData)
-  const queryClient = useQueryClient();
 
+  const allProducts = productsData?.pages.flatMap((page: any) => page.products) || [];
+
+  // ----- 2. Search hook (with explicit `q`) -----
+  const {
+    inputValue,
+    setInputValue,
+    products: searchResults,
+    isLoading: isSearchLoading,
+    isError: isSearchError,
+  } = useDebouncedSearch(
+    '/products/search',
+    {
+      delay: 400,
+      q: inputValue, // 👈 explicitly send the search text
+      category: category === 'الكل' ? '' : category,
+      minPrice: price[0],
+      maxPrice: price[1],
+    }
+  );
+
+  // Determine what to display
+  const isSearchActive = inputValue.trim().length > 0;
+  const productsToShow = isSearchActive ? searchResults : allProducts;
+  const isLoading = isSearchActive ? isSearchLoading : isInitialLoading;
+  const isError = isSearchActive ? isSearchError : isInitialError;
+
+  // ----- 3. Handlers -----
   const handleProductHover = useCallback(
     (productId: string) => {
       queryClient.prefetchQuery({
@@ -65,12 +85,11 @@ console.log("search products data",SearchProudctsData)
         staleTime: 5 * 60 * 1000,
       });
     },
-    [queryClient],
+    [queryClient]
   );
-// -------- Handlers --------
+
   const handleApply = () => {
-    // Parent can listen to onApply to fetch filtered products
- console.log("apying filter function")
+    console.log('Applying filter');
     setShowFilter(false);
   };
 
@@ -79,61 +98,31 @@ console.log("search products data",SearchProudctsData)
     setColor('');
     setSize('');
     setBrand('');
-    setPrice([150, 2500]);
+    setPrice([0, 2500]);
   };
-  // const handleSearch = async () => {
-  //   let filter = {}
-  //   const query = new URLSearchParams(filter)
-  //   if(searchText){
-  //     filter = {...filter,q:searchText}
-  //   }
-  //   if(category){
-  //     filter = {...filter,category}
-  //   }
-  //   if(color){
-  //     filter = {...filter, color}
-  //   }
-  //   if(size){
-  //     filter = {...filter,size}
-  //   }
-  //   if(brand){
-  //     filter = {...filter,brand}
-  //   }
-  //   if(price){
-  //     filter = {...filter,minPrice:price[0]}
-  //   }
-  //   if(price){
-  //     filter = {...filter,maxPrice:price[1]}
-  //   }
-  //   try {
-  //     const { data } = await axios.get("/products/search", {
-  //       params: { search: query },
-  //     });
-  //     setSearchResult(data.data);
-  //   } catch (error) {
-  //     console.error("Error searching products:", error);
-  //   }
-  // };
-//   const searchProducts = async (query) => {
-//   const params = new URLSearchParams({
-//     q: query,
-//     page: 1,
-//     limit: 10,
-//     category: 'مجوهرات',
-//     minPrice: 100,
-//     maxPrice: 500,
-//   });
-//   const response = await fetch(`${api}/products/search?${params}`);
-//   const data = await response.json();
-//    setSearchResult(data.data);
-//   console.log(data.products);
-// };  
-  // useEffect(() => {
-  //   const delayDebounce = setTimeout(() => {
-  //     searchProducts(searchText);
-  //   }, 500);
-  //   return () => clearTimeout(delayDebounce);
-  // }, [searchText]);
+
+  const handleClear = () => {
+    setInputValue(''); // clear search input
+  };
+
+  // ----- 4. Render helpers -----
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const imageUri = item.images?.[0] ?? item.colors?.[0]?.images?.[0];
+    return <ProductCard product={item} />;
+  };
+
+  const renderFooter = () => {
+    // Only show pagination indicator when NOT searching
+    if (isSearchActive) return null;
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator size="small" color="#B89354" />
+      </View>
+    );
+  };
+
+  // ----- 5. Loading & Error states -----
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -151,134 +140,94 @@ console.log("search products data",SearchProudctsData)
     );
   }
 
-  const allProducts = data?.pages.flatMap((page: any) => page.products) || [];
-
-  const renderItem = ({ item, index }: { item: any; index: number }) => {
-    const imageUri = item.images?.[0] ?? item.colors?.[0]?.images?.[0];
-    return (
-     <ProductCard product={item} />
-      // <TouchableOpacity
-      //   onPress={() => {
-      //     handleProductHover(item._id);
-      //     router.push(`/product/${item._id}`);
-      //   }}
-      //   activeOpacity={0.7}
-      //   style={styles.productCard}
-      // >
-      //   <View style={styles.imageContainer}>
-      //     <Image
-      //       source={imageUri ? { uri: imageUri } : defaultSource}
-      //       style={styles.productImage}
-      //       contentFit="cover"
-      //       cachePolicy="memory-disk"
-      //       priority={index < 3 ? 'high' : 'normal'}
-      //       placeholder={placeholderSource}
-      //       placeholderContentFit="cover"
-      //       transition={300}
-
-      //     />
-      //     {/* <View style={styles.loadingOverlay} pointerEvents="none">
-      //       <ActivityIndicator size="small" color="#B89354" />
-      //     </View> */}
-      //     </View>
-      //   <Text style={styles.productName}>{item.name}</Text>
-      //   <Text style={styles.productPrice}>
-      //     {item.price} {CURRENCY}
-      //   </Text>
-      // </TouchableOpacity>
-    );
-  };
-
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footer}>
-        <ActivityIndicator size="small" color="#B89354" />
-      </View>
-    );
-  };
-const handleClear = () => {
-    setSearchText("");
-    // inputRef.current?.focus();
-  };
+  // ----- 6. Main render -----
   return (
-     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
+    <SafeAreaView className="bg-surface shadow flex-1" edges={['top']}>
       <Header showBack />
-        <View
+
+      {/* Search Bar */}
+      <View
         className={`mx-4 my-3 flex-row items-center bg-white rounded-xl overflow-hidden ${
-          isFocused ? "ring-2 ring-primary ring-opacity-50" : ""
+          isFocused ? 'ring-2 ring-primary ring-opacity-50' : ''
         }`}
         style={{
-          shadowColor: "#000",
+          shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
           shadowRadius: 8,
           elevation: 3,
-          // transform: [{ scale: scaleAnim }],
         }}
       >
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={(e) => {
-          e.stopPropagation();
-           setShowFilter(true)
-          }}
+          onPress={() => setShowFilter(true)}
           className="p-4 pr-3 border-r border-stone-100"
         >
           <Ionicons name="filter-sharp" size={20} color={COLORS.primary} />
         </TouchableOpacity>
-      {inputValue.length > 0 && (
-          <TouchableOpacity activeOpacity={0.6} onPress={handleClear} className="p-2 ">
+
+        {inputValue.length > 0 && (
+          <TouchableOpacity activeOpacity={0.6} onPress={handleClear} className="p-2">
             <Ionicons name="close-circle" size={24} color={COLORS.active} />
           </TouchableOpacity>
         )}
+
         <TextInput
-          // onPressIn={(e) => e.stopPropagation()}
-        
           className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
           placeholder="ابحث عن مجموعتنا الحصرية..."
           placeholderTextColor="#a8a29e"
           value={inputValue}
-          onChangeText={(value)=>setInputValue(value)}
-          // onFocus={() => setIsFocused(true)}
-          // onBlur={() => setIsFocused(false)}
+          onChangeText={setInputValue}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           textAlign="right"
           textAlignVertical="center"
           returnKeyType="search"
           clearButtonMode="never"
         />
 
-  
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={(e) => {
-            e.stopPropagation();
-            // search logic not implemented in backend filter right now
-            // console.log("Search:", searchText);
-          //  setFilterModal(true)
-          // btn search logic not implemented in backend filter right now
+          onPress={() => {
+            // Optional manual search trigger
           }}
           className="p-4 pl-3 border-l border-stone-100"
         >
           <Ionicons name="search-outline" size={20} color={COLORS.primary} />
         </TouchableOpacity>
-    
-    </View>
-    <FlatList
-      data={allProducts}
-      renderItem={renderItem}
-      keyExtractor={(item, index) => `${item._id}_${index}`}
-      numColumns={2}
-      onEndReached={() => hasNextPage && fetchNextPage()}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={renderFooter}
-      windowSize={5}
-      maxToRenderPerBatch={5}
-      initialNumToRender={6}
-      removeClippedSubviews={true}
-      contentContainerStyle={styles.listContainer}
-      columnWrapperStyle={styles.columnWrapper}
-    />
+      </View>
+
+      {/* Product List */}
+      {productsToShow.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={{ color: '#888', fontSize: 16 }}>
+            {isSearchActive ? 'No products match your search' : 'No products available'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={productsToShow}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => `${item._id}_${index}`}
+          numColumns={2}
+          onEndReached={() => {
+            // Only fetch more if we are NOT searching
+            if (!isSearchActive && hasNextPage) {
+              fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          windowSize={5}
+          maxToRenderPerBatch={5}
+          initialNumToRender={6}
+          removeClippedSubviews={true}
+          contentContainerStyle={styles.listContainer}
+          columnWrapperStyle={styles.columnWrapper}
+        />
+      )}
+
+      {/* Filter Modal */}
       <FilterProductsModal
         showFilterModal={showFilter}
         setShowFilterModal={setShowFilter}
@@ -294,10 +243,11 @@ const handleClear = () => {
         setPriceRange={setPrice}
         onApply={handleApply}
       />
-      </SafeAreaView>
+    </SafeAreaView>
   );
 }
 
+// ---------- Styles (unchanged) ----------
 const styles = StyleSheet.create({
   center: {
     flex: 1,

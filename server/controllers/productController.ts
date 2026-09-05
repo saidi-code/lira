@@ -181,7 +181,7 @@ export const getProductById = async (req: Request, res: Response) => {
     cache.set(cacheKey, product, 3600);
 
     // 5. Renvoyer la réponse
-    res.json({ success: true, data: product });
+    res.json({ success: true, data: product || [] });
 
   } catch (error) {
     console.error('Error fetching product by id:', error);
