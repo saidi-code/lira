@@ -129,7 +129,7 @@ export const searchProducts = async (req: Request, res: Response) => {
     sort[sortField] = sortDirection;
 
     // ---------- Execute query ----------
-    const products = await Product.find(filter)
+    const products = await Product.find(filter?filter:{})
       .populate('category', 'title icon')
       .skip(skip)
       .limit(limitNum)

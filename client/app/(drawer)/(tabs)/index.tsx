@@ -47,11 +47,12 @@ export default function Index() {
     page:1,
     category:""
   });
-const { inputValue, setInputValue, products:SearchProudctsData, isLoading:searchLoading } = useDebouncedSearch('', {
+const { inputValue, setInputValue, products:SearchProudctsData, isLoading:searchLoading } = useDebouncedSearch('?page=1?limit=10?q=""?category=""?minPrice=""?maxPrice=""', {
   delay: 400,
-  category: 'مجوهرات',
-  minPrice: 100,
-  maxPrice: 500,
+  category: category,
+  minPrice: price[0],
+  maxPrice: price[1],
+  q:searchText,
 });
 console.log("search products data",SearchProudctsData)
   const queryClient = useQueryClient();
