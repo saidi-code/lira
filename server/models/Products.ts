@@ -26,6 +26,7 @@ const productSchema = new mongoose.Schema({
 },{timestamps:true}) 
 
 // Product.ts
+productSchema.index({ name: 'text', description: 'text' })
 productSchema.index({ isActive: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, price: 1 });
 productSchema.index({ isActive: 1, brand: 1 });
