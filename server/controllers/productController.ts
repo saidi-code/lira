@@ -83,13 +83,8 @@ export const searchProducts = async (req: Request, res: Response) => {
 
     // Text search
     if (q && typeof q === 'string' && q.trim()) {
-      const searchRegex = new RegExp(q.trim(), 'i');
-      filter.$or = [
-        { name: searchRegex },
-        { description: searchRegex },
-        { brand: searchRegex },
-        { subtitle: searchRegex },
-      ];
+      
+      filter.$text = { $search: q.trim() };
     }
 
     // Category filter
