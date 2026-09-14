@@ -117,10 +117,13 @@ export const searchProducts = async (req: Request, res: Response) => {
     if (brand && typeof brand === 'string' && brand.trim()) {
       filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
     }
-    //color filter
-    if (color && typeof color === 'string' && color.trim()) {
-      filter.colors = { $regex: new RegExp(`^${color.trim()}$`, 'i') };
-    }
+//color filter
+if (color && typeof color === 'string' && color.trim()) {
+  const trimmedColor = color.trim();
+  // Escape special regex characters (including # if needed, though # isn't special in regex)
+  const escapedColor = trimmedColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  filter.colors = { $regex: new RegExp(`^${escapedColor}$`, 'i') };
+}
     //size filter
     if (size && typeof size === 'string' && size.trim()) {
       filter.sizes = { $regex: new RegExp(`^${size.trim()}$`, 'i') };
