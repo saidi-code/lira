@@ -119,9 +119,8 @@ export const searchProducts = async (req: Request, res: Response) => {
     }
 //color filter
 if (color && typeof color === 'string' && color.trim()) {
-  const trimmedColor = color.trim();
-  const escaped = trimmedColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  filter.colors = { $regex: `^${escaped}$`, $options: 'i' };
+  const escaped = color.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  filter['colors.hex'] = { $regex: `^${escaped}$`, $options: 'i' };
 }
     //size filter
     if (size && typeof size === 'string' && size.trim()) {
