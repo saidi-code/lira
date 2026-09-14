@@ -73,6 +73,7 @@ export default function Index() {
         setIsSearchError(false);
 
         const cleanParams: Record<string, any> = { ...params };
+       console.log("cleanParams", cleanParams);
         if (cleanParams.category === "الكل") delete cleanParams.category;
         Object.keys(cleanParams).forEach((k) => {
           if (!cleanParams[k]) delete cleanParams[k];

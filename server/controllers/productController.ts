@@ -72,6 +72,9 @@ export const searchProducts = async (req: Request, res: Response) => {
       category,
       minPrice,
       maxPrice,
+      brand,
+      color,
+      size, 
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
@@ -110,7 +113,18 @@ export const searchProducts = async (req: Request, res: Response) => {
         }
       }
     }
-
+//brand filter
+    if (brand && typeof brand === 'string' && brand.trim()) {
+      filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
+    }
+    //color filter
+    if (color && typeof color === 'string' && color.trim()) {
+      filter.colors = { $regex: new RegExp(`^${color.trim()}$`, 'i') };
+    }
+    //size filter
+    if (size && typeof size === 'string' && size.trim()) {
+      filter.sizes = { $regex: new RegExp(`^${size.trim()}$`, 'i') };
+    } 
     // Price filter
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -137,7 +151,7 @@ export const searchProducts = async (req: Request, res: Response) => {
       Product.countDocuments(filter),
     ]);
     console.log("url", req.originalUrl);
-console.log(filter, 'filter');
+    console.log(filter, 'filter');
 
     return res.status(200).json({
       success: true,

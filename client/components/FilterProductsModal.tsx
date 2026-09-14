@@ -92,7 +92,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
 
       setCategoriesOptions([
         { label: 'الكل', value: 'الكل' },
-        ...categories.map((c: any) => ({ label: c.title, value: c.title })),
+        ...categories.map((c: any) => ({ label: c.title, value: c._id })),
       ]);
     } catch (error) {
       console.error('Error fetching categories:', error);
