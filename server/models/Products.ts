@@ -25,10 +25,13 @@ const productSchema = new mongoose.Schema({
 
 },{timestamps:true}) 
 
-productSchema.index({ name: "text", description: "text" });
+// Product.ts
 productSchema.index({ isActive: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, price: 1 });
+productSchema.index({ isActive: 1, brand: 1 });
+productSchema.index({ 'colors.hex': 1 });
+productSchema.index({ sizes: 1 });
 productSchema.index({ category: 1, isActive: 1 });
-productSchema.index({ price: 1 });
 productSchema.methods.generateSKU = function () {
   if(this.type === "simple"){
   const namePart = this.name.replace(/\s+/g, '').toUpperCase().slice(0, 3); 
