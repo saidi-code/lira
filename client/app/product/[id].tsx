@@ -19,20 +19,17 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
-import axios from "../../config/api";
 import { COLORS, CURRENCY } from "../../constants/index";
 import { IProduct } from "../../constants/types";
 import { useCart } from "../../context/CartContext";
+import { useProduct } from "../../hooks/useProducts";
 
 const SingleProduct = () => {
   const { addToCart, updateCartItemQuantity, cartItems } = useCart();
   const { isLiked, addToFavoris, removeFromFavoris } = useFavoris();
 
-  const [product, setProduct] = useState<IProduct | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-
   const { width } = Dimensions.get("screen");
-  const [loading, setLoading] = useState(true);
 
   // UI state for variable products
   const [pColor, setPColor] = useState<number>(0);
@@ -40,6 +37,9 @@ const SingleProduct = () => {
 
   const params = useLocalSearchParams();
   const id = params.id as string | undefined;
+
+  const { data: productData, isLoading: loading } = useProduct(id);
+  const product: IProduct | null = productData ?? null;
 
   // route params can be string | string[]
   const routeColor = useMemo(() => {
@@ -53,24 +53,6 @@ const SingleProduct = () => {
     if (Array.isArray(v)) return v[0];
     return v;
   }, [params.size]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const { data } = await axios.get(`/products/${id}`);
-        setProduct(data.data);
-      } catch (e) {
-        console.error("Error fetching product:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
 
   // Resolve defaults from route params for variable products
   useEffect(() => {

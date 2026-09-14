@@ -11,13 +11,14 @@ export const useDebouncedSearch = (
     minPrice?: number;
     maxPrice?: number;
     enabled?: boolean;
+    q?: string;
   } = {}
 ) => {
   const { delay = 400, category, minPrice, maxPrice, enabled = true } = options;
 
   const [inputValue, setInputValue] = useState(initialQuery);
   const [debouncedTerm, setDebouncedTerm] = useState(initialQuery);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce logic
   useEffect(() => {

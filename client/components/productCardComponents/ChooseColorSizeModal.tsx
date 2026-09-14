@@ -10,12 +10,13 @@ import {
   View,
 } from "react-native";
 
-import {useCart} from "../../context/CartContext"
+import { useCart } from "../../context/CartContext";
+import { IProduct } from "../../constants/types";
+
 type Props = {
   show: boolean;
   setShow: (v: boolean) => void;
   product: IProduct | null;
- 
 };
 
 const ChooseColorSizeModal = ({
@@ -189,7 +190,7 @@ const [uiColor, setUiColor] = useState<string | null>(selectedColor);
 
             <TouchableOpacity
               onPress={async () => {
-             
+                if (!product) return;
                 await addToCart(product, selectedSize, selectedColor);
                 setShow(false);
               }}

@@ -1,101 +1,63 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useCallback, memo } from "react";
 import { useRouter } from "expo-router";
-import React, { useMemo, useState,useCallback } from "react";
-import { BlurView } from 'expo-blur';
-import { Image } from "expo-image";
-import {
-
-  StyleSheet,
-  Pressable,
-  Text,
-  TouchableOpacity,
-  View,ActivityIndicator
-} from "react-native";
-import { CURRENCY } from "../constants/index";
-import { IProduct, ProductCardProps } from "../constants/types";
+import { StyleSheet, Pressable, View } from "react-native";
+import { ProductCardProps } from "../constants/types";
 import ChooseColorSizeModal from "./productCardComponents/ChooseColorSizeModal";
-import { useCart } from "../context/CartContext";
 import ProductCardCategoryComponent from "./productCardComponents/ProductCategoryComponent";
 import ProductNameComponent from "./productCardComponents/ProductNameComponent";
 import ProductPriceComponent from "./productCardComponents/ProductPriceComponent";
 import AddToCartBtn from "./productCardComponents/AddToCartBtn";
 import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
-import { useQueryClient } from '@tanstack/react-query';
-import api from "@/config/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/config/api";
 import ProductImage from "./productCardComponents/ProductImage";
-const ProductCard = ({ product }: ProductCardProps) => {
-  const placeholderSource = require("../assets/images/productLoadingImage.svg");
-  const { isSignedIn } = useAuth();
+
+const ProductCard = memo(({ product }: ProductCardProps) => {
   const router = useRouter();
-  const { addToCart } = useCart();
-
-
-  const [showModal, setShowModal] = useState(false);
- 
-
-
-  const handleOpenVariableModal = () => {
-    setShowModal(true);
-  };
   const queryClient = useQueryClient();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleOpenVariableModal = useCallback(() => {
+    setShowModal(true);
+  }, []);
+
   const handleProductHover = useCallback(
     (productId: string) => {
+      if (!productId) return;
       queryClient.prefetchQuery({
-        queryKey: ['product', productId],
-        queryFn: () => api.get(`/products/${productId}`),
+        queryKey: ["product", productId],
+        queryFn: async () => {
+          const res = await api.get(`/products/${productId}`);
+          return res.data ?? res;
+        },
         staleTime: 5 * 60 * 1000,
       });
     },
-    [queryClient],
+    [queryClient]
   );
+
+  const handlePress = useCallback(() => {
+    if (!product?._id) return;
+    handleProductHover(product._id);
+    router.push(`/product/${product._id}`);
+  }, [product?._id, handleProductHover, router]);
+
+  const categoryTitle =
+    (product?.category as any)?.title ??
+    (typeof product?.category === "string" ? product.category : "");
+
   return (
-    <Pressable
-      // className="flex-1"
-      style={styles.productCard}
-      onPress={() => {
-        handleProductHover(product._id)
-        router.push(`/product/${product._id}`)}}
-    >
-       <View
-        style={{ position: 'relative'}}
-        // style={styles.imageContainer}
-          //  className=" aspect-square relative bg-[#fcf9f1]
-          // rounded-2xl overflow-hidden"
-         >
-              <ProductImage product={product}/>
-              <AddToFavorisBtn product={product} />
-     </View>
-      <View
-        className="p-3 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch"
-        //   className="p-4 bg-white rounded-3xl
-        // shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]
-        // outline outline-1 outline-offset-[-1px]
-        //  outline-[#b89354]/5 self-stretch"
-      >
-        {/* // product category component  */}
-        <ProductCardCategoryComponent productCategory={product.category.title} />
-        {/* Product name */}
+    <Pressable style={styles.productCard} onPress={handlePress}>
+      <View style={styles.imageContainer}>
+        <ProductImage product={product} />
+        <AddToFavorisBtn product={product} />
+      </View>
+
+      <View className="p-3 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch">
+        <ProductCardCategoryComponent productCategory={categoryTitle} />
         <ProductNameComponent productName={product.name} />
 
-        {/* Price and cart button */}
-        <View className=" flex-row justify-between">
-          {/* <TouchableOpacity
-            onPress={() => {
-              if (!product) return;
-
-              if (product.type === "variable") {
-                handleOpenVariableModal();
-                return;
-              }
-
-              // Simple product: add directly
-              addToCart(product as IProduct, null, null);
-            }}
-            className="w-10 h-10 bg-[#b89354] rounded-full justify-center items-center"
-          >
-            <Ionicons name="add-outline" size={18} color={"#ffffff"} />
-          </TouchableOpacity> */}
+        <View className="flex-row justify-between items-center mt-1">
           <AddToCartBtn
             product={product}
             handleOpenVariableModal={handleOpenVariableModal}
@@ -103,42 +65,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <ProductPriceComponent productPrice={product.price} />
         </View>
 
-        <ChooseColorSizeModal
-          show={showModal}
-          setShow={setShowModal}
-          product={(product as any) ?? null}
-        />
+        {showModal && (
+          <ChooseColorSizeModal
+            show={showModal}
+            setShow={setShowModal}
+            product={product ?? null}
+          />
+        )}
       </View>
     </Pressable>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
+
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFF8F5",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#B89354",
-    fontFamily: "Tajawal-Medium",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#B89354",
-    fontFamily: "Tajawal-Medium",
-  },
-  listContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    backgroundColor: "#FFF8F5",
-  },
-  columnWrapper: {
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
   productCard: {
     flex: 1,
     marginHorizontal: 6,
@@ -150,47 +91,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    maxWidth: 200,
   },
   imageContainer: {
-    width: "100%",
-    // aspectRatio: 1,
-    backgroundColor: "#fcf9f1",
     position: "relative",
-    aspectRatio: "1 / 1",
-  },
-  productImage: {
     width: "100%",
-    height: "100%",
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#201B16",
-    textAlign: "right",
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    fontFamily: "Tajawal-Medium",
-  },
-  productPrice: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#B89354",
-    textAlign: "right",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-    paddingTop: 4,
-    fontFamily: "Tajawal-Medium",
-  },
-  footer: {
-    paddingVertical: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#fcf9f1",
   },
 });
+
 export default ProductCard;

@@ -22,7 +22,6 @@ export const getCart = async (req: Request, res: Response) => {
 export const addToCart = async (req: Request, res: Response) => {
   try {
     const { productId, quantity = 1, size, color } = req.body;
-    console.log("addToCart request body:", req.body);
     if (!productId) {
       return res
         .status(400)
@@ -35,14 +34,13 @@ export const addToCart = async (req: Request, res: Response) => {
         .json({ success: false, message: "quantity must be greater than 0" });
     }
 
-    if ((productId as string).length < 12) {
+    if (typeof productId !== 'string' || productId.length < 12) {
       // prevents obvious invalid ObjectId values
       return res
         .status(400)
         .json({ success: false, message: "Invalid productId" });
     }
-    console.log("addToCart called with:", { productId, quantity, size, color });
-    const product  = await Product.findById(productId);
+    const product = await Product.findById(productId);
     if (!product) {
       return res
         .status(404)
@@ -93,15 +91,6 @@ if(product.type==="simple"){
     // For variable products we MUST persist the chosen color name and size.
     const normalizedSize = product.type === "simple" ? null : (size ?? null);
     const normalizedColor = product.type === "simple" ? null : (color ?? null);
-
-    console.log("addToCart normalized:", {
-      productId,
-      productType: product.type,
-      size,
-      color,
-      normalizedSize,
-      normalizedColor,
-    });
 
 
 

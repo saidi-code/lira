@@ -6,7 +6,7 @@ import { useState } from 'react';
 const ProductImage = ({ product}:{product:any}) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const blurhash ='LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+  const blurhash ='U9IqZ800009FWAx]D%-n00bv%#~p01R*_2D*';
   const imageUri = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
 
   return (

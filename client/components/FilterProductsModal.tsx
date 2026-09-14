@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,31 +10,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import { api } from '@/config/api';
+import { CURRENCY, COLORS } from '@/constants';
 
-// -------- Constants (replace with your actual imports) --------
-// For demonstration, we define them here. In your project, import from '@/constants'
-const COLORS = {
-  primary: '#7a5b14',
-  primaryLight: '#f5ede4',
-  inactive: '#9ca3af',
-  active: '#b89354',
-};
-const CURRENCY = 'ر.س';
-const CATEGORIES = [
-  { title: 'مجوهرات', icon: '...' },
-  { title: 'ساعات', icon: '...' },
-  { title: 'عطور', icon: '...' },
-  // ... add all your categories
-];
-
-// -------- Local Data --------
 const brandsOptions = [
   { label: 'نسيج الشرق', value: 'نسيج الشرق' },
   { label: 'فنون يدوية', value: 'فنون يدوية' },
   { label: 'تراثنا الأصيل', value: 'تراثنا الأصيل' },
 ];
 
-const categoriesOptions = CATEGORIES.map((c) => ({ label: c.title, value: c.title }));
+// const categoriesOptions = CATEGORIES.map((c) => ({ label: c.title, value: c.title }));
 
 const colorOptions = ['#000000', '#ffffff', '#B89354', '#D4AF37'];
 
@@ -46,11 +31,9 @@ const sizesOptions = [
   { label: 'كبير جداً', value: 'xxl' },
 ];
 
-// -------- Props Interface --------
 interface SearchPageProps {
   showFilterModal: boolean;
   setShowFilterModal: (visible: boolean) => void;
-  // Optional external state (if you want to lift state up)
   selectedCategory?: string;
   setSelectedCategory?: (cat: string) => void;
   selectedColor?: string;
@@ -61,10 +44,9 @@ interface SearchPageProps {
   setSelectedBrand?: (brand: string) => void;
   priceRange?: [number, number];
   setPriceRange?: (range: [number, number]) => void;
-  onApply?: () => void; // callback when "تطبيق الفلاتر" is pressed
+  onApply?: () => void;
 }
 
-// -------- Component --------
 const FilterProductsModal: React.FC<SearchPageProps> = ({
   showFilterModal,
   setShowFilterModal,
@@ -80,14 +62,14 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
   setPriceRange: externalSetPrice,
   onApply,
 }) => {
-  // -------- Internal fallback state (if no external state provided) --------
   const [localCategory, setLocalCategory] = useState('الكل');
   const [localColor, setLocalColor] = useState('');
   const [localSize, setLocalSize] = useState('');
   const [localBrand, setLocalBrand] = useState('');
   const [localPrice, setLocalPrice] = useState<[number, number]>([150, 2500]);
+  const [fetchCategoriesLoading, setFetchCategoriesLoading] = useState(false);
 
-  // Use external state if provided, otherwise use local
+const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; value: string }[]>([]);
   const category = externalCategory ?? localCategory;
   const setCategory = externalSetCategory ?? setLocalCategory;
   const color = externalColor ?? localColor;
@@ -99,15 +81,28 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
   const price = externalPrice ?? localPrice;
   const setPrice = externalSetPrice ?? setLocalPrice;
 
-  // -------- DropDownPicker open state --------
   const [openCategory, setOpenCategory] = useState(false);
   const [openBrand, setOpenBrand] = useState(false);
 
-  // -------- Handlers --------
+  const fetchCategories = async () => {
+    try {
+      setFetchCategoriesLoading(true);
+      const res = await api.get('/categories');
+      const categories = res.data || [];
+
+      setCategoriesOptions([
+        { label: 'الكل', value: 'الكل' },
+        ...categories.map((c: any) => ({ label: c.title, value: c.title })),
+      ]);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setFetchCategoriesLoading(false);
+    }
+  }; 
   const handleApply = () => {
-    // Parent can listen to onApply to fetch filtered products
     onApply?.();
-    setShowFilterModal(false);
+    // setShowFilterModal(false);
   };
 
   const handleReset = () => {
@@ -117,8 +112,10 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
     setBrand('');
     setPrice([150, 2500]);
   };
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  // -------- Render --------
   return (
     <Modal
       visible={showFilterModal}
@@ -127,7 +124,11 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
       onRequestClose={() => setShowFilterModal(false)}
     >
       <View className="bg-surface flex-1 rounded-t-2xl p-4 relative">
-        <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          className="flex-1"
+          nestedScrollEnabled={true}   // ✅ allows nested scrolling on Android
+        >
           {/* Header */}
           <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-primary-100">
             <TouchableOpacity onPress={handleReset} className="flex-row items-center gap-2">
@@ -152,9 +153,11 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
                 value={category}
                 items={categoriesOptions}
                 setOpen={setOpenCategory}
-                setValue={setCategory}
+                setValue={setCategory as any}
                 setItems={() => {}}
+                listMode="SCROLLVIEW"
                 placeholder="اختر الفئة"
+                loading={fetchCategoriesLoading}
                 style={{
                   borderColor: '#7a5b14',
                   borderWidth: 1,
@@ -179,9 +182,6 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
                   fontFamily: 'tajwal-meduim',
                   fontSize: 16,
                   color: '#201b16',
-                }}
-                arrowIconStyle={{
-                  color: '#201b16' as any,
                 }}
               />
             </View>
@@ -221,7 +221,7 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
                   width: 32,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: COLORS.primaryLight,
+                  backgroundColor: '#f5ede4',
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}
@@ -244,8 +244,9 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
                 value={brand}
                 items={brandsOptions}
                 setOpen={setOpenBrand}
-                setValue={setBrand}
+                setValue={setBrand as any}
                 setItems={() => {}}
+                listMode="SCROLLVIEW"
                 placeholder="اختر العلامات التجارية"
                 style={{
                   borderColor: '#7a5b14',
@@ -271,9 +272,6 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
                   fontFamily: 'tajwal-meduim',
                   fontSize: 16,
                   color: '#201b16',
-                }}
-                arrowIconStyle={{
-                  tintColor: '#201b16',
                 }}
               />
             </View>
@@ -307,43 +305,46 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
               </View>
             </View>
           </View>
-
-          {/* ===== Size ===== */}
-          <View className="mb-12">
-            <View className="border-r-2 border-primary-700 mb-8">
-              <Text className="font-tajwal mr-4 text-2xl text-body font-bold text-right">المقاس</Text>
-            </View>
-            <View className="flex justify-end flex-row gap-3 p-3 flex-wrap">
-              {sizesOptions.map((s, index) => (
-                <TouchableWithoutFeedback
-                  key={index}
-                  onPress={() => setSize(s.value)}
-                >
-                  <View
-                    style={{
-                      backgroundColor: size === s.value ? '#b89354' : '#d1c5b4',
-                      borderColor: '#fcf9f1',
-                      borderWidth: 1,
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 8,
-                    }}
-                  >
-                    <Text
-                      className={`font-tajwal text-base ${
-                        size === s.value ? 'text-white' : 'text-inactive'
-                      }`}
-                    >
-                      {s.label}
-                    </Text>
-                  </View>
-                </TouchableWithoutFeedback>
-              ))}
-            </View>
+{category === 'ملابس' && (
+  <View className="mb-12">
+    <View className="border-r-2 border-primary-700 mb-8">
+      <Text className="font-tajwal mr-4 text-2xl text-body font-bold text-right">
+        المقاس
+      </Text>
+    </View>
+    <View className="flex justify-end flex-row gap-3 p-3 flex-wrap">
+      {sizesOptions.map((s, index) => (
+        <TouchableWithoutFeedback
+          key={index}
+          onPress={() => setSize(s.value)}
+        >
+          <View
+            style={{
+              backgroundColor: size === s.value ? '#b89354' : '#d1c5b4',
+              borderColor: '#fcf9f1',
+              borderWidth: 1,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              className={`font-tajwal text-base ${
+                size === s.value ? 'text-white' : 'text-inactive'
+              }`}
+            >
+              {s.label}
+            </Text>
           </View>
+        </TouchableWithoutFeedback>
+      ))}
+    </View>
+  </View>
+)}
+        
         </ScrollView>
 
-        {/* ===== Footer ===== */}
+        {/* Footer */}
         <View className="bg-[#fcf9f1]/90 py-4 px-6 border-t border-t-primary-100 flex-row justify-between items-center">
           <TouchableOpacity
             onPress={handleApply}

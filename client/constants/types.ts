@@ -105,19 +105,19 @@ export interface ICartContext {
   ) => Promise<void>;
   updateCartItemQuantity: (
     itemId: string,
-    size: string | null,
     quantity: number,
-    color: string | null,
-    pSize?: string | null,
-    pColor?: string | null,
-    setColor?: (color: string | null) => void,
-    setSize?: (size: string | null) => void,
+    size?: string | null,
+    color?: string | null,
   ) => Promise<void>;
   clearCart: () => Promise<void>;
   cartTotal: number;
   itemCount: number;
   loading: boolean;
   cartItems: ICartItem[];
+  pSize?: string | null;
+  setPSize?: (size: string | null) => void;
+  pColor?: string | null;
+  setPColor?: (color: string | null) => void;
 }
 export interface IFavorisItem {
   productId: string;

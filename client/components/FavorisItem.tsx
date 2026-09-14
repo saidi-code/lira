@@ -1,31 +1,39 @@
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
-import React, { useMemo } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useCallback, memo } from "react";
+import { Text, TouchableOpacity, View, Pressable } from "react-native";
+import { Image } from "expo-image";
 import { CURRENCY } from "../constants/index";
 import { FavorisItemsProps } from "../constants/types";
 import { useCart } from "../context/CartContext";
 import { useFavoris } from "../context/FavorisContext";
+import { useRouter } from "expo-router";
 
-const FavorisItem = ({ product }: FavorisItemsProps) => {
+const FavorisItem = memo(({ product }: FavorisItemsProps) => {
+  const router = useRouter();
   const { addToCart } = useCart();
   const { toggleLike } = useFavoris();
 
   const imageUri = useMemo(() => {
     if (!product) return undefined;
-
-    // Backend in wishlist populates only: name, images, price, category
-    // So we primarily rely on `product.images`.
-    const firstImage = product?.images?.[0];
-    if (firstImage) return firstImage;
-
-    // Fallback for variable products if they ever arrive fully.
-    return product?.colors?.[0]?.images?.[0];
+    return product?.images?.[0] ?? product?.colors?.[0]?.images?.[0];
   }, [product]);
 
-  const handleToggleLike = () => {
+  const handleToggleLike = useCallback(() => {
     if (!product?._id) return;
-    toggleLike(product as any);
-  };
+    toggleLike(product);
+  }, [product, toggleLike]);
+
+  const handleAddToCart = useCallback(() => {
+    if (!product) return;
+    addToCart(product, null, null);
+  }, [product, addToCart]);
+
+  const handleNavigate = useCallback(() => {
+    if (!product?._id) return;
+    router.push(`/product/${product._id}`);
+  }, [product?._id, router]);
+
+  if (!product) return null;
 
   return (
     <View className="self-stretch p-4 bg-white rounded-xl shadow-lg flex-row justify-start items-center gap-4 mb-4">
@@ -35,24 +43,24 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
           <View className="self-stretch flex-row justify-between items-start">
             <TouchableOpacity
               onPress={handleToggleLike}
-              className="flex-col justify-center items-center"
+              className="flex-col justify-center items-center p-1"
             >
-              <Ionicons name={"heart-sharp"} color={"#b89354"} size={20} />
+              <Ionicons name="heart-sharp" color="#b89354" size={20} />
             </TouchableOpacity>
 
-            <View className="flex-col justify-start items-end">
+            <Pressable onPress={handleNavigate} className="flex-col justify-start items-end flex-1 ml-2">
               <Text
                 className="text-right text-body text-lg font-body"
                 numberOfLines={1}
               >
-                {product?.name}
+                {product.name}
               </Text>
-            </View>
+            </Pressable>
           </View>
 
           <View className="self-stretch flex-col justify-start items-end">
             <Text className="text-right text-[#645d59] text-xs font-tajwal font-medium tracking-wide">
-              {product?.subtitle}
+              {product.subtitle}
             </Text>
           </View>
         </View>
@@ -61,14 +69,14 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
         <View className="self-stretch pt-4 flex-col justify-start items-start">
           <View className="self-stretch flex-row justify-between items-end">
             <TouchableOpacity
-              onPress={() => addToCart(product, null, null)}
+              onPress={handleAddToCart}
               activeOpacity={0.8}
               className="px-4 py-2 bg-[#b89354] rounded-full flex-row justify-start items-center gap-1"
             >
               <Text className="text-center text-white text-base font-body">
                 إضافة للحقيبة
               </Text>
-              <SimpleLineIcons name={"handbag"} size={14} color={"#fff"} />
+              <SimpleLineIcons name="handbag" size={14} color="#fff" />
             </TouchableOpacity>
 
             <View className="flex-col justify-start items-end">
@@ -81,19 +89,19 @@ const FavorisItem = ({ product }: FavorisItemsProps) => {
       </View>
 
       {/* Product image */}
-      <View className="w-28 h-32 rounded-lg overflow-hidden">
+      <Pressable onPress={handleNavigate} className="w-28 h-32 rounded-lg overflow-hidden bg-gray-100">
         <Image
-          className="w-28 h-32 rounded-lg"
-          source={
-
-               { uri: imageUri }
-          }
-        style={{ width: 112, height: 128 }}
-          resizeMode="cover"
+          source={{ uri: imageUri }}
+          style={{ width: 112, height: 128 }}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          transition={200}
         />
-      </View>
+      </Pressable>
     </View>
   );
-};
+});
+
+FavorisItem.displayName = "FavorisItem";
 
 export default FavorisItem;

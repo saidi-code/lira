@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collectionApi } from '../config/collectionApi';
-import {api} from "../config/apiQuery"
-// import { Collection, CreateCollectionInput, UpdateCollectionInput } from '../types/collection';
+import { api } from "../config/api";
 
 // Keys for caching
 export const collectionKeys = {
@@ -13,14 +12,14 @@ export const collectionKeys = {
 };
 
 // ------------------- Queries -------------------
-export const useCollections = (filters) => {
+export const useCollections = (filters?: Record<string, any>) => {
   return useQuery({
     queryKey: ['collections', filters],
-    // queryFn: () => collectionApi.getAll(params),
-    queryFn: async () =>{
-      const res = await api.get(`/collections`,{params:{...filters}});
+    queryFn: async () => {
+      const res = await api.get(`/collections`, { params: filters });
       return res.data;
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 };
 

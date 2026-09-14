@@ -81,18 +81,14 @@ const Wishlist = () => {
           </View>
         ) : (
           // Favoris Items Container
-          <>
             <View className="m-6">
-              <FlatList
-                data={favorisItem as any[]}
-                keyExtractor={(item: any, index) => String(item?._id ?? index)}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <FavorisItem key={item?.productId ?? item?._id} product={item?.product} />
-                )}
-              />
+              {favorisItem.map((item, index) => (
+                <FavorisItem
+                  key={item.productId || `fav-${index}`}
+                  product={item.product as any}
+                />
+              ))}
             </View>
-          </>
         )}
       </ScrollView>
     </SafeAreaView>

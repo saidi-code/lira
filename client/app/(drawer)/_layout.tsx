@@ -1,4 +1,4 @@
-import { Drawer } from 'expo-router/drawer';
+import {Drawer} from "@/config/Drawer/Drawer";
 import {
   DrawerContentScrollView,
   DrawerItemList,
@@ -40,6 +40,7 @@ function CustomDrawerContent(props: any) {
   };
 
   return (
+    
     <DrawerContentScrollView
       {...props}
       contentContainerStyle={styles.drawerContainer}
@@ -126,6 +127,7 @@ function CustomDrawerContent(props: any) {
         </View>
       </View>
     </DrawerContentScrollView>
+   
   );
 }
 
@@ -140,7 +142,7 @@ export default function DrawerLayout() {
         // You can customize the header toggle button here too
       }}
     >
-  
+   {/* <Drawer.Screen name="(tabs)" options={{ title: 'Home' }} /> */}
       {/* Add more screens as needed */}
       {/* <Drawer.Screen name="profile" options={{ title: 'Profile' }} /> */}
     </Drawer>
@@ -151,8 +153,6 @@ export default function DrawerLayout() {
 const styles = StyleSheet.create({
   drawerContainer: {
     flex: 1,
-  
-   
   },
   header: {
     paddingHorizontal: 20,

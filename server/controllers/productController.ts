@@ -1,40 +1,50 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Product from "../models/Products.js";
-import Category from "../models/Categories.js"
+import Category from "../models/Categories.js";
 import cloudinary from "../config/cloundinary.js";
-
-
-import cache from '../utils/cache.js'; // Import du cache
+import cache from '../utils/cache.js';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    // 1. Récupérer les paramètres de pagination
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    
-    // 2. Construire la clé de cache UNIQUE pour cette page
-    // const cacheKey = `products:list:page:${page}:limit:${limit}`;
-    
-    // 3. Essayer de récupérer depuis le cache
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
+    const { category } = req.query;
 
-    // const cachedData = cache.get(cacheKey);
-    // if (cachedData) {
-    //   console.log(`✅ Cache hit pour ${cacheKey}`);
-    //   return res.json(cachedData);
-    // }
-    
-    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
-    
-    // 4. Requête en base de données
-    const query = { isActive: true };
-    const total = await Product.countDocuments(query);
-    const products = await Product.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate('category', 'title icon');
-    
-    // 5. Construire la réponse
-    const responseData = {
+    const query: any = { isActive: true };
+
+    if (category && typeof category === 'string' && category.trim() && category !== 'الكل') {
+      const trimmedCategory = category.trim();
+      if (mongoose.Types.ObjectId.isValid(trimmedCategory)) {
+        query.category = trimmedCategory;
+      } else {
+        const categoryDoc = await Category.findOne({
+          title: { $regex: new RegExp(`^${trimmedCategory}$`, 'i') },
+        }).select('_id').lean();
+
+        if (categoryDoc) {
+          query.category = categoryDoc._id;
+        } else {
+          return res.json({
+            success: true,
+            data: [],
+            pagination: { total: 0, page, pages: 0 },
+          });
+        }
+      }
+    }
+
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .populate('category', 'title icon')
+        .lean(),
+      Product.countDocuments(query),
+    ]);
+
+    return res.json({
       success: true,
       data: products,
       pagination: {
@@ -42,17 +52,10 @@ export const getProducts = async (req: Request, res: Response) => {
         page,
         pages: Math.ceil(total / limit),
       },
-    };
-    
-    // 6. Mettre en cache pour 1 heure (3600 secondes)
-    // cache.set(cacheKey, responseData, 3600);
-    
-    // 7. Renvoyer la réponse
-    res.json(responseData);
-    
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Error fetching products',
       error: error instanceof Error ? error.message : error,
@@ -60,25 +63,20 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
-
 export const searchProducts = async (req: Request, res: Response) => {
   try {
     const {
       q,
       page = 1,
       limit = 10,
-      category,           // This is a title, e.g. "مجوهرات"
+      category,
       minPrice,
       maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
 
-    // ---------- Build the filter ----------
-    const filter: any = {};
+    const filter: any = { isActive: true };
 
     // Text search
     if (q && typeof q === 'string' && q.trim()) {
@@ -91,22 +89,25 @@ export const searchProducts = async (req: Request, res: Response) => {
       ];
     }
 
-    // ---------- Category filter (convert title → ObjectId) ----------
-    if (category && typeof category === 'string') {
-      // Find the category document with this title (case‑insensitive)
-      const categoryDoc = await Category.findOne({
-        title: { $regex: new RegExp(`^${category.trim()}$`, 'i') }
-      });
-
-      if (categoryDoc) {
-        filter.category = categoryDoc._id; // Use the ObjectId
+    // Category filter
+    if (category && typeof category === 'string' && category.trim() && category !== 'الكل') {
+      const trimmedCategory = category.trim();
+      if (mongoose.Types.ObjectId.isValid(trimmedCategory)) {
+        filter.category = trimmedCategory;
       } else {
-        // No category with that title → return empty results
-        return res.status(200).json({
-          success: true,
-          data: [],
-          pagination: { total: 0, page: Number(page), limit: Number(limit), totalPages: 0 },
-        });
+        const categoryDoc = await Category.findOne({
+          title: { $regex: new RegExp(`^${trimmedCategory}$`, 'i') },
+        }).select('_id').lean();
+
+        if (categoryDoc) {
+          filter.category = categoryDoc._id;
+        } else {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            pagination: { total: 0, page: Number(page), limit: Number(limit), totalPages: 0 },
+          });
+        }
       }
     }
 
@@ -117,27 +118,28 @@ export const searchProducts = async (req: Request, res: Response) => {
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // ---------- Pagination ----------
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = parseInt(limit as string, 10) || 10;
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit as string, 10) || 10));
     const skip = (pageNum - 1) * limitNum;
 
-    // ---------- Sorting ----------
     const sort: any = {};
     const sortField = (sortBy as string) || 'createdAt';
     const sortDirection = (sortOrder as string) === 'asc' ? 1 : -1;
     sort[sortField] = sortDirection;
 
-    // ---------- Execute query ----------
-    const products = await Product.find(filter?filter:{})
-      .populate('category', 'title icon')
-      .skip(skip)
-      .limit(limitNum)
-      .sort(sort);
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('category', 'title icon')
+        .skip(skip)
+        .limit(limitNum)
+        .sort(sort)
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+    console.log("url", req.originalUrl);
+console.log(filter, 'filter');
 
-    const total = await Product.countDocuments(filter);
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: products,
       pagination: {
@@ -149,43 +151,30 @@ export const searchProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Search error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-// controllers/productController.ts
-
 
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // const cacheKey = `product:${id}`;
 
-    // // 1. Essayer de récupérer depuis le cache
-    // const cachedProduct = cache.get(cacheKey);
-    // if (cachedProduct) {
-    //   console.log(`✅ Cache hit pour ${cacheKey}`);
-    //   return res.json({ success: true, data: cachedProduct });
-    // }
+    if (typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid product ID' });
+    }
 
-    // console.log(`🔄 Cache miss pour ${cacheKey}, requête DB...`);
+    const product = await Product.findById(id)
+      .populate('category', 'title icon')
+      .lean();
 
-    // 2. Requête en base de données
-    const product = await Product.findById(id).populate('category', 'title icon');
-
-    // 3. Si le produit n'existe pas ou n'est pas actif, on ne le met pas en cache
     if (!product || !product.isActive) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // 4. Mettre en cache pour 1 heure (3600 secondes)
-    // cache.set(cacheKey, product, 3600);
-
-    // 5. Renvoyer la réponse
-    res.json({ success: true, data: product || [] });
-
+    return res.json({ success: true, data: product });
   } catch (error) {
     console.error('Error fetching product by id:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Error fetching product',
       error: error instanceof Error ? error.message : error,

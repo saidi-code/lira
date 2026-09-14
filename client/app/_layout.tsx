@@ -11,15 +11,26 @@ import { toastConfig } from "../constants/config";
 import { CartProvider } from "../context/CartContext";
 import { FavorisProvider } from "../context/FavorisContext";
 import "../global.css";
+
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
   throw new Error("Add your Clerk Publishable Key to the .env file");
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      cacheTime: 1000 * 60 * 15,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 export default function RootLayout() {
+
   const [fontsLoaded] = useFonts({
     "jazera-bold": require("../assets/fonts/Al-Jazeera-Arabic-Bold.ttf"),
     "tajwal-meduim": require("../assets/fonts/Tajawal-Medium.ttf"),

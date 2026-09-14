@@ -52,14 +52,15 @@ export const getCollections = async (req: Request, res: Response) => {
       filter.isFeatured = req.query.isFeatured === 'true';
     }
 
-    const collections = await Collection.find(filter)
-      .populate('products','product.category') // populates product details
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate({ path: 'products', populate: { path: 'category' } });
-
-    const total = await Collection.countDocuments(filter);
+    const [collections, total] = await Promise.all([
+      Collection.find(filter)
+        .populate({ path: 'products', populate: { path: 'category', select: 'title icon' } })
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean(),
+      Collection.countDocuments(filter),
+    ]);
 
     return res.status(200).json({
       data: collections,
@@ -76,7 +77,6 @@ export const getCollections = async (req: Request, res: Response) => {
   }
 };
 
-
 // ----------------------------------------
 // READ a single collection by ID
 // ----------------------------------------
@@ -84,11 +84,13 @@ export const getCollectionById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid collection ID' });
     }
 
-    const collection = await Collection.findById(id).populate('products');
+    const collection = await Collection.findById(id)
+      .populate({ path: 'products', populate: { path: 'category', select: 'title icon' } })
+      .lean();
 
     if (!collection) {
       return res.status(404).json({ error: 'Collection not found' });
@@ -109,7 +111,7 @@ export const updateCollection = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid collection ID' });
     }
 
@@ -125,7 +127,7 @@ export const updateCollection = async (req: Request, res: Response) => {
     const updated = await Collection.findByIdAndUpdate(id, updateData, {
       new: true, // return updated document
       runValidators: true, // enforce schema validation
-    }).populate('products');
+    }).populate({ path: 'products', populate: { path: 'category', select: 'title icon' } });
 
     if (!updated) {
       return res.status(404).json({ error: 'Collection not found' });
@@ -146,7 +148,7 @@ export const deleteCollection = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid collection ID' });
     }
 

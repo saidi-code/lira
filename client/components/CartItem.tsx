@@ -1,32 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect,useState } from "react";
-import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState, useCallback, memo } from "react";
+import { Pressable, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
 import { CURRENCY } from "../constants/index";
 import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
-const CartItem = ({ item, removeItem, updateItemQuantity, loading }: CartItemProps) => {
+const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) => {
   const [quantity, setQuantity] = useState(item?.quantity ?? 1);
-const addQuantity = () => {
-  const newQuantity = quantity + 1;
-  setQuantity(newQuantity);
-  updateItemQuantity( item._id, newQuantity, item.size ?? null, item.color ?? null);
-}
-const subtractQuantity = () => {
-  if (quantity <= 1) return;
-  const newQuantity = quantity - 1;
-  setQuantity(newQuantity);
-  updateItemQuantity( item._id, newQuantity, item.size ?? null, item.color ?? null);
-} 
 
-useEffect(() => {
-  setQuantity(item?.quantity ?? 1);
-}, [item?.quantity]);
+  useEffect(() => {
+    setQuantity(item?.quantity ?? 1);
+  }, [item?.quantity]);
 
+  const addQuantity = useCallback(() => {
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    updateItemQuantity(item._id, newQuantity, item.size ?? null, item.color ?? null);
+  }, [item._id, item.size, item.color, quantity, updateItemQuantity]);
+
+  const subtractQuantity = useCallback(() => {
+    if (quantity <= 1) return;
+    const newQuantity = quantity - 1;
+    setQuantity(newQuantity);
+    updateItemQuantity(item._id, newQuantity, item.size ?? null, item.color ?? null);
+  }, [item._id, item.size, item.color, quantity, updateItemQuantity]);
 
   const isVariable = item?.product?.type === "variable";
- const isProductHasColors = item?.product?.colors?.length > 0 
- const isProductHasSizes = item?.product?.colors?.sizes > 0
+  const isProductHasColors = Boolean(item?.color);
+  const isProductHasSizes = Boolean(item?.size);
+
+  const imageUri =
+    item?.product?.images?.[0] ?? item?.product?.colors?.[0]?.images?.[0];
 
   return (
     <View
@@ -38,7 +43,6 @@ useEffect(() => {
         elevation: 4,
         backgroundColor: "#fff",
         marginBottom: 24,
-        display: "flex",
         width: "100%",
         flexDirection: "row",
         borderRadius: 20,
@@ -52,153 +56,130 @@ useEffect(() => {
           removeItem(
             item?.product?._id ?? item?._id,
             item?.size ?? null,
-            item?.product?.colors?.[0]?.hex ?? item?.color ?? null,
+            item?.product?.colors?.[0]?.hex ?? item?.color ?? null
           );
         }}
-        className="absolute z-10 top-4 left-4 flex-col justify-center items-center"
+        className="absolute z-10 top-4 left-4 flex-col justify-center items-center p-1"
       >
         <Ionicons name="close-outline" color="#785920" size={20} />
       </TouchableOpacity>
 
       <View className="flex-1 flex-row justify-end gap-4 p-4">
-        <View className="flex-col ">
-          <View className="flex-col justify-start items-end mt-6 flex-1 mr-2">
+        <View className="flex-col justify-between flex-1">
+          <View className="flex-col justify-start items-end mt-4 mr-2">
             <Text
               className="text-right text-body text-lg font-body"
               numberOfLines={1}
             >
               {item?.product?.name}
             </Text>
-            <Text className="text-right text-primary-600 text-xs  font-medium tracking-wide ">
+            <Text className="text-right text-primary-600 text-xs font-medium tracking-wide">
               {item?.product?.subtitle}
             </Text>
 
             {/* Selected variant values */}
             {isVariable && (
-              <View className="gap-1">
-                {/*
-                  item.color = color name coming from backend
-                  We find the color object inside product.colors to display its HEX.
-                */}
-              {
-                isProductHasColors && ( <View className=" items-center flex-row-reverse gap-1 ">
-                  <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                    اللون:
-                  </Text>
-
-                  <View
-                    className="h-4 w-4 rounded-md"
-                    style={{
-                      backgroundColor: 
-                        (item as any)?.product?.colors?.find(
-                          (c: any) => c?.name === item?.color
-                        )?.hex ?? "#000",
-                      outlineWidth: 1,
-                      outlineColor:"#B89354",
-                      shadowColor: "#fff",
-                      shadowOpacity: 0.2,
-                      shadowRadius: 6,
-                      elevation: 4,
-                      outlineOffset:1,
-                      margin: 4,
-                    }}
-                  />
-                </View>)
-              }
-              {
-                isProductHasSizes && (
-<View className=" items-center flex-row-reverse gap-1 ">
-                  <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
-                    المقاس:
-                  </Text>
-                  <View
-                    className="h-4 w-4 rounded-sm items-center justify-center"
-                    style={{
-                      backgroundColor: "transparent",
-                      outlineWidth: 1,
-                      outlineColor:"#B89354",
-                      shadowColor: "#fff",
-                      shadowOpacity: 0.2,
-                      shadowRadius: 6,
-                      elevation: 4,
-                      outlineOffset:1,
-                      margin: 4,
-                    }}
-                  >
-                    <Text className="text-right text-primary-600 text-xs font-medium tracking-wide  uppercase">{item?.size ?? ""}</Text>
+              <View className="gap-1 mt-1">
+                {isProductHasColors && (
+                  <View className="items-center flex-row-reverse gap-1">
+                    <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
+                      اللون:
+                    </Text>
+                    <View
+                      className="h-4 w-4 rounded-md"
+                      style={{
+                        backgroundColor:
+                          (item as any)?.product?.colors?.find(
+                            (c: any) => c?.name === item?.color
+                          )?.hex ?? "#000",
+                        borderWidth: 1,
+                        borderColor: "#B89354",
+                        margin: 2,
+                      }}
+                    />
                   </View>
-                </View>
-                )
-              }
+                )}
+                {isProductHasSizes && (
+                  <View className="items-center flex-row-reverse gap-1">
+                    <Text className="text-right text-primary-600 text-[10px] font-medium tracking-wide">
+                      المقاس:
+                    </Text>
+                    <View
+                      className="px-1 py-0.5 rounded-sm items-center justify-center"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#B89354",
+                      }}
+                    >
+                      <Text className="text-right text-primary-600 text-[10px] font-medium uppercase">
+                        {item?.size ?? ""}
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
-
-
           </View>
 
           {/* Price & Quantity Row */}
-          <View className=" flex-1 flex-row gap-4 items-center">
-            <Text className="text-right text-primary-700 text-base font-body">
-              {item?.product?.price} {CURRENCY}
-            </Text>
-
-            <View className="px-2 py-1 bg-[#fdf1ea] rounded-full flex-row justify-center items-center gap-4">
+          <View className="flex-row justify-between items-center mt-3">
+            <View className="px-2 py-1 bg-[#fdf1ea] rounded-full flex-row justify-center items-center gap-3">
               <TouchableOpacity
-                onPress={() =>
-                 subtractQuantity()
-                }
+                onPress={subtractQuantity}
                 activeOpacity={0.7}
                 className="w-5 h-5 rounded-full items-center justify-center"
-                disabled={item?.quantity <= 1}
+                disabled={quantity <= 1}
               >
                 <Ionicons name="remove-outline" color="#785920" size={12} />
               </TouchableOpacity>
 
-              <Text className="text-center text-body text-base leading-6 font-body w-[8px]">
-                {item.quantity}
+              <Text className="text-center text-body text-sm font-body min-w-[12px]">
+                {quantity}
               </Text>
 
               <TouchableOpacity
-                onPress={() =>
-                  addQuantity()
-                }
+                onPress={addQuantity}
                 activeOpacity={0.7}
                 className="w-5 h-5 rounded-full items-center justify-center"
               >
                 <Ionicons name="add-outline" color="#785920" size={12} />
               </TouchableOpacity>
             </View>
+
+            <Text className="text-right text-primary-700 text-base font-body">
+              {item?.product?.price ? item.product.price * quantity : 0} {CURRENCY}
+            </Text>
           </View>
         </View>
 
         <Pressable
           onPress={() => {
+            if (!item?.product?._id) return;
             router.push({
               pathname: "/product/[id]",
               params: {
-                id: item?.product?._id,
-                color: item?.color,
-                size: item?.size,
-                quantity: item.quantity - 1,
-              } as any,
+                id: item.product._id,
+                color: item.color ?? undefined,
+                size: item.size ?? undefined,
+              },
             });
           }}
         >
           <View className="rounded-lg overflow-hidden bg-gray-100">
             <Image
-              source={{
-                uri: item?.product?.images?.[0] ?? item?.product?.colors?.[0]?.images?.[0],
-              }}
-              style={{ width: 110, height: 110 * 1.33 }}
-              defaultSource={require("../assets/images/productLoadingImage.png")}
-              resizeMode="cover"
+              source={{ uri: imageUri }}
+              style={{ width: 100, height: 130 }}
+              cachePolicy="memory-disk"
+              contentFit="cover"
+              transition={200}
             />
           </View>
         </Pressable>
       </View>
     </View>
   );
-};
+});
+
+CartItem.displayName = "CartItem";
 
 export default CartItem;
-

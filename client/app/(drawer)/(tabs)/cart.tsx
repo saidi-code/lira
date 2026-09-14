@@ -1,34 +1,22 @@
-import ProductCard from "@/components/ProductCard";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-
 import { useRouter } from "expo-router";
+import React from "react";
 import {
-  FlatList,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,ActivityIndicator
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartItem from "../../../components/CartItem";
 import Header from "../../../components/Header";
 import OrderSummary from "../../../components/OrderSummary";
-
 import { useCart } from "../../../context/CartContext";
 
-import { useAuth } from "@clerk/clerk-expo";
-import { COLORS } from "@/constants";
-
 const Cart = () => {
-  const { isSignedIn,getToken } = useAuth();
   const router = useRouter();
-
-
-  const { cartItems, removeFromCart, updateCartItemQuantity,cartTotal,loading } =
+  const { cartItems, removeFromCart, updateCartItemQuantity, cartTotal, loading } =
     useCart();
-
-
-console.log("cartItems", cartItems);
 
 
   return (
@@ -91,23 +79,19 @@ console.log("cartItems", cartItems);
           <>
 
             {/* Cart Items Container */}
-            <FlatList
-              data={cartItems}
-              keyExtractor={(item) => String(item._id)}
-
-              scrollEnabled={false}
-              renderItem={({ item }) => (
+            <View className="mx-6 my-4">
+              {cartItems.map((item) => (
                 <CartItem
-                loading={loading}
+                  key={item._id}
+                  loading={loading}
                   item={item}
                   removeItem={removeFromCart}
-                  updateItemQuantity={(itemId, newQty, size,color) =>
-                    updateCartItemQuantity(itemId, size, color, newQty)
+                  updateItemQuantity={(itemId, newQty, size, color) =>
+                    updateCartItemQuantity(itemId, newQty, size, color)
                   }
                 />
-              )}
-              contentContainerStyle={{ margin: 24 }}
-            />
+              ))}
+            </View>
             {/* Order Summary Section */}
             <View className="flex-1 p-4 bg-[#ece0d9]/30 ">
               <OrderSummary subtotal={cartTotal} shipping={7} />

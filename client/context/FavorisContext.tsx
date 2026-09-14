@@ -1,44 +1,44 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-    IFavorisContextValue,
-    IFavorisItem,
-    IProduct,
-} from "../constants/types";
-// Favories store only the product ids (and optional size/color if you need it later)
-import axios from "../config/api";
-import {useAuth} from "@clerk/clerk-expo"
-const FavorisContext = createContext<IFavorisContextValue | undefined>(
-  undefined,
-);
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@clerk/clerk-expo";
+import { IFavorisContextValue, IFavorisItem, IProduct } from "../constants/types";
+import { apiClient } from "../config/api";
 
-export const FavorisProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+const FavorisContext = createContext<IFavorisContextValue | undefined>(undefined);
+
+export const FavorisProvider = ({ children }: { children: React.ReactNode }) => {
   const { getToken, isSignedIn } = useAuth();
   const [favorisItem, setFavorisItem] = useState<IFavorisItem[]>([]);
 
-  
-  const isLiked = useMemo(
-    () => (productId: string) =>
+  // Fast O(1) set lookup for isLiked
+  const likedSet = useMemo(() => {
+    return new Set(favorisItem.map((f) => f.productId));
+  }, [favorisItem]);
 
-      favorisItem.some((f) => f.productId === productId),
-    [favorisItem],
+  const isLiked = useCallback(
+    (productId: string) => {
+      if (!productId) return false;
+      return likedSet.has(productId);
+    },
+    [likedSet]
   );
-const getWishList = async () => {
+
+  const getWishList = useCallback(async () => {
+    if (!isSignedIn) {
+      setFavorisItem([]);
+      return;
+    }
     try {
       const token = await getToken();
-      const { data } = await axios.get("/wishlist", {
+      const { data } = await apiClient.get("/wishlist", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (data.success) {
+
+      if (data?.success) {
         const wishList = data.data;
         const itemsArray = Array.isArray(wishList?.items) ? wishList.items : [];
 
-        // `items.product` is populated by the backend (name images price category)
         const mappedFavorisItems: IFavorisItem[] = itemsArray.map((item: any) => ({
           productId: item?.product?._id ?? "",
           product: item?.product ?? undefined,
@@ -48,113 +48,108 @@ const getWishList = async () => {
       } else {
         setFavorisItem([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error Fetch Wish List", error);
     }
-  const addToFavoris = (product: IProduct) => {
-    setFavorisItem((prev) => {
-      if (prev.some((f) => f.productId === product._id)) return prev;
-      return [...prev, { productId: product._id }];
-    });
-  };
+  }, [getToken, isSignedIn]);
 
-  const removeFromFavoris = (productId: string) => {
-    setFavorisItem((prev) => prev.filter((f) => f.productId !== productId));
-  };
-  const itemsCount = favorisItem.length;
+  const addToFavoris = useCallback(
+    async (product: IProduct) => {
+      if (!product?._id) return;
 
-  return (
-    <FavorisContext.Provider
-      value={{
-        favorisItem,
-        isLiked,
-        addToFavoris,
-        removeFromFavoris,
-        toggleLike,
-        getWishList,
-        itemsCount,
-      }}
-    >
-      {children}
-    </FavorisContext.Provider>
+      // Optimistic update
+      setFavorisItem((prev) => {
+        if (prev.some((f) => f.productId === product._id)) return prev;
+        return [...prev, { productId: product._id, product }];
+      });
+
+      if (!isSignedIn) return;
+
+      try {
+        const token = await getToken();
+        await apiClient.post(
+          "/wishlist/add",
+          { productId: product._id },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Error adding to wish list:", error);
+        // Revert on error
+        getWishList();
+      }
+    },
+    [getToken, isSignedIn, getWishList]
   );
-};
-const addToFavoris = async (product: IProduct) => {
-    try {
-      const token = await getToken();
-      const { data } = await axios.post(
-        "/wishlist/add",
-        { productId: product._id },
-        {
+
+  const removeFromFavoris = useCallback(
+    async (productId: string) => {
+      if (!productId) return;
+
+      // Optimistic update
+      setFavorisItem((prev) => prev.filter((f) => f.productId !== productId));
+
+      if (!isSignedIn) return;
+
+      try {
+        const token = await getToken();
+        await apiClient.delete(`/wishlist/remove/${productId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
-      );
-      if (data.success) {
-        const wishList = data.data;
-        const itemsArray = Array.isArray(wishList?.items) ? wishList.items : [];
-        const mappedFavorisItems: IFavorisItem[] = itemsArray.map((item: any) => ({
-          productId: item?.product?._id ?? "",
-        }));
-        setFavorisItem(mappedFavorisItems);
+        });
+      } catch (error) {
+        console.error("Error removing from wish list:", error);
+        // Revert on error
+        getWishList();
       }
-    } catch (error: any) {
-      console.error("Error Add To Wish List", error);
-    }
-  };
-const removeFromFavoris = async (productId: string) => {
-    try {
-      const token = await getToken();
-      const { data } = await axios.delete(`/wishlist/remove/${productId}`, {
-        headers: {  
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (data.success) {
-        const wishList = data.data;
-        const itemsArray = Array.isArray(wishList?.items) ? wishList.items : [];
-        const mappedFavorisItems: IFavorisItem[] = itemsArray.map((item: any) => ({
-          productId: item?.product?._id ?? "",
-        }));
-        setFavorisItem(mappedFavorisItems);
+    },
+    [getToken, isSignedIn, getWishList]
+  );
+
+  const toggleLike = useCallback(
+    async (product: IProduct) => {
+      if (!product?._id) return;
+      if (isLiked(product._id)) {
+        await removeFromFavoris(product._id);
+      } else {
+        await addToFavoris(product);
       }
-    } catch (error: any) {
-      console.error("Error Remove From Wish List", error);
-    }
-  };    
-const toggleLike = async (product: IProduct) => {
-    if (isLiked(product._id)) {
-      await removeFromFavoris(product._id);
-    } else {
-      await addToFavoris(product);
-    }   
-}
-const itemsCount = favorisItem.length;
+    },
+    [isLiked, removeFromFavoris, addToFavoris]
+  );
 
   useEffect(() => {
     if (isSignedIn) {
       getWishList();
     } else {
       setFavorisItem([]);
-     
     }
-  }, [isSignedIn]);
-return <FavorisContext.Provider
-    value={{
-        favorisItem,
-        isLiked,
-        addToFavoris,
-        removeFromFavoris,
-        toggleLike,
-        getWishList,
-        itemsCount,   }}>
-      {children}
-    </FavorisContext.Provider>
-}
+  }, [isSignedIn, getWishList]);
+
+  const itemsCount = favorisItem.length;
+
+  const value = useMemo(
+    () => ({
+      favorisItem,
+      isLiked,
+      addToFavoris,
+      removeFromFavoris,
+      toggleLike,
+      getWishList,
+      itemsCount,
+    }),
+    [favorisItem, isLiked, addToFavoris, removeFromFavoris, toggleLike, getWishList, itemsCount]
+  );
+
+  return <FavorisContext.Provider value={value}>{children}</FavorisContext.Provider>;
+};
+
 export function useFavoris() {
   const ctx = useContext(FavorisContext);
   if (!ctx) throw new Error("useFavoris must be used within FavorisProvider");
   return ctx;
 }
-    
