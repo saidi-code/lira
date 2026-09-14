@@ -120,12 +120,8 @@ export const searchProducts = async (req: Request, res: Response) => {
 //color filter
 if (color && typeof color === 'string' && color.trim()) {
   const trimmedColor = color.trim();
-  
-  // Option A: Exact match (case-insensitive)
-  filter.colors = { $regex: new RegExp(`^${trimmedColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') };
-  
-  // Option B: If you want to support both "#FF0000" and "FF0000"
-  // filter.colors = { $regex: new RegExp(`^#?${trimmedColor.replace(/^#/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') };
+  const escaped = trimmedColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  filter.colors = { $regex: `^${escaped}$`, $options: 'i' };
 }
     //size filter
     if (size && typeof size === 'string' && size.trim()) {
