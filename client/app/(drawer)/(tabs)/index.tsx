@@ -108,17 +108,11 @@ export default function Index() {
     const timer = setTimeout(() => {
       performSearch({
         q: searchText.trim(),
-        category,
-        color,
-        brand,
-        size,
-        minPrice: price[0],
-        maxPrice: price[1],
+       
       });
     }, 400);
-
     return () => clearTimeout(timer);
-  }, [searchText, category, color, brand, size, price, performSearch]);
+  }, [searchText, performSearch]);
 
   const handleApplyFilters = useCallback(() => {
     performSearch({
@@ -131,7 +125,7 @@ export default function Index() {
       maxPrice: price[1],
     });
     setShowFilter(false);
-  }, [searchText, category, color, brand, size, price, performSearch]);
+  }, [searchText, category, color, brand, size, price, performSearch, setShowFilter]);
 
   const isSearchActive =
     searchText.trim().length > 0 ||
@@ -240,12 +234,12 @@ export default function Index() {
           onPress={() =>
             performSearch({
               q: searchText.trim(),
-              category,
-              color,
-              brand,
-              size,
-              minPrice: price[0],
-              maxPrice: price[1],
+              category: category === "الكل" ? "" : category,
+              color: "",
+              brand:  "",
+              size: "",
+              minPrice: price[0]|| 0,
+              maxPrice: price[1]|| 10000,
             })
           }
           className="p-4 pl-3 border-l border-stone-100"
@@ -298,6 +292,7 @@ export default function Index() {
         priceRange={price}
         setPriceRange={setPrice}
         onApply={handleApplyFilters}
+        searchResultsCount={searchResult.length}
       />
     </SafeAreaView>
   );

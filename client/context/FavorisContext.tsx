@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { IFavorisContextValue, IFavorisItem, IProduct } from "../constants/types";
 import { apiClient } from "../config/api";
@@ -22,13 +22,17 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
     [likedSet]
   );
 
+  // Clerk's getToken changes identity every render — pin it with a ref
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
   const getWishList = useCallback(async () => {
     if (!isSignedIn) {
       setFavorisItem([]);
       return;
     }
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await apiClient.get("/wishlist", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -51,7 +55,8 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
     } catch (error) {
       console.error("Error Fetch Wish List", error);
     }
-  }, [getToken, isSignedIn]);
+    // isSignedIn is the only real dep; getTokenRef is stable
+  }, [isSignedIn]);
 
   const addToFavoris = useCallback(
     async (product: IProduct) => {
@@ -66,7 +71,7 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
       if (!isSignedIn) return;
 
       try {
-        const token = await getToken();
+        const token = await getTokenRef.current();
         await apiClient.post(
           "/wishlist/add",
           { productId: product._id },
@@ -82,7 +87,7 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
         getWishList();
       }
     },
-    [getToken, isSignedIn, getWishList]
+    [isSignedIn, getWishList]
   );
 
   const removeFromFavoris = useCallback(
@@ -95,7 +100,7 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
       if (!isSignedIn) return;
 
       try {
-        const token = await getToken();
+        const token = await getTokenRef.current();
         await apiClient.delete(`/wishlist/remove/${productId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -107,7 +112,7 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
         getWishList();
       }
     },
-    [getToken, isSignedIn, getWishList]
+    [isSignedIn, getWishList]
   );
 
   const toggleLike = useCallback(
@@ -122,13 +127,20 @@ export const FavorisProvider = ({ children }: { children: React.ReactNode }) => 
     [isLiked, removeFromFavoris, addToFavoris]
   );
 
+  // Use a ref so the effect never needs getWishList in its dep array
+  // (which would cause infinite re-renders because getToken changes identity each render)
+  const getWishListRef = useRef(getWishList);
+  getWishListRef.current = getWishList;
+
   useEffect(() => {
     if (isSignedIn) {
-      getWishList();
+      getWishListRef.current();
     } else {
       setFavorisItem([]);
     }
-  }, [isSignedIn, getWishList]);
+    // Only re-run when auth state changes, not when getWishList reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   const itemsCount = favorisItem.length;
 

@@ -17,6 +17,7 @@ const brandsOptions = [
   { label: 'نسيج الشرق', value: 'نسيج الشرق' },
   { label: 'فنون يدوية', value: 'فنون يدوية' },
   { label: 'تراثنا الأصيل', value: 'تراثنا الأصيل' },
+  {label:"لطافة", value:"لطافة"},
 ];
 
 // const categoriesOptions = CATEGORIES.map((c) => ({ label: c.title, value: c.title }));
@@ -50,6 +51,7 @@ interface SearchPageProps {
 const FilterProductsModal: React.FC<SearchPageProps> = ({
   showFilterModal,
   setShowFilterModal,
+  searchResultsCount,
   selectedCategory: externalCategory,
   setSelectedCategory: externalSetCategory,
   selectedColor: externalColor,
@@ -89,10 +91,15 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
       setFetchCategoriesLoading(true);
       const res = await api.get('/categories');
       const categories = res.data || [];
+      const fetchedCategoriesOptions = await categories.map((c: any) => ({
+        label: c.title,
+        value: c._id,
+      }));
+
 
       setCategoriesOptions([
         { label: 'الكل', value: 'الكل' },
-        ...categories.map((c: any) => ({ label: c.title, value: c._id })),
+        ...fetchedCategoriesOptions
       ]);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -102,7 +109,8 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
   }; 
   const handleApply = () => {
     onApply?.();
-    // setShowFilterModal(false);
+    setShowFilterModal(false);
+  
   };
 
   const handleReset = () => {
@@ -357,7 +365,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
 
           <View className="items-end">
             <Text className="text-[#4c4542] text-[10px] font-tajwal">النتائج</Text>
-            <Text className="text-accent text-base font-tajwal">124 قطعة</Text>
+            <Text className="text-accent text-base font-tajwal"> قطعة {searchResultsCount}</Text>
           </View>
         </View>
       </View>

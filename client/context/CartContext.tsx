@@ -1,11 +1,12 @@
 import { useAuth } from "@clerk/clerk-expo";
-import {
+import React, {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { apiClient } from "../config/api";
@@ -24,6 +25,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const { getToken, isSignedIn } = useAuth();
 
+  // Clerk's getToken changes identity every render — pin it with a ref
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
   const fetchCartItems = useCallback(async () => {
     if (!isSignedIn) {
       setCartItems([]);
@@ -32,7 +37,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       setLoading(true);
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await apiClient.get("/cart", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -59,7 +64,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [getToken, isSignedIn]);
+    // isSignedIn is the only real dep; getTokenRef is stable
+  }, [isSignedIn]);
+
+  // Keep fetchCartItems ref for use in callbacks below
+  const fetchCartItemsRef = useRef(fetchCartItems);
+  fetchCartItemsRef.current = fetchCartItems;
 
   const addToCart = useCallback(
     async (
@@ -77,7 +87,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       try {
         setLoading(true);
-        const token = await getToken();
+        const token = await getTokenRef.current();
         const { data } = await apiClient.post(
           "/cart/add",
           {
@@ -94,7 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         );
 
         if (data?.success) {
-          await fetchCartItems();
+          await fetchCartItemsRef.current();
           toast.show({
             type: "successToast",
             text2: "تمت إضافة المنتج إلى السلة",
@@ -109,7 +119,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [getToken, isSignedIn, fetchCartItems]
+    [isSignedIn]
   );
 
   const removeFromCart = useCallback(
@@ -122,7 +132,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         setLoading(true);
-        const token = await getToken();
+        const token = await getTokenRef.current();
 
         const { data } = await apiClient.delete(`/cart/item/${itemId}`, {
           params: {
@@ -135,7 +145,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (data?.success) {
-          await fetchCartItems();
+          await fetchCartItemsRef.current();
         } else {
           console.error("Remove from cart failed:", data);
         }
@@ -145,7 +155,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [getToken, isSignedIn, fetchCartItems]
+    [isSignedIn]
   );
 
   const updateCartItemQuantity = useCallback(
@@ -159,7 +169,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         setLoading(true);
-        const token = await getToken();
+        const token = await getTokenRef.current();
         const rawId = itemId.includes("::") ? itemId.split("::")[0] : itemId;
         const { data } = await apiClient.put(
           `/cart/item/${rawId}`,
@@ -176,7 +186,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         );
 
         if (data?.success) {
-          await fetchCartItems();
+          await fetchCartItemsRef.current();
         } else {
           console.error("Update cart item failed:", data?.message);
         }
@@ -186,14 +196,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [getToken, isSignedIn, fetchCartItems]
+    [isSignedIn]
   );
 
   const clearCart = useCallback(async () => {
     if (!isSignedIn) return;
     try {
       setLoading(true);
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await apiClient.delete(`/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -208,21 +218,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [getToken, isSignedIn]);
+  }, [isSignedIn]);
 
   const itemCount = useMemo(
     () => cartItems.reduce((count, item) => count + item.quantity, 0),
     [cartItems]
   );
 
+  // Use ref so the effect only re-runs on auth state change
+  const fetchCartItemsEffectRef = useRef(fetchCartItems);
+  fetchCartItemsEffectRef.current = fetchCartItems;
+
   useEffect(() => {
     if (isSignedIn) {
-      fetchCartItems();
+      fetchCartItemsEffectRef.current();
     } else {
       setCartItems([]);
       setCartTotal(0);
     }
-  }, [isSignedIn, fetchCartItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   const contextValue = useMemo<ICartContext>(
     () => ({

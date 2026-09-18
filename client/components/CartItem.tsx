@@ -159,8 +159,8 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
               pathname: "/product/[id]",
               params: {
                 id: item.product._id,
-                color: item.color ?? undefined,
-                size: item.size ?? undefined,
+                color: item.color ?? "",
+                size: item.size ?? "",
               },
             });
           }}
