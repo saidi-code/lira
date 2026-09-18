@@ -24,7 +24,7 @@ export default function Index() {
   const [category, setCategory] = useState("الكل");
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
-  const [brand, setBrand] = useState("");
+  const [brand, setBrand] = useState("الكل");
   const [price, setPrice] = useState<[number, number]>([0, 2500]);
   const [searchText, setSearchText] = useState("");
   const [searchResult, setSearchResult] = useState<any[]>([]);
@@ -236,7 +236,7 @@ export default function Index() {
               q: searchText.trim(),
               category: category === "الكل" ? "" : category,
               color: "",
-              brand:  "",
+              brand:  brand === "الكل" ? "" : brand,
               size: "",
               minPrice: price[0]|| 0,
               maxPrice: price[1]|| 10000,

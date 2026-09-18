@@ -116,7 +116,7 @@ export const searchProducts = async (req: Request, res: Response) => {
       }
     }
 //brand filter
-    if (brand && typeof brand === 'string' && brand.trim()) {
+    if (brand && typeof brand === 'string' && brand.trim() && brand !== 'الكل') {
       filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
     }
 //color filter
