@@ -81,13 +81,18 @@ export const searchProducts = async (req: Request, res: Response) => {
 
     const filter: any = { isActive: true };
 
-    // Text search
-    if (q && typeof q === 'string' && q.trim()) {
-      
-      filter.$text = { 
-        $search: q.trim() 
-      };
+   
+  // Text search — matches q anywhere in name, subtitle, or description
+    if (q && typeof q === "string" && q.trim()) {
+      const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escaped, "i"); // "i" = case-insensitive
+      filter.$or = [
+        { name: { $regex: regex } },
+        { subtitle: { $regex: regex } },
+        { description: { $regex: regex } },
+      ];
     }
+
 
     // Category filter
     if (category && typeof category === 'string' && category.trim() && category !== 'الكل') {
