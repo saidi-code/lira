@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
 import { COLORS, CURRENCY } from "../../constants/index";
 import { IProduct } from "../../constants/types";
-import { useCart } from "../../context/CartContext";
+import { useCart } from "../../hooks/useCart";
 import { useProduct } from "../../hooks/useProducts";
 
 const SingleProduct = () => {
@@ -136,8 +136,8 @@ const SingleProduct = () => {
       const nextQty = (matchingCartItem.quantity ?? 0) + 1;
       updateCartItemQuantity(
         matchingCartItem._id,
-        currentVariant.size,
         nextQty,
+        currentVariant.size,
         currentVariant.color,
       );
       return;

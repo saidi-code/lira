@@ -78,6 +78,10 @@ export default function Index() {
         Object.keys(cleanParams).forEach((k) => {
           if (!cleanParams[k]) delete cleanParams[k];
         });
+        if (cleanParams.brand === "الكل") delete cleanParams.brand;
+        Object.keys(cleanParams).forEach((k) => {
+          if (!cleanParams[k]) delete cleanParams[k];
+        });
 
         const data = await api.get("/products/search", {
           params: cleanParams,
@@ -129,8 +133,10 @@ export default function Index() {
 
   const isSearchActive =
     searchText.trim().length > 0 ||
-    category !== "الكل" ||
-    Boolean(color || brand || size);
+    category !== "الكل" 
+    ||
+    brand !== "الكل" ||
+    Boolean(color || size);
 
   const rawProducts = isSearchActive ? searchResult : allProducts;
 
@@ -235,10 +241,10 @@ export default function Index() {
             performSearch({
               q: searchText.trim(),
               category: category === "الكل" ? "" : category,
-              color: "",
-              brand:  brand === "الكل" ? "" : brand,
-              size: "",
-              minPrice: price[0]|| 0,
+                color:  color === "الكل" ? "" : color,
+                brand:  brand === "الكل" ? "" : brand,
+                size:  size === "الكل" ? "" : size,
+                minPrice: price[0]|| 0,
               maxPrice: price[1]|| 10000,
             })
           }

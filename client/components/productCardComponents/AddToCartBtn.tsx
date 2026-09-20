@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View ,TouchableOpacity} from 'react-native'
 import React, { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../hooks/useCart';
 
 interface AddToCartBtnProps {
   product: any;

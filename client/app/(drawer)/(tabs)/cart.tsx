@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  FlatList,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -11,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CartItem from "../../../components/CartItem";
 import Header from "../../../components/Header";
 import OrderSummary from "../../../components/OrderSummary";
-import { useCart } from "../../../context/CartContext";
+import ProductCard from "../../../components/ProductCard";
+import { useCart } from "../../../hooks/useCart";
 
 const Cart = () => {
   const router = useRouter();
@@ -144,13 +146,13 @@ const Cart = () => {
                 data={cartItems}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                keyExtractor={(product: any, index) =>
-                  String(product?._id ?? index)
+                keyExtractor={(item: any, index: number) =>
+                  String(item?._id ?? index)
                 }
                 contentContainerStyle={{ gap: 16 }}
-                renderItem={({ item: product }) => (
+                renderItem={({ item }: { item: any }) => (
                   <View style={{ marginRight: 0 }}>
-                    <ProductCard product={product} />
+                    <ProductCard product={item?.product ?? item} />
                   </View>
                 )}
               />

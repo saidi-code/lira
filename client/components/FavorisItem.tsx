@@ -4,7 +4,7 @@ import { Text, TouchableOpacity, View, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { CURRENCY } from "../constants/index";
 import { FavorisItemsProps } from "../constants/types";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../context/FavorisContext";
 import { useRouter } from "expo-router";
 

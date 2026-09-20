@@ -19,10 +19,11 @@ export const apiClient = axios.create({
 });
 
 export const api = {
-  get: async <T = any>(endpoint: string, options?: { signal?: AbortSignal; params?: Record<string, any> }): Promise<T> => {
+  get: async <T = any>(endpoint: string, options?: { signal?: AbortSignal; params?: Record<string, any>; headers?: Record<string, string> }): Promise<T> => {
     const config: AxiosRequestConfig = {
       params: options?.params,
       signal: options?.signal,
+      headers: options?.headers,
     };
     const response = await apiClient.get<T>(endpoint, config);
     return response.data;

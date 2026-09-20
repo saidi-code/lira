@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { useCart } from "../../context/CartContext";
+import { useCart } from "../../hooks/useCart";
 import { IProduct } from "../../constants/types";
 
 type Props = {

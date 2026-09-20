@@ -239,7 +239,8 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
 export const deleteCartItem = async (req: Request, res: Response) => {
   try {
-    // const size = req.query.size as string | undefined;
+    const size = req.query.size as string | undefined;
+    const color = req.query.color as string | undefined;
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       return res
@@ -247,14 +248,30 @@ export const deleteCartItem = async (req: Request, res: Response) => {
         .json({ success: false, message: "Cart not found" });
     }
 
-    cart.items = cart.items.filter(
-      (item) =>
-        item.product.toString() !== req.params.productId,
-    );
+    const targetId = req.params.productId;
+    cart.items = (cart.items as any).filter((item: any) => {
+      const isMatchId = item._id?.toString() === targetId;
+      const isMatchProduct = item.product?.toString() === targetId;
+
+      if (isMatchId) return false;
+      if (isMatchProduct) {
+        if (size !== undefined && color !== undefined) {
+          return !(item.size === size && item.color === color);
+        }
+        if (size !== undefined) {
+          return item.size !== size;
+        }
+        if (color !== undefined) {
+          return item.color !== color;
+        }
+        return false;
+      }
+      return true;
+    });
+
     cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images price stock");
-    console.log("cart data", cart);
+    await cart.populate("items.product", "name images price stock colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

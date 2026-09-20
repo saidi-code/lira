@@ -8,8 +8,9 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../constants/config";
-import { CartProvider } from "../context/CartContext";
 import { FavorisProvider } from "../context/FavorisContext";
+import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
+import { useAuthModal } from "../hooks/useCart";
 import "../global.css";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -29,6 +30,11 @@ const queryClient = new QueryClient({
   },
 });
 
+function AuthModalContainer() {
+  const { isOpen, close } = useAuthModal();
+  return <LoginOrRegisterModal show={isOpen} setShow={close} />;
+}
+
 export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
@@ -42,26 +48,17 @@ export default function RootLayout() {
   }, [fontsLoaded]);
   return (
     <QueryClientProvider client={queryClient}>
-        <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
-          <CartProvider>
-            <FavorisProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-              <Stack screenOptions={{headerShown:false,navigationBarHidden:true}}>
-              <Stack.Screen name="(drawer)" options={{headerShown:false}} />
-             
-               {/* // screenOptions={{
-              //     headerShown: false,
-              //     // statusBarHidden:true,
-              //     navigationBarHidden:true,
-              //     statusBarHidden:false
-              //   }} */}
-              
-              </Stack>
-    </GestureHandlerRootView>
-              <Toast config={toastConfig} />
-            </FavorisProvider>
-          </CartProvider>
-        </ClerkProvider>
-      </QueryClientProvider>
+      <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
+        <FavorisProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
+              <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+            </Stack>
+          </GestureHandlerRootView>
+          <AuthModalContainer />
+          <Toast config={toastConfig} />
+        </FavorisProvider>
+      </ClerkProvider>
+    </QueryClientProvider>
   );
 }

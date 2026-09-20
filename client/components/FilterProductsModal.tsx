@@ -14,6 +14,7 @@ import { api } from '@/config/api';
 import { CURRENCY, COLORS } from '@/constants';
 
 const brandsOptions = [
+    { label: 'الكل', value: '' },
   { label: 'نسيج الشرق', value: 'نسيج الشرق' },
   { label: 'فنون يدوية', value: 'فنون يدوية' },
   { label: 'تراثنا الأصيل', value: 'تراثنا الأصيل' },

@@ -4,7 +4,7 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/index";
 import { HeaderProps } from "../constants/types";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../context/FavorisContext";
 import { DrawerToggleButton } from "@react-navigation/drawer";
 import OpenNavMenuBtn from "./OpenNavMenuBtn";
