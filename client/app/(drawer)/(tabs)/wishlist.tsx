@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import FavorisItem from "../../../components/FavorisItem";
 import Header from "../../../components/Header";
-import { useFavoris } from "../../../context/FavorisContext";
+import { useFavoris } from "../../../hooks/useFavoris";
 const Wishlist = () => {
   const router = useRouter();
   const { favorisItem, itemsCount } = useFavoris();

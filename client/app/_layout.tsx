@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../constants/config";
-import { FavorisProvider } from "../context/FavorisContext";
 import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
 import { useAuthModal } from "../hooks/useCart";
 import "../global.css";
@@ -49,15 +48,13 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
-        <FavorisProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
-              <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-            </Stack>
-          </GestureHandlerRootView>
-          <AuthModalContainer />
-          <Toast config={toastConfig} />
-        </FavorisProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
+            <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+          </Stack>
+        </GestureHandlerRootView>
+        <AuthModalContainer />
+        <Toast config={toastConfig} />
       </ClerkProvider>
     </QueryClientProvider>
   );

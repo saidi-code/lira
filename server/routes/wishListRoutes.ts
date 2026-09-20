@@ -7,5 +7,6 @@ router.use(protect);
 router.get("/", getWishList);
 router.post("/add", addToWishList);
 router.delete("/remove/:productId", removeFromWishList);
+router.delete("/:productId", removeFromWishList);
 
 export default router;

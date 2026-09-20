@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import {useFavoris} from '../../context/FavorisContext'
+import { useFavoris } from '../../hooks/useFavoris'
 import React from 'react'
 import { Ionicons } from "@expo/vector-icons";
 const AddToFavorisBtn  =({product}:any) => {

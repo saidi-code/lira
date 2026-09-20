@@ -5,7 +5,7 @@ import Product from "../models/Products.js";
 export const getWishList = async (req: Request, res: Response) => {
   try {
     let wishList = await WishList.findOne({ user: req.user._id })
-      .populate("items.product", "name images price category")
+      .populate("items.product", "name images subtitle price category stock colors type")
       .lean();
 
     if (!wishList) {
@@ -44,7 +44,7 @@ export const addToWishList = async (req: Request, res: Response) => {
       { user: req.user._id },
       { $push: { items: { product: productId } } },
       { new: true, upsert: true }
-    ).populate("items.product", "name images price category");
+    ).populate("items.product", "name images subtitle price category stock colors type");
 
     return res.json({ success: true, data: wishList });
   } catch (error: any) {
@@ -63,7 +63,7 @@ export const removeFromWishList = async (req: Request, res: Response) => {
       { user: req.user._id },
       { $pull: { items: { product: productId } } },
       { new: true }
-    ).populate("items.product", "name images price category");
+    ).populate("items.product", "name images subtitle price category stock colors type");
 
     if (!wishList) {
       return res.status(404).json({ success: false, message: "Wish List not found" });

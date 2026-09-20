@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { CURRENCY } from "../constants/index";
 import { FavorisItemsProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
-import { useFavoris } from "../context/FavorisContext";
+import { useFavoris } from "../hooks/useFavoris";
 import { useRouter } from "expo-router";
 
 const FavorisItem = memo(({ product }: FavorisItemsProps) => {

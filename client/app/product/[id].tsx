@@ -1,4 +1,4 @@
-import { useFavoris } from "@/context/FavorisContext";
+import { useFavoris } from "../../hooks/useFavoris";
 import {
   FontAwesome6,
   Ionicons,

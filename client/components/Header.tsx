@@ -5,7 +5,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/index";
 import { HeaderProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
-import { useFavoris } from "../context/FavorisContext";
+import { useFavoris } from "../hooks/useFavoris";
 import { DrawerToggleButton } from "@react-navigation/drawer";
 import OpenNavMenuBtn from "./OpenNavMenuBtn";
 const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
@@ -66,7 +66,7 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
           </TouchableOpacity>
           <TouchableOpacity
             className="relative"
-            onPress={() => router.navigate("/(tabs)/wishlist")}
+            onPress={() => router.navigate("/wishlist")}
           >
             <Ionicons
               name={favorisCount > 0 ? "heart-sharp" : "heart-outline"}
