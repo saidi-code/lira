@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 const addressSchema = new mongoose.Schema({
-user:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true,unique:true},
+user:{type:mongoose.Schema.Types.ObjectId,ref:"User",required:true},
 type:{type:String,required:true,enum:["Home","Work","Other"],default:"Other"},
 street:{type:String,required:true},
 city:{type:String,required:true},
