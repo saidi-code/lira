@@ -183,7 +183,7 @@ export default function Index() {
   );
 
   if (isLoading) {
-    return <LoadingPage />;
+    return <LoadingPage  />;
   }
 
   if (isError) {

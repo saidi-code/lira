@@ -28,7 +28,7 @@ const ProductImage = ({ product}:{product:any}) => {
       
       <Image
         source={{ uri:imageUri }}
-        style={{ width: 200, height: 200 }}
+        style={{ width:"auto", height: 150 }}
         onLoad={() => setLoaded(true)}
         onError={() => {
           setLoaded(true);

@@ -127,6 +127,10 @@ export default function Page() {
   // Display email code verification form
   if (showEmailCode) {
     return (
+     
+     <View className="flex-1 items-center justify-center pt-32 bg-surface">
+
+      <View className="flex-1 items-center justify-center">
       <View className="relative ">
         <View className="justify-center items-center w-16 h-16 rounded-full bg-[#b89354]/5 
         mb-2 absolute 
@@ -190,6 +194,9 @@ export default function Page() {
           </TouchableOpacity>
         </View>
       </View>
+      </View>
+      </View>
+     
     );
   }
 
