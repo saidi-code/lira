@@ -59,7 +59,7 @@ export const addressApi = {
    * GET /api/addresses/user
    * Get all addresses of the logged-in user (max 3)
    */
-  getMyAddresses: async (
+  getMyaddresses: async (
     token?: string | null
   ): Promise<BackendAddress[]> => {
     const res = await api.get<AddressResponse>("/addresses/user", {
