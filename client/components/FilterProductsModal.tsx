@@ -47,6 +47,7 @@ interface SearchPageProps {
   priceRange?: [number, number];
   setPriceRange?: (range: [number, number]) => void;
   onApply?: () => void;
+  searchResultsCount?: number;
 }
 
 const FilterProductsModal: React.FC<SearchPageProps> = ({

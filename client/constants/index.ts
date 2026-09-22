@@ -18,15 +18,15 @@ export const ICON_PATHS = {
 } as const;
 
 export const CATEGORIES = [
-  { title: "مجوهرات", icon: "../../assets/images/icons/diamon.svg" },
-  { title: "ساعات", icon: "../../assets/images/icons/watch.svg" },
-  { title: "عطور", icon: "../../assets/images/icons/dress.svg" },
-  { title: "ملابس", icon: "../../assets/images/icons/dress.svg" },
-  { title: "باخور", icon: "../../assets/images/icons/dress.svg" },
-  { title: "حقائب يد", icon: "../../assets/images/icons/dress.svg" },
-  { title: "إكسسوارات", icon: "../../assets/images/icons/dress.svg" },
-  { title: "أحذية", icon: "../../assets/images/icons/dress.svg" },
-  { title: "مكياج", icon: "../../assets/images/icons/dress.svg" },
+  { id: "1", name: "مجوهرات", title: "مجوهرات", icon: "../../assets/images/icons/diamon.svg" },
+  { id: "2", name: "ساعات", title: "ساعات", icon: "../../assets/images/icons/watch.svg" },
+  { id: "3", name: "عطور", title: "عطور", icon: "../../assets/images/icons/dress.svg" },
+  { id: "4", name: "ملابس", title: "ملابس", icon: "../../assets/images/icons/dress.svg" },
+  { id: "5", name: "باخور", title: "باخور", icon: "../../assets/images/icons/dress.svg" },
+  { id: "6", name: "حقائب يد", title: "حقائب يد", icon: "../../assets/images/icons/dress.svg" },
+  { id: "7", name: "إكسسوارات", title: "إكسسوارات", icon: "../../assets/images/icons/dress.svg" },
+  { id: "8", name: "أحذية", title: "أحذية", icon: "../../assets/images/icons/dress.svg" },
+  { id: "9", name: "مكياج", title: "مكياج", icon: "../../assets/images/icons/dress.svg" },
 ];
 
 export const PROFILE_MENU = [

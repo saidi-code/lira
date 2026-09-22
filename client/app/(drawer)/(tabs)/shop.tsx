@@ -33,7 +33,7 @@ export default function ShopScreen() {
             حدث خطأ أثناء تحميل البيانات
           </Text>
           <Text className="text-gray-500 text-sm mb-6">
-            {error?.message || "يرجى المحاولة مرة أخرى"}
+            {(error as Error)?.message || "يرجى المحاولة مرة أخرى"}
           </Text>
           <TouchableOpacity
             onPress={() => refetch()}

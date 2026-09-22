@@ -1,14 +1,53 @@
-// controllers/addressController.js
-import Address from "../models/Address.js";
+// controllers/addressController.ts
+import { Request, Response } from "express";
 import mongoose from "mongoose";
+import Address from "../models/Address.js";
+
+// ==================== TYPES ====================
+interface AuthUser {
+  _id: mongoose.Types.ObjectId;
+  role?: string;
+}
+
+interface AuthRequest extends Request {
+  user?: AuthUser;
+}
+
+interface CreateAddressBody {
+  type?: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phoneNumber: string;
+  isDefault?: boolean;
+}
+
+interface UpdateAddressBody {
+  type?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phoneNumber?: string;
+  isDefault?: boolean;
+}
+
+interface AddressParams {
+  id: string;
+}
 
 // ==================== CREATE ====================
 // @desc    Create a new address
 // @route   POST /api/addresses
 // @access  Private
-export const createAddress = async (req, res) => {
+export const createAddress = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
   try {
-    const { type, street, city, state, zipCode, phoneNumber, isDefault } = req.body;
+    const { type, street, city, state, zipCode, phoneNumber, isDefault } =
+      req.body as CreateAddressBody;
 
     // 1. Validate required fields
     if (!street || !city || !state || !zipCode || !phoneNumber) {
@@ -19,13 +58,14 @@ export const createAddress = async (req, res) => {
     }
 
     // 2. Count existing addresses for this user
-    const addressCount = await Address.countDocuments({ user: req.user._id });
+    const addressCount = await Address.countDocuments({ user: req.user!._id });
 
     // 3. Enforce max 3 addresses
     if (addressCount >= 3) {
       return res.status(400).json({
         success: false,
-        message: "You can only have a maximum of 3 addresses. Please delete one to add a new address.",
+        message:
+          "You can only have a maximum of 3 addresses. Please delete one to add a new address.",
       });
     }
 
@@ -34,12 +74,12 @@ export const createAddress = async (req, res) => {
 
     // 5. If setting as default, unset all other defaults
     if (shouldBeDefault) {
-      await Address.updateMany({ user: req.user._id }, { isDefault: false });
+      await Address.updateMany({ user: req.user!._id }, { isDefault: false });
     }
 
     // 6. Create the address
     const address = await Address.create({
-      user: req.user._id,
+      user: req.user!._id,
       type,
       street,
       city,
@@ -49,38 +89,41 @@ export const createAddress = async (req, res) => {
       isDefault: shouldBeDefault,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Address created successfully",
       data: address,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error creating address",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-}
+};
 
 // ==================== READ (All) ====================
 // @desc    Get all addresses
 // @route   GET /api/addresses
 // @access  Private/Admin
-export const getAllAddresses = async (req, res) => {
+export const getAllAddresses = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const addresses = await Address.find().populate("user", "name email");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: addresses.length,
       data: addresses,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching addresses",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -89,9 +132,12 @@ export const getAllAddresses = async (req, res) => {
 // @desc    Get address by user ID
 // @route   GET /api/addresses/user
 // @access  Private
-export const getAddressByUser = async (req, res) => {
+export const getAddressByUser = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
   try {
-    const addresses = await Address.find({ user: req.user._id })
+    const addresses = await Address.find({ user: req.user!._id })
       .populate("user", "name email")
       .sort({ isDefault: -1, createdAt: -1 }); // default first, then newest
 
@@ -102,16 +148,16 @@ export const getAddressByUser = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: addresses.length,
       data: addresses,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching addresses",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -120,7 +166,10 @@ export const getAddressByUser = async (req, res) => {
 // @desc    Get address by ID
 // @route   GET /api/addresses/:id
 // @access  Private
-export const getAddressById = async (req, res) => {
+export const getAddressById = async (
+  req: AuthRequest & Request<AddressParams>,
+  res: Response
+): Promise<Response> => {
   try {
     const { id } = req.params;
 
@@ -141,9 +190,10 @@ export const getAddressById = async (req, res) => {
     }
 
     // Check ownership
+    const addressUser = address.user as unknown as { _id: mongoose.Types.ObjectId };
     if (
-      address.user._id.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      addressUser._id.toString() !== req.user!._id.toString() &&
+      req.user!.role !== "admin"
     ) {
       return res.status(403).json({
         success: false,
@@ -151,15 +201,15 @@ export const getAddressById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: address,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error fetching address",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -168,11 +218,14 @@ export const getAddressById = async (req, res) => {
 // @desc    Update address
 // @route   PUT /api/addresses/:id
 // @access  Private
-export const updateAddress = async (req, res) => {
+export const updateAddress = async (
+  req: AuthRequest & Request<AddressParams>,
+  res: Response
+): Promise<Response> => {
   try {
     const { id } = req.params;
     const { type, street, city, state, zipCode, phoneNumber, isDefault } =
-      req.body;
+      req.body as UpdateAddressBody;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -192,8 +245,8 @@ export const updateAddress = async (req, res) => {
 
     // Check ownership
     if (
-      address.user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      address.user.toString() !== req.user!._id.toString() &&
+      req.user!.role !== "admin"
     ) {
       return res.status(403).json({
         success: false,
@@ -220,16 +273,16 @@ export const updateAddress = async (req, res) => {
 
     const updatedAddress = await address.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Address updated successfully",
       data: updatedAddress,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error updating address",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -238,7 +291,10 @@ export const updateAddress = async (req, res) => {
 // @desc    Delete address
 // @route   DELETE /api/addresses/:id
 // @access  Private
-export const deleteAddress = async (req, res) => {
+export const deleteAddress = async (
+  req: AuthRequest & Request<AddressParams>,
+  res: Response
+): Promise<Response> => {
   try {
     const { id } = req.params;
 
@@ -260,8 +316,8 @@ export const deleteAddress = async (req, res) => {
 
     // Check ownership
     if (
-      address.user.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
+      address.user.toString() !== req.user!._id.toString() &&
+      req.user!.role !== "admin"
     ) {
       return res.status(403).json({
         success: false,
@@ -271,15 +327,15 @@ export const deleteAddress = async (req, res) => {
 
     await address.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Address deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error deleting address",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -288,7 +344,10 @@ export const deleteAddress = async (req, res) => {
 // @desc    Set address as default
 // @route   PATCH /api/addresses/:id/default
 // @access  Private
-export const setDefaultAddress = async (req, res) => {
+export const setDefaultAddress = async (
+  req: AuthRequest & Request<AddressParams>,
+  res: Response
+): Promise<Response> => {
   try {
     const { id } = req.params;
 
@@ -309,7 +368,7 @@ export const setDefaultAddress = async (req, res) => {
     }
 
     // Check ownership
-    if (address.user.toString() !== req.user._id.toString()) {
+    if (address.user.toString() !== req.user!._id.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized",
@@ -317,24 +376,21 @@ export const setDefaultAddress = async (req, res) => {
     }
 
     // Unset all other defaults for this user
-    await Address.updateMany(
-      { user: req.user._id },
-      { isDefault: false }
-    );
+    await Address.updateMany({ user: req.user!._id }, { isDefault: false });
 
     address.isDefault = true;
     await address.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Default address set successfully",
       data: address,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error setting default address",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

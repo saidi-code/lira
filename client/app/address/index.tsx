@@ -23,7 +23,7 @@ const AddressScreen = () => {
   const [addressAddress, setAdressAdress] = useState("");
   const [addressِCodePostal, setAdressCodePostal] = useState("");
   const [addressPhone, setAddressPhone] = useState("");
-  const [selectedAddress, setSelectedAddress] = useState({});
+  const [selectedAddress, setSelectedAddress] = useState<(typeof ADDRESSES)[0] | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const handleEditAddress = (address: any) => {
     console.log(address);
@@ -219,8 +219,8 @@ const AddressScreen = () => {
                   defaultOption={
                     isEditing
                       ? {
-                          key: selectedAddress.type,
-                          value: selectedAddress.type,
+                          key: selectedAddress?.type,
+                          value: selectedAddress?.type,
                         }
                       : { key: "المنزل", value: "المنزل" }
                   }
@@ -248,7 +248,7 @@ const AddressScreen = () => {
                   numberOfLines={5}
                   multiline={true}
                   className="border border-body rounded-lg text-right p-2"
-                  value={isEditing ? selectedAddress.phone : addressPhone}
+                  value={isEditing ? selectedAddress?.phone : addressPhone}
                   onChange={(e: any) => setAddressPhone(e)}
                   placeholder="مثال:+216123456"
                   placeholderTextColor={"#3d3d3d"}
@@ -262,7 +262,7 @@ const AddressScreen = () => {
                   numberOfLines={5}
                   multiline={true}
                   className="border border-body rounded-lg text-right p-2"
-                  value={isEditing ? selectedAddress.address : addressAddress}
+                  value={isEditing ? selectedAddress?.address : addressAddress}
                   onChange={(e: any) => setAdressAdress(e)}
                   placeholder="إسم الحي, إسم الشارع, عددالمنزل مثال: حي الإسكان شارع الحرية منزل عدد 3"
                   placeholderTextColor={"#3d3d3d"}
@@ -285,8 +285,8 @@ const AddressScreen = () => {
                   defaultOption={
                     isEditing
                       ? {
-                          key: selectedAddress.country,
-                          value: selectedAddress.country,
+                          key: selectedAddress?.country,
+                          value: selectedAddress?.country,
                         }
                       : { key: "تونس", value: "تونس" }
                   }
@@ -317,8 +317,8 @@ const AddressScreen = () => {
                   defaultOption={
                     isEditing
                       ? {
-                          key: selectedAddress.state,
-                          value: selectedAddress.state,
+                          key: selectedAddress?.state,
+                          value: selectedAddress?.state,
                         }
                       : { key: "مدنين", value: "مدنين" }
                   }
@@ -334,7 +334,7 @@ const AddressScreen = () => {
                 </Text>
                 <TextInput
                   className="border border-body rounded-lg text-right px-2"
-                  value={isEditing ? selectedAddress.city : addressCity}
+                  value={isEditing ? selectedAddress?.city : addressCity}
                   onChange={(e: any) => setAddressCity(e)}
                   placeholder="إسم المدينة مثال:'بني خداش'"
                   placeholderTextColor={"#3d3d3d"}
@@ -348,7 +348,7 @@ const AddressScreen = () => {
                   className="border border-body rounded-lg text-right px-2"
                   value={
                     isEditing
-                      ? selectedAddress.addressِCodePostal
+                      ? selectedAddress?.codePostal?.toString()
                       : addressِCodePostal
                   }
                   onChange={(e: any) => setAdressCodePostal(e)}

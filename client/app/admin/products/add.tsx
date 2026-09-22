@@ -75,7 +75,7 @@ export default function AddProduct() {
         sizes,
       };
       Object.entries(fields).forEach(([key, value]) =>
-        formData.append(key, value),
+        formData.append(key, String(value)),
       );
       // send images
       for (const [i, uri] of images.entries()) {
