@@ -4,7 +4,7 @@ import cartRouter from './CartRoutes.js';
 import wishListRoutes from './wishListRoutes.js';
 import collectionsRouter from './collectionsRoutes.js';
 import categoriesRouter from './categoriesRoutes.js';
-import addressesRoutes from "./adressRoutes.js"
+import addressesRoutes from "./addressesRoutes.js"
 import ordersRoutes from "./OrderRoutes.js"
 import clerkWebhook from "../controllers/webhooks.js";
 const router = express.Router();
