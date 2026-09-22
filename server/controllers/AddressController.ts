@@ -138,7 +138,8 @@ export const getAddressByUser = async (
 ): Promise<Response> => {
   try {
     console.log("req address user ID", req.user!._id)
-    const addresses = await Address.find({ user: req.user!._id })
+    // const addresses = await Address.find({ user: req.user!._id })
+    const addresses = await Address.find({ user: "6aad6a58245810a619265d96"})
       .populate("user", "name email")
       .sort({ isDefault: -1, createdAt: -1 }); // default first, then newest
 
