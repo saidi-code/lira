@@ -10,10 +10,10 @@ import clerkWebhook from "../controllers/webhooks.js";
 const router = express.Router();
 router.post('/clerk', express.raw({ type: 'application/json' }),clerkWebhook) 
 router.use('/products', productsRouter); 
+router.use('/addresses',addressesRoutes)
 router.use('/cart', cartRouter);
 router.use('/wishlist', wishListRoutes);
 router.use('/collections', collectionsRouter);
 router.use('/categories', categoriesRouter);
 router.use('/orders',ordersRoutes)
-router.use('/addresses',addressesRoutes)
 export default router;

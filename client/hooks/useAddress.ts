@@ -42,7 +42,7 @@ export function useAddressesQuery() {
     queryFn: async () => {
       if (!isSignedIn) return [];
       const token = await getToken();
-      return addressApi.getMyAddresses(token);
+      return addressApi.getMyaddresses(token);
     },
     enabled: Boolean(isSignedIn),
     staleTime: 1000 * 60 * 2,

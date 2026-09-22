@@ -263,7 +263,7 @@ export const updateAddress = async (
     }
 
     // Update fields (only if provided)
-    if (type) address.type = type;
+    if (type) address.type = type ;
     if (street) address.street = street;
     if (city) address.city = city;
     if (state) address.state = state;

@@ -53,7 +53,7 @@ const authHeaders = (token?: string | null) =>
 // ==================== API ====================
 export const addressApi = {
   /** GET /addresses/user — logged-in user's addresses (max 3) */
-  getMyAddresses: async (
+  getMyaddresses: async (
     token?: string | null
   ): Promise<BackendAddress[]> => {
     const res = await api.get<AddressResponse>("/addresses/user", {
