@@ -2,7 +2,6 @@
 import { api } from "./api";
 
 // ==================== Types ====================
-
 export interface BackendAddress {
   _id: string;
   user?: string;
@@ -48,31 +47,23 @@ export interface DeleteAddressInput {
 }
 
 // ==================== Helpers ====================
-
 const authHeaders = (token?: string | null) =>
   token ? { Authorization: `Bearer ${token}` } : undefined;
 
 // ==================== API ====================
-
 export const addressApi = {
-  /**
-   * GET /api/addresses/user
-   * Get all addresses of the logged-in user (max 3)
-   */
-  getMyaddresses: async (
+  /** GET /addresses/user — logged-in user's addresses (max 3) */
+  getMyAddresses: async (
     token?: string | null
   ): Promise<BackendAddress[]> => {
     const res = await api.get<AddressResponse>("/addresses/user", {
       headers: authHeaders(token),
     });
-    // data can be an array for this endpoint
-    return Array.isArray(res.data.data) ? res.data.data : [];
+    // NOTE: `api.get` already returns the JSON body, so use `res.data`
+    return Array.isArray(res.data) ? res.data : [];
   },
 
-  /**
-   * GET /api/addresses/:id
-   * Get a single address by id
-   */
+  /** GET /addresses/:id */
   getAddressById: async (
     addressId: string,
     token?: string | null
@@ -80,13 +71,10 @@ export const addressApi = {
     const res = await api.get<AddressResponse>(`/addresses/${addressId}`, {
       headers: authHeaders(token),
     });
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
-  /**
-   * POST /api/addresses
-   * Create a new address (max 3 per user)
-   */
+  /** POST /addresses */
   addAddress: async (
     payload: AddAddressInput,
     token?: string | null
@@ -104,13 +92,10 @@ export const addressApi = {
       },
       { headers: authHeaders(token) }
     );
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
-  /**
-   * PUT /api/addresses/:id
-   * Update an existing address
-   */
+  /** PUT /addresses/:id */
   updateAddress: async (
     addressId: string,
     payload: UpdateAddressInput,
@@ -129,13 +114,10 @@ export const addressApi = {
       },
       { headers: authHeaders(token) }
     );
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
-  /**
-   * DELETE /api/addresses/:id
-   * Delete an address
-   */
+  /** DELETE /addresses/:id */
   deleteAddress: async (
     addressId: string,
     token?: string | null
@@ -143,13 +125,10 @@ export const addressApi = {
     const res = await api.delete<AddressResponse>(`/addresses/${addressId}`, {
       headers: authHeaders(token),
     });
-    return { success: res.data.success, message: res.data.message };
+    return { success: res.success, message: res.message };
   },
 
-  /**
-   * PATCH /api/addresses/:id/default
-   * Set an address as the default one
-   */
+  /** PATCH /addresses/:id/default */
   setDefaultAddress: async (
     addressId: string,
     token?: string | null
@@ -159,6 +138,6 @@ export const addressApi = {
       {},
       { headers: authHeaders(token) }
     );
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 };

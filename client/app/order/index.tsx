@@ -1,11 +1,10 @@
 import { View, Text } from 'react-native'
-import React,{useEffect} from 'react'
+import React from 'react'
 import {useOrder} from '@/hooks/useOrder'
 const Index = () => {
-    const {orders}= useOrder()
-   useEffect(()=>{
+ const {orders}=useOrder()
     console.log(orders)
-   },[orders])
+
   return (
     <View>
       <Text>order index page </Text>

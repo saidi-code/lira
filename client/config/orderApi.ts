@@ -112,6 +112,7 @@ export const orderApi = {
     const res = await api.post<OrderResponse>("/orders", payload, {
       headers: authHeaders(token),
     });
+    console.log("create order response",res)
     return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
   },
 

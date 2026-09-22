@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import {useAddressesQuery} from "@/hooks/useAddress"
 import { SelectList } from "react-native-dropdown-select-list";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,6 +36,8 @@ const AddressScreen = () => {
     setOpenModal(false);
     showSuccessToast();
   };
+  const {addresses} = useAddressesQuery()
+  console.log(addresses)
   return (
     <SafeAreaView className="flex-1 bg-red-50" edges={["top"]}>
       <Header showBack />

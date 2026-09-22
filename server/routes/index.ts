@@ -14,6 +14,6 @@ router.use('/cart', cartRouter);
 router.use('/wishlist', wishListRoutes);
 router.use('/collections', collectionsRouter);
 router.use('/categories', categoriesRouter);
-router.use('/addresses',addressesRoutes)
 router.use('/orders',ordersRoutes)
+router.use('/addresses',addressesRoutes)
 export default router;
