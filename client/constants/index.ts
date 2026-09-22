@@ -30,7 +30,7 @@ export const CATEGORIES = [
 ];
 
 export const PROFILE_MENU = [
-  { id: 1, title: "طلباتي", icon: "cube-sharp", route: "/orders" },
+  { id: 1, title: "طلباتي", icon: "cube-sharp", route: "/order" },
   {
     id: 2,
     title: "عناوين الشحن",

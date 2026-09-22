@@ -11,9 +11,9 @@ import {
   Pagination,
   PaymentStatus,
 } from "../config/orderApi";
-import { openAuthModal } from "./useCart";
-import { cartKeys } from "./useCart";
-import { addressKeys } from "./useAddress";
+import { openAuthModal,cartKeys } from "../hooks/useCart";
+
+import { addressKeys } from "../hooks/useAddress";
 
 // ==========================================
 // 1. Query Keys
