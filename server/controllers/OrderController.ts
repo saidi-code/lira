@@ -42,9 +42,12 @@ interface CreateOrderBody {
   tax?: number;
 }
 
+type OrderStatus = "placed" | "processing" | "shipped" | "delivered" | "cancelled";
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
 interface UpdateOrderStatusBody {
-  orderStatus?: string;
-  paymentStatus?: string;
+  orderStatus?: OrderStatus;
+  paymentStatus?: PaymentStatus;
 }
 
 interface OrderParams {
@@ -162,7 +165,7 @@ export const createOrder = async (
       orderItems.push({
         product: product._id,
         name: product.name,
-        image: product.images?.[0] ?? product.image,
+        image: product.images?.[0],
         price,
         quantity,
         size: item.size ?? null,
@@ -348,7 +351,7 @@ export const getAllOrders = async (
 // @route   PUT /api/orders/:id/status
 // @access  Admin
 export const updateOrderStatus = async (
-  req: Request<OrderParams, {}, UpdateOrderStatusBody>,
+  req: AuthRequest & Request<OrderParams, {}, UpdateOrderStatusBody>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -468,7 +471,7 @@ export const cancelOrder = async (
 // @route   DELETE /api/orders/:id
 // @access  Admin
 export const deleteOrder = async (
-  req: Request<OrderParams>,
+  req: AuthRequest & Request<OrderParams>,
   res: Response
 ): Promise<Response> => {
   try {

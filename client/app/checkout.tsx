@@ -77,7 +77,9 @@ const CheckoutScreen = () => {
 
     if (order) {
       await clearCart();
-      router.replace(`/order-success?orderId=${order._id}`);
+      router.replace(`/order?orderId=${order._id}`);
+      // Note: orders list shows a success banner for this orderId;
+      // users can tap through to /order/[id] for full details.
     }
   };
 
@@ -109,7 +111,7 @@ const CheckoutScreen = () => {
         </Text>
         <TouchableOpacity
           style={styles.primaryBtn}
-          onPress={() => router.push("/addresses/new")}
+          onPress={() => router.push("/address")}
         >
           <Text style={styles.primaryBtnText}>إضافة عنوان</Text>
         </TouchableOpacity>
@@ -158,7 +160,7 @@ const CheckoutScreen = () => {
 
       <TouchableOpacity
         style={styles.secondaryBtn}
-        onPress={() => router.push("/addresses/new")}
+        onPress={() => router.push("/address")}
         activeOpacity={0.8}
       >
         <Text style={styles.secondaryBtnText}>+ إضافة عنوان جديد</Text>

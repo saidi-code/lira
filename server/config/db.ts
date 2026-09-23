@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Product from "../models/Product.js"; // adjust path to your Product model
-// import Category from "../models/Category.js"; // add other models if needed
 
 dotenv.config();
 

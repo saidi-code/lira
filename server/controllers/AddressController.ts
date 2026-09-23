@@ -139,7 +139,7 @@ export const getAddressByUser = async (
   try {
     console.log("req address user ID", req.user!._id)
     // const addresses = await Address.find({ user: req.user!._id })
-    const addresses = await Address.find({ user: req.user._id})
+    const addresses = await Address.find({ user: req.user!._id})
       .populate("user", "name email")
       .sort({ isDefault: -1, createdAt: -1 }); // default first, then newest
 
@@ -265,7 +265,9 @@ export const updateAddress = async (
     }
 
     // Update fields (only if provided)
-    if (type) address.type = type ;
+    if (type && ["Home", "Work", "Other"].includes(type)) {
+      address.type = type as "Home" | "Work" | "Other";
+    }
     if (street) address.street = street;
     if (city) address.city = city;
     if (state) address.state = state;

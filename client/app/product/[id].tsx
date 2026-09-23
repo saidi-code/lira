@@ -23,6 +23,7 @@ import { COLORS, CURRENCY } from "../../constants/index";
 import { IProduct } from "../../constants/types";
 import { useCart } from "../../hooks/useCart";
 import { useProduct } from "../../hooks/useProducts";
+import ReviewsSection from "../../components/ReviewsSection";
 
 const SingleProduct = () => {
   const { addToCart, updateCartItemQuantity, cartItems } = useCart();
@@ -387,6 +388,9 @@ const SingleProduct = () => {
             </View>
           </View>
         </View>
+
+      {/* ============ تقييمات المنتج (تُحقن قبل تفاصيل إضافية) ============ */}
+      <ReviewsSection productId={product._id} />
 
         <View className="pb-32 mt-16 px-4 bg-white rounded-t-[32px] shadow-lg mb-12">
           <Text className="text-right text-body text-2xl font-tajwal font-medium my-6">

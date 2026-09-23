@@ -7,6 +7,8 @@ export const COLORS = {
   surface: "#ECE0D9",
   inactive: "#A8A29E",
   active: "#B45309",
+  white: "#FFFFFF",
+  skeleton: "#E5E7EB",
 };
 
 export const CURRENCY = "د.ت";
@@ -37,9 +39,14 @@ export const PROFILE_MENU = [
     icon: "location-outline",
     route: "/address",
   },
-  { id: 4, title: "تقيماتي", icon: "star-outline", route: "/" },
-  { id: 5, title: "طرق الدفع", icon: "cash-outline", route: "/" },
-  { id: 6, title: "الإعدادات", icon: "settings-outline", route: "/settings" },
+  { id: 3, title: "تقيماتي", icon: "star-outline", route: "/reviews" },
+  {
+    id: 4,
+    title: "طرق الدفع",
+    icon: "cash-outline",
+    route: "/payment-methods",
+  },
+  { id: 5, title: "الإعدادات", icon: "settings-outline", route: "/settings" },
 ];
 
 export const ADDRESSES = [

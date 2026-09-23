@@ -1,5 +1,18 @@
 // api/products.ts
-import { api } from './apiQuery';
+import { api } from './api';
+import type { IProduct } from '../constants/types';
+
+// Shape returned by GET /api/v1/products/search
+interface SearchResponseBody {
+  success?: boolean;
+  data?: IProduct[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit?: number;
+    totalPages?: number;
+  };
+}
 
 export const searchProducts = async ({
   query,
@@ -23,10 +36,11 @@ export const searchProducts = async ({
     ...(maxPrice && { maxPrice: String(maxPrice) }),
   });
 
-  const response = await  api.get(`/products/search?${params}`, {
+  const body = await api.get<SearchResponseBody>(`/products/search?${params}`, {
     signal, // 👈 passes AbortSignal to axios
   });
 
-  // Adjust to your API response shape
-  return response.data; // { products: [...], pagination: {...} }
+  // The API responds with { success, data, pagination } — expose it as
+  // { products, pagination } which useDebouncedSearch expects.
+  return { products: body.data ?? [], pagination: body.pagination };
 };

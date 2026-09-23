@@ -16,46 +16,80 @@ import { SelectList } from "react-native-dropdown-select-list";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {useAddAddress} from "@/hooks/useAddress"
+import { BackendAddress } from "@/config/addressApi";
+
+// The address-type dropdown works with Arabic labels, while the API
+// expects the English enum from the Address model.
+const ADDRESS_TYPE_MAP: Partial<Record<string, "Home" | "Work" | "Other">> = {
+  "المنزل": "Home",
+  "المكتب": "Work",
+  "أخري": "Other",
+};
 
 const AddressScreen = () => {
-  const {mutate,isError} = useAddAddress()
+  const {
+    addresses,
+    isLoading,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    canAddMore,
+  } = useAddress();
   const [openModal, setOpenModal] = useState(false);
-  const [addressType, setAddressType] = useState("");
+  const [addressType, setAddressType] = useState("المنزل");
   const [addressCountry, setAddressCountry] = useState("");
   const [addressState, setAdressState] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [addressAddress, setAdressAdress] = useState("");
   const [addressCodePostal, setAdressCodePostal] = useState("");
   const [addressPhone, setAddressPhone] = useState("");
-  const [selectedAddress, setSelectedAddress] = useState<(typeof ADDRESSES)[0] | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<BackendAddress | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const handleEditAddress = (address: any) => {
-    console.log(address);
+  const handleEditAddress = (address: BackendAddress) => {
     setIsEditing(true);
     setSelectedAddress(address);
+    // Prefill the form from the existing address
+    setAddressType(
+      Object.entries(ADDRESS_TYPE_MAP).find(([, v]) => v === address.type)?.[0] ??
+        "المنزل"
+    );
+    setAddressCity(address.city);
+    setAdressState(address.state);
+    setAdressAdress(address.street);
+    setAdressCodePostal(address.zipCode);
+    setAddressPhone(address.phoneNumber);
     setOpenModal(true);
   };
-  const handleAddAddress = async () => {
-   await mutate({
-    type:addressType,
-    city:addressCity,
-    zipCode:addressCodePostal,
-    phoneNumber:addressPhone,
-    state:addressState, 
-    street:addressCountry,
-    isDefault:true
-   })
-   if(isError){
-    setOpenModal(true);
-    showErrorToast("Address not created!");
-   }
+  const handleAddAddress = async () => {    // Build the payload once — used for both create and update
+    const payload = {
+      type: ADDRESS_TYPE_MAP[addressType] ?? "Other",
+      city: addressCity,
+      zipCode: addressCodePostal,
+      phoneNumber: addressPhone,
+      state: addressState,
+      street: addressAddress,
+      isDefault: true,
+    };
+
+    if (isEditing && selectedAddress) {
+      await updateAddress(selectedAddress._id, {
+        type: payload.type,
+        street: payload.street,
+        city: payload.city,
+        state: payload.state,
+        zipCode: payload.zipCode,
+        phoneNumber: payload.phoneNumber,
+      });
+    } else {
+      await addAddress(payload);
+    }
+
     setOpenModal(false);
-    showSuccessToast("Address created!");
-   
+    setIsEditing(false);
+    setSelectedAddress(null);
   };
   const {addresses} = useAddress()
-  console.log(addresses)
-  return (
+  console.log(addresses)  return (
     <SafeAreaView className="flex-1 bg-red-50" edges={["top"]}>
       <Header showBack />
 

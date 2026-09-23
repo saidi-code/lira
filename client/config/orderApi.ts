@@ -113,7 +113,7 @@ export const orderApi = {
       headers: authHeaders(token),
     });
     console.log("create order response",res)
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
   /**
@@ -129,8 +129,8 @@ export const orderApi = {
     });
 
     return {
-      orders: Array.isArray(res.data.data) ? res.data.data : [],
-      pagination: res.data.pagination ?? EMPTY_PAGINATION,
+      orders: Array.isArray(res.data) ? res.data : [],
+      pagination: res.pagination ?? EMPTY_PAGINATION,
     };
   },
 
@@ -144,7 +144,7 @@ export const orderApi = {
     const res = await api.get<OrderResponse>(`/orders/${orderId}`, {
       headers: authHeaders(token),
     });
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
   /**
@@ -159,7 +159,7 @@ export const orderApi = {
       {},
       { headers: authHeaders(token) }
     );
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
   /**
@@ -175,8 +175,8 @@ export const orderApi = {
     });
 
     return {
-      orders: Array.isArray(res.data.data) ? res.data.data : [],
-      pagination: res.data.pagination ?? EMPTY_PAGINATION,
+      orders: Array.isArray(res.data) ? res.data : [],
+      pagination: res.pagination ?? EMPTY_PAGINATION,
     };
   },
 
@@ -193,7 +193,7 @@ export const orderApi = {
       payload,
       { headers: authHeaders(token) }
     );
-    return !Array.isArray(res.data.data) ? res.data.data ?? null : null;
+    return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 
   /**
@@ -206,6 +206,6 @@ export const orderApi = {
     const res = await api.delete<OrderResponse>(`/orders/${orderId}`, {
       headers: authHeaders(token),
     });
-    return { success: res.data.success, message: res.data.message };
+    return { success: res.success, message: res.message };
   },
 };

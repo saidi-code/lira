@@ -217,6 +217,20 @@ export const createProduct = async (req: Request, res: Response) => {
     const sizes = transformStringToArray(req.body.sizes) as any[];
     const colors = transformStringToArray(req.body.colors) as any;
 
+    // Category may arrive as an ObjectId or a title (admin UI sends titles)
+    let categoryId = req.body.category;
+    if (categoryId && !mongoose.Types.ObjectId.isValid(categoryId)) {
+      const categoryDoc = await Category.findOne({
+        title: { $regex: new RegExp(`^${categoryId}$`, "i") },
+      })
+        .select("_id")
+        .lean();
+      if (!categoryDoc) {
+        return res.json({ success: false, message: `Unknown category: ${categoryId}` });
+      }
+      categoryId = categoryDoc._id;
+    }
+
     // Build payload differently based on product type
     // Schema notes (models/Products.ts):
     // - simple/variable both have: sizes, images, colors, stock
@@ -224,6 +238,7 @@ export const createProduct = async (req: Request, res: Response) => {
     //   but schema does not enforce it, so we forward it if provided.
     const productData: any = {
       ...req.body,
+      category: categoryId,
       images,
       type,
       sizes: sizes ?? [],
@@ -325,6 +340,106 @@ const transformStringToArray = (data: any): any[] => {
   }
 
   return jsonData;
+};
+
+// ==================== UPDATE PRODUCT ====================
+// @desc    Update a product (admin) — fields + optional new images
+// @route   PUT /api/products/:id
+// @access  Admin
+export const updateProduct = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    // Scalar fields (only overwrite when provided)
+    const { name, description, price, stock, category, isFeatured, sizes } = req.body;
+
+    if (name !== undefined) product.name = name;
+    if (description !== undefined) product.description = description;
+    if (price !== undefined) product.price = Number(price);
+    if (stock !== undefined) product.stock = Number(stock);
+    if (isFeatured !== undefined) {
+      product.isFeatured = isFeatured === true || isFeatured === "true";
+    }
+    if (sizes !== undefined) {
+      product.sizes = transformStringToArray(sizes) as string[];
+    }
+
+    // Category may arrive as an ObjectId or a title (admin UI sends titles)
+    if (category !== undefined && category !== "undefined") {
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        product.category = category as any;
+      } else {
+        const categoryDoc = await Category.findOne({
+          title: { $regex: new RegExp(`^${category}$`, "i") },
+        })
+          .select("_id")
+          .lean();
+        if (categoryDoc) {
+          product.category = categoryDoc._id as any;
+        }
+        // Unknown title → keep current category instead of failing
+      }
+    }
+
+    // Images: keep existing ones the client sent back + upload any new files
+    const existingImages = transformStringToArray(req.body.existingImages) as string[];
+    let newImages: string[] = [];
+    const files = (req as any).files as unknown;
+    if (Array.isArray(files) && files.length > 0) {
+      newImages = await uploadImages(files);
+    }
+
+    const finalImages = [...existingImages, ...newImages];
+    if (finalImages.length === 0) {
+      return res.json({ success: false, message: "At least one image is required" });
+    }
+    product.images = finalImages;
+
+    await product.save();
+
+    return res.json({ success: true, message: "Product updated", data: product });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Error updating product", error: error?.message });
+  }
+};
+
+// ==================== DELETE PRODUCT (SOFT) ====================
+// @desc    Deactivate a product (admin) — soft delete keeps order history intact
+// @route   DELETE /api/products/:id
+// @access  Admin
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    product.isActive = false;
+    await product.save();
+
+    return res.json({ success: true, message: "Product deleted" });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Error deleting product", error: error?.message });
+  }
 };
 
 

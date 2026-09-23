@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { View, ActivityIndicator, StyleSheet, Text, StyleProp, ViewStyle } from "react-native";
 import { Image, ImageProps, ImageContentFit } from "expo-image";
 
-export interface CachedImageProps extends Omit<ImageProps, "source" | "style"> {
+export interface CachedImageProps
+  extends Omit<ImageProps, "source" | "style" | "resizeMode"> {
   uri?: string;
   style?: any;
   placeholderColor?: string;

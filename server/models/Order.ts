@@ -82,7 +82,7 @@ const orderSchema = new mongoose.Schema(
       type: [orderItemSchema],
       required: true,
       validate: {
-        validator: (arr) => Array.isArray(arr) && arr.length > 0,
+        validator: (arr: unknown[]) => Array.isArray(arr) && arr.length > 0,
         message: "Order must contain at least one item",
       },
     },
@@ -128,9 +128,9 @@ const orderSchema = new mongoose.Schema(
 // ==========================================
 // 5. Pre-save Hook — Auto-generate orderNumber
 // ==========================================
-orderSchema.pre("save", async function (next) {
+orderSchema.pre("save", async function () {
   // Only generate if this is a new document and orderNumber is not set
-  if (!this.isNew || this.orderNumber) return next();
+  if (!this.isNew || this.orderNumber) return;
 
   const Order = mongoose.model("Order");
 
@@ -143,7 +143,7 @@ orderSchema.pre("save", async function (next) {
 
     if (!exists) {
       this.orderNumber = candidate;
-      return next();
+      return;
     }
     attempts++;
   }
@@ -153,8 +153,6 @@ orderSchema.pre("save", async function (next) {
     .toString(36)
     .substring(2, 8)
     .toUpperCase()}`;
-
-  next();
 });
 
 // ==========================================

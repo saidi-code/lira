@@ -46,3 +46,31 @@ export const getStatusColor = (status: string) => {
       return "bg-gray-50 text-gray-900";
   }
 };
+
+// Arabic labels for order / payment statuses (customer-facing screens)
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  placed: "تم استلام الطلب",
+  processing: "قيد التجهيز",
+  shipped: "تم الشحن",
+  delivered: "تم التوصيل",
+  cancelled: "ملغى",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pending: "في الانتظار",
+  paid: "مدفوع",
+  failed: "فشل الدفع",
+  refunded: "مسترد",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "الدفع عند الاستلام",
+  stripe: "بطاقة بنكية",
+};
+
+// Stable date formatting (avoids Intl availability differences on Hermes)
+export const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+};

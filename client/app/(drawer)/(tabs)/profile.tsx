@@ -113,7 +113,7 @@ const Profile = () => {
                 />
               </View>
               <TouchableOpacity
-                onPress={() => router.navigate("/(profile)/UpdateProfile" as any)}
+                onPress={() => router.push("/profile")}
                 className="absolute h-7 w-7 bg-primary  border-white border-2 rounded-full right-[-3px] bottom-[-3px] items-center justify-center z-10"
               >
                 <MaterialCommunityIcons name="pencil" size={14} color="white" />

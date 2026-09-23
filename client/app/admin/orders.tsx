@@ -41,7 +41,7 @@ export default function AdminOrders() {
   const fetchOrders = async () => {
     try {
       const token = await getToken();
-      const { data } = await axios.get("/orders/admin/all", {
+      const { data } = await axios.get("/orders", {
         params: { limit: 999 },
         headers: {
           Authorization: `Bearer ${token}`,
