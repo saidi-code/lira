@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { ADDRESSES, COLORS } from "@/constants";
-import { showSuccessToast, ShowToast } from "@/constants/utility";
+import { showErrorToast, showSuccessToast, ShowToast } from "@/constants/utility";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -11,18 +11,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {useAddressesQuery} from "@/hooks/useAddress"
+import useAddress, {useAddressesQuery} from "@/hooks/useAddress"
 import { SelectList } from "react-native-dropdown-select-list";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {useAddAddress} from "@/hooks/useAddress"
+
 const AddressScreen = () => {
+  const {mutate,isError} = useAddAddress()
   const [openModal, setOpenModal] = useState(false);
   const [addressType, setAddressType] = useState("");
   const [addressCountry, setAddressCountry] = useState("");
   const [addressState, setAdressState] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [addressAddress, setAdressAdress] = useState("");
-  const [addressِCodePostal, setAdressCodePostal] = useState("");
+  const [addressCodePostal, setAdressCodePostal] = useState("");
   const [addressPhone, setAddressPhone] = useState("");
   const [selectedAddress, setSelectedAddress] = useState<(typeof ADDRESSES)[0] | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -32,11 +35,25 @@ const AddressScreen = () => {
     setSelectedAddress(address);
     setOpenModal(true);
   };
-  const handleAddAddress = () => {
+  const handleAddAddress = async () => {
+   await mutate({
+    type:addressType,
+    city:addressCity,
+    zipCode:addressCodePostal,
+    phoneNumber:addressPhone,
+    state:addressState, 
+    street:addressCountry,
+    isDefault:true
+   })
+   if(isError){
+    setOpenModal(true);
+    showErrorToast("Address not created!");
+   }
     setOpenModal(false);
-    showSuccessToast();
+    showSuccessToast("Address created!");
+   
   };
-  const {addresses} = useAddressesQuery()
+  const {addresses} = useAddress()
   console.log(addresses)
   return (
     <SafeAreaView className="flex-1 bg-red-50" edges={["top"]}>
@@ -352,7 +369,7 @@ const AddressScreen = () => {
                   value={
                     isEditing
                       ? selectedAddress?.codePostal?.toString()
-                      : addressِCodePostal
+                      : addressCodePostal
                   }
                   onChange={(e: any) => setAdressCodePostal(e)}
                   placeholder="مثال: 4100"
