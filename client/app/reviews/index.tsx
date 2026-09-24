@@ -77,7 +77,9 @@ const MyReviewsScreen = () => {
             activeOpacity={0.8}
             className="self-stretch py-4 bg-[#785920] rounded-full shadow-md items-center"
           >
-            <Text className="text-white text-base font-tajwal">إعادة المحاولة</Text>
+            <Text className="text-white text-base font-tajwal">
+              إعادة المحاولة
+            </Text>
           </TouchableOpacity>
         </View>
       );
@@ -98,6 +100,13 @@ const MyReviewsScreen = () => {
             className="self-stretch py-5 bg-[#785920] rounded-full shadow-md flex-row justify-center items-center gap-2"
           >
             <Ionicons name="bag-outline" color="#fff" size={20} />
+            <Text className="text-white text-base font-tajwal">
+              ابدأ التسوق الآن
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
     return reviews.map((review) => {
       const product =
@@ -119,7 +128,11 @@ const MyReviewsScreen = () => {
               />
             ) : (
               <View className="w-16 h-16 rounded-lg bg-surface items-center justify-center">
-                <Ionicons name="cube-outline" size={24} color={COLORS.inactive} />
+                <Ionicons
+                  name="cube-outline"
+                  size={24}
+                  color={COLORS.inactive}
+                />
               </View>
             )}
             <View className="flex-1">
@@ -158,7 +171,9 @@ const MyReviewsScreen = () => {
               onPress={() => router.push(`/product/${product._id}`)}
               className="mt-3 self-stretch py-2 rounded-full border border-primary-200 items-center"
             >
-              <Text className="font-tajwal text-xs text-primary">عرض المنتج</Text>
+              <Text className="font-tajwal text-xs text-primary">
+                عرض المنتج
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -189,9 +204,3 @@ const MyReviewsScreen = () => {
 };
 
 export default MyReviewsScreen;
-
-            <Text className="text-white text-base font-tajwal">ابدأ التسوق الآن</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }

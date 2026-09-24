@@ -1,4 +1,3 @@
-// app/checkout.tsx
 import { useState } from "react";
 import {
   View,
@@ -6,17 +5,19 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import {useCart} from "../hooks/useCart";
-import {useAddress} from "../hooks/useAddress";
-import {useOrder} from "../hooks/useOrder";
-import { BackendAddress } from "../config/addressApi";
-import { PaymentMethod } from "../config/orderApi";
-import { COLORS } from "../constants/index";
-import SkeletonAddressCard from "../components/SkeletonAddressCard";
-import SkeletonCheckoutTotals from "../components/SkeletonCheckoutTotals"
+import { useCart } from "@/hooks/useCart";
+import { useAddress } from "@/hooks/useAddress";
+import { useOrder } from "@/hooks/useOrder";
+import { BackendAddress } from "@/config/addressApi";
+import { PaymentMethod } from "@/config/orderApi";
+import { COLORS } from "@/constants";
+import SkeletonAddressCard from "@/components/SkeletonAddressCard";
+import SkeletonCheckoutTotals from "@/components/SkeletonCheckoutTotals";
 
 const SHIPPING_COST = 7;
 const TAX_RATE = 0; // مثل 0.19 لـ 19%
@@ -58,49 +59,75 @@ const CheckoutScreen = () => {
 
   // ---------- الإجراءات ----------
   const handlePlaceOrder = async () => {
-    if (!isSignedIn) return;
-    if (!selectedAddress) return;
-    if (!cartItems?.length) return;
+    if (!isSignedIn) {
+      Alert.alert("تنبيه", "يرجى تسجيل الدخول لإتمام الطلب.");
+      return;
+    }
+    if (!selectedAddress) {
+      Alert.alert("تنبيه", "يرجى اختيار عنوان الشحن.");
+      return;
+    }
+    if (!cartItems?.length) {
+      Alert.alert("تنبيه", "سلة التسوق فارغة.");
+      return;
+    }
 
-    const order = await createOrder({
-      items: cartItems.map((item) => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        size: item.size ?? null,
-        color: item.color ?? null,
-      })),
-      shippingAddressId: selectedAddress._id,
-      paymentMethod,
-      shippingCost: SHIPPING_COST,
-      tax,
-    });
+    try {
+      const order = await createOrder({
+        items: cartItems.map((item) => ({
+          product: item.product._id,
+          quantity: item.quantity,
+          size: item.size ?? null,
+          color: item.color ?? null,
+        })),
+        shippingAddressId: selectedAddress._id,
+        paymentMethod,
+        shippingCost: SHIPPING_COST,
+        tax,
+      });
 
-    if (order) {
+      // بعض الـ hooks تُرجع { data: order } والبعض يُرجع order مباشرة
+      const createdOrder = (order as any)?.data ?? order;
+
+      if (!createdOrder?._id) {
+        Alert.alert("خطأ", "تم إنشاء الطلب لكن لم يتم استلام رقمه.");
+        return;
+      }
+
       await clearCart();
-      router.replace(`/order?orderId=${order._id}`);
-      // Note: orders list shows a success banner for this orderId;
-      // users can tap through to /order/[id] for full details.
+      router.replace(`/order?orderId=${createdOrder._id}`);
+    } catch (e: any) {
+      console.error("createOrder failed:", e);
+      Alert.alert(
+        "تعذّر إنشاء الطلب",
+        e?.response?.data?.message ??
+          e?.message ??
+          "حدث خطأ غير متوقع. حاول مرة أخرى."
+      );
     }
   };
 
   // ---------- حالة التحميل (Skeleton) ----------
- if (isAddressLoading) {
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>عنوان الشحن</Text>
-      <SkeletonAddressCard />
-      <SkeletonAddressCard />
-      <SkeletonAddressCard />
+  if (isAddressLoading) {
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <Text style={styles.sectionTitle}>عنوان الشحن</Text>
+        <SkeletonAddressCard />
+        <SkeletonAddressCard />
+        <SkeletonAddressCard />
 
-      <Text style={styles.sectionTitle}>طريقة الدفع</Text>
-      <SkeletonAddressCard />
-      <SkeletonAddressCard />
+        <Text style={styles.sectionTitle}>طريقة الدفع</Text>
+        <SkeletonAddressCard />
+        <SkeletonAddressCard />
 
-      <Text style={styles.sectionTitle}>المجاميع</Text>
-      <SkeletonCheckoutTotals />
-    </ScrollView>
-  );
-}
+        <Text style={styles.sectionTitle}>المجاميع</Text>
+        <SkeletonCheckoutTotals />
+      </ScrollView>
+    );
+  }
 
   // ---------- لا يوجد عنوان ----------
   if (!selectedAddress) {
@@ -120,10 +147,7 @@ const CheckoutScreen = () => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* ============ عنوان الشحن ============ */}
       <Text style={styles.sectionTitle}>عنوان الشحن</Text>
 
@@ -141,8 +165,8 @@ const CheckoutScreen = () => {
                 {addr.type === "Home"
                   ? "🏠 المنزل"
                   : addr.type === "Work"
-                  ? "🏢 العمل"
-                  : "📍 آخر"}
+                    ? "🏢 العمل"
+                    : "📍 آخر"}
               </Text>
               {addr.isDefault && (
                 <View style={styles.badge}>
@@ -189,16 +213,22 @@ const CheckoutScreen = () => {
       <Text style={styles.sectionTitle}>ملخص الطلب</Text>
 
       <View style={styles.summaryBox}>
-        {cartItems.map((item) => (
-          <View key={item._id} style={styles.summaryRow}>
-            <Text style={styles.summaryText} numberOfLines={1}>
-              {item.product.name} × {item.quantity}
-            </Text>
-            <Text style={styles.summaryText}>
-              {(item.price * item.quantity).toFixed(2)} د.ت
-            </Text>
-          </View>
-        ))}
+        {cartItems.map((item) => {
+          const unitPrice =
+            (item as any).price ??
+            (item.product as any)?.price ??
+            0;
+          return (
+            <View key={item._id} style={styles.summaryRow}>
+              <Text style={styles.summaryText} numberOfLines={1}>
+                {item.product.name} × {item.quantity}
+              </Text>
+              <Text style={styles.summaryText}>
+                {(unitPrice * item.quantity).toFixed(2)} د.ت
+              </Text>
+            </View>
+          );
+        })}
 
         <View style={styles.divider} />
 
@@ -225,27 +255,34 @@ const CheckoutScreen = () => {
         </View>
       </View>
 
-      {/* ============ تأكيد الطلب ============ */}
-      <TouchableOpacity
-        style={[
-          styles.primaryBtn,
-          (isCreatingOrder || !cartItems.length) && styles.btnDisabled,
-        ]}
-        disabled={isCreatingOrder || !cartItems.length}
-        onPress={handlePlaceOrder}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.primaryBtnText}>
-          {isCreatingOrder
-            ? "جارٍ تأكيد الطلب..."
-            : `تأكيد الطلب (${totalAmount.toFixed(2)} د.ت)`}
-        </Text>
-      </TouchableOpacity>
+    {/* ============ تأكيد الطلب ============ */}
+<TouchableOpacity
+  style={[
+    styles.primaryBtn,
+    ( !cartItems.length) && styles.btnDisabled,
+  ]}
+  disabled={isCreatingOrder || !cartItems.length}
+  onPress={handlePlaceOrder}
+  activeOpacity={0.85}
+>
+  {isCreatingOrder ? (
+    <View style={styles.btnRow}>
+      <ActivityIndicator color="#fff" size="small" />
+      <Text style={styles.primaryBtnText}>جارٍ تأكيد الطلب...</Text>
+    </View>
+  ) : (
+    <Text style={styles.primaryBtnText}>
+      {`تأكيد الطلب (${totalAmount.toFixed(2)} د.ت)`}
+    </Text>
+  )}
+</TouchableOpacity>
+
     </ScrollView>
   );
 };
 
 export default CheckoutScreen;
+
 
 // ==========================================
 // الأنماط
@@ -253,6 +290,11 @@ export default CheckoutScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f7f7f7" },
   content: { padding: 16, paddingBottom: 60 },
+  btnRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+},
   center: {
     flex: 1,
     alignItems: "center",
