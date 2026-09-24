@@ -2,7 +2,7 @@ import { COLORS } from "@/constants";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,9 +23,16 @@ export default function AdminProducts() {
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState([]);
 
-  const fetchProducts = async () => {
+  // Clerk's getToken is not memoized; keep the latest instance in a ref so
+  // fetchProducts stays referentially stable (avoids refetch loops).
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  const fetchProducts = useCallback(async () => {
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await axios.get("/products", {
         params: { limit: 999 },
         headers: {
@@ -51,11 +58,11 @@ export default function AdminProducts() {
     // setProducts(dummyProducts as any);
     // setLoading(false);
     // setRefreshing(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const onRefresh = () => {
     setRefreshing(true);

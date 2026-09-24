@@ -28,13 +28,13 @@ const ChooseColorSizeModal = ({
   const { addToCart } = useCart();
    const defaultColor = product?.colors?.[0]?.hex ?? null;
      const defaultSize = product?.colors?.[0]?.variants?.[0]?.size ?? null;
-  const [selectedSize, setSelectedSize] = useState<string | null>(defaultSize);
+  const [selectedSize] = useState<string | null>(defaultSize);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     defaultColor,
   );
     
 const [uiColor, setUiColor] = useState<string | null>(selectedColor);
-  const [uiSize, setUiSize] = useState<string | null>(selectedSize);
+const [, setUiSize] = useState<string | null>(selectedSize);
   const isVariable = product?.type === "variable";
 
   
@@ -45,7 +45,7 @@ const [uiColor, setUiColor] = useState<string | null>(selectedColor);
     setUiSize(selectedSize);
   }, [selectedColor, selectedSize, show]);
 
-  const colors = (product as any)?.colors ?? [];
+  const colors = useMemo(() => (product as any)?.colors ?? [], [product]);
   const activeColorObj = useMemo(() => {
     if (!isVariable) return null;
     return colors.find((c: any) => c?.name === uiColor) ?? colors?.[0] ?? null;

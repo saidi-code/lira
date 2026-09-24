@@ -1,7 +1,6 @@
-import Header from "@/components/Header";
 import { COLORS } from "@/constants";
 import { useSignUp } from "@clerk/clerk-expo";
-import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Entypo } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import * as React from "react";
 import {

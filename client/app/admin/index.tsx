@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants";
 import { getStatusColor } from "../../constants/utility";
 import { useAuth } from "@clerk/clerk-expo";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -23,9 +23,16 @@ export default function AdminDashboard() {
     recentOrders: [],
   });
 
-  const fetchStats = async () => {
+  // Clerk's getToken is not memoized; keep the latest instance in a ref so
+  // fetchStats stays referentially stable (avoids refetch loops).
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  const fetchStats = useCallback(async () => {
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await axios.get("/admin/stats", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -40,11 +47,11 @@ export default function AdminDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   const onRefresh = () => {
     setRefreshing(true);

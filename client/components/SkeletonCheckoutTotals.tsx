@@ -19,7 +19,7 @@ const AnimatedBox = ({ style }: { style: any }) => {
       -1,
       true
     );
-  }, []);
+  }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: shimmer.value,

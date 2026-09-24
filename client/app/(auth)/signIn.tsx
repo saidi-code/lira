@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 
-import Header from "@/components/Header";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/build/Entypo";
 import { COLORS } from "@/constants";

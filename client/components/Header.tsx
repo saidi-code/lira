@@ -6,7 +6,6 @@ import { COLORS } from "../constants/index";
 import { HeaderProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../hooks/useFavoris";
-import { DrawerToggleButton } from "@react-navigation/drawer";
 import OpenNavMenuBtn from "./OpenNavMenuBtn";
 const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
   const { itemCount } = useCart();

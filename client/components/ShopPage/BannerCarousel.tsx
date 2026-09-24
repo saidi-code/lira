@@ -8,7 +8,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import BannerSkeleton from './BannerSkeleton'; // your skeleton component (adjust path)
-import { useCollections } from '../../hooks/useCollections';
 interface Collection {
   _id: string;
   banner: string;

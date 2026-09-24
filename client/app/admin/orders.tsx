@@ -2,7 +2,7 @@ import { COLORS } from "@/constants";
 import { getStatusColor } from "../../constants/utility";
 
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -38,9 +38,16 @@ export default function AdminOrders() {
     "cancelled",
   ];
 
-  const fetchOrders = async () => {
+  // Clerk's getToken is not memoized; keep the latest instance in a ref so
+  // fetchOrders stays referentially stable (avoids refetch loops).
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  const fetchOrders = useCallback(async () => {
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const { data } = await axios.get("/orders", {
         params: { limit: 999 },
         headers: {
@@ -73,11 +80,11 @@ export default function AdminOrders() {
     // })) as any);
     // setLoading(false);
     // setRefreshing(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const onRefresh = () => {
     setRefreshing(true);

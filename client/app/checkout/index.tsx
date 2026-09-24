@@ -94,8 +94,30 @@ const CheckoutScreen = () => {
         return;
       }
 
+      // بيانات شاشة النجاح تُلتقط قبل إفراغ السلة
+      const orderItems = createdOrder.items ?? [];
+      const itemsCount = orderItems.length || cartItems.length;
+      const firstName =
+        orderItems[0]?.name ?? cartItems[0]?.product?.name ?? "";
+      const successParams = {
+        orderId: String(createdOrder._id),
+        orderNumber: String(createdOrder.orderNumber ?? ""),
+        total: Number(createdOrder.totalAmount ?? totalAmount).toFixed(2),
+        productName: firstName
+          ? itemsCount > 1
+            ? `${firstName} +${itemsCount - 1}`
+            : firstName
+          : "",
+        productImage: String(
+          orderItems[0]?.image ?? cartItems[0]?.product?.images?.[0] ?? ""
+        ),
+      };
+
       await clearCart();
-      router.replace(`/order?orderId=${createdOrder._id}`);
+      router.replace({
+        pathname: "/checkout/checkoutSuccess",
+        params: successParams,
+      });
     } catch (e: any) {
       console.error("createOrder failed:", e);
       Alert.alert(

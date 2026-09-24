@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, ActivityIndicator, StyleSheet, Text, StyleProp, ViewStyle } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Text } from "react-native";
 import { Image, ImageProps, ImageContentFit } from "expo-image";
 
 export interface CachedImageProps

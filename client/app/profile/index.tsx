@@ -7,9 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const UpdateProfile = () => {
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
   return (
     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
       <Header showBack />

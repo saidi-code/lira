@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 import { useFavoris } from '../../hooks/useFavoris'
 import React from 'react'
 import { Ionicons } from "@expo/vector-icons";

@@ -25,7 +25,7 @@ const BannerSkeleton: React.FC<BannerSkeletonProps> = ({ count = 4 }) => {
       -1,
       true
     );
-  }, []);
+  }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: 0.4 + 0.6 * shimmer.value,

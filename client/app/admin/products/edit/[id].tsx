@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -42,10 +42,17 @@ export default function EditProduct() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<string[]>([]);
 
+  // Clerk's getToken is not memoized; keep the latest instance in a ref so
+  // the fetch effect isn't re-run on every render.
+  const getTokenRef = useRef(getToken);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const token = await getToken();
+        const token = await getTokenRef.current();
         const { data } = await axios.get(`/products/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -92,7 +99,7 @@ export default function EditProduct() {
     };
 
     if (id) fetchProduct();
-  }, [id]);
+  }, [id, router]);
 
   const pickImages = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({

@@ -8,7 +8,8 @@ import {
   SafeAreaView 
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CURRENCY } from '@/constants';
 
 // --- TYPES ---
 interface CheckoutData {
@@ -57,9 +58,55 @@ const CHECKOUT_DATA: CheckoutData = {
   }
 };
 
+// --- Route params passed by the checkout screen (all strings) ---
+type SuccessParams = {
+  orderId?: string;
+  orderNumber?: string;
+  total?: string;
+  productName?: string;
+  productImage?: string;
+};
+
+const firstParam = (v?: string | string[]) =>
+  (Array.isArray(v) ? v[0] : v) ?? "";
+
+// Arabic month names — avoids Intl availability differences on Hermes
+const AR_MONTHS = [
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+];
+const formatArabicDate = (d: Date) =>
+  `${d.getDate()} ${AR_MONTHS[d.getMonth()]}`;
+
+// Typical delivery window (the backend order model has no ETA field)
+const ESTIMATED_DELIVERY_DAYS = 7;
+
 // --- COMPONENT ---
 const CheckoutSuccess: React.FC = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<SuccessParams>();
+
+  const orderNumber = firstParam(params.orderNumber);
+  const orderId = firstParam(params.orderId);
+  const total = firstParam(params.total);
+  const productName = firstParam(params.productName);
+  const productImage = firstParam(params.productImage);
+
+  // Live view of the order: real data when routed from checkout,
+  // demo values from CHECKOUT_DATA when opened directly.
+  const data: CheckoutData = {
+    ...CHECKOUT_DATA,
+    orderId: orderNumber || CHECKOUT_DATA.orderId,
+    totalAmount: total ? `${total} ${CURRENCY}` : CHECKOUT_DATA.totalAmount,
+    estimatedDuration: formatArabicDate(
+      new Date(Date.now() + ESTIMATED_DELIVERY_DAYS * 24 * 60 * 60 * 1000)
+    ),
+    product: {
+      name: productName || CHECKOUT_DATA.product.name,
+      imageUrl: productImage || CHECKOUT_DATA.product.imageUrl,
+    },
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#FDF8F5]">
       <ScrollView 
@@ -100,7 +147,7 @@ const CheckoutSuccess: React.FC = () => {
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-xs text-gray-400">{CHECKOUT_DATA.labels.orderNumber}</Text>
                 <Text className="font-bold text-[#8A7042] text-lg tracking-wider">
-                  {CHECKOUT_DATA.orderId}
+                  {data.orderId}
                 </Text>
               </View>
 
@@ -109,13 +156,13 @@ const CheckoutSuccess: React.FC = () => {
                 {/* Total Price Box */}
                 <View className="flex-1 bg-[#FDF6F2] rounded-lg p-3 items-center">
                   <Text className="text-[10px] text-gray-500 mb-1">{CHECKOUT_DATA.labels.total}</Text>
-                  <Text className="font-bold text-[#4A3B2A] text-lg">{CHECKOUT_DATA.totalAmount}</Text>
+                  <Text className="font-bold text-[#4A3B2A] text-lg">{data.totalAmount}</Text>
                 </View>
                 
                 {/* Duration Box */}
                 <View className="flex-1 bg-[#FDF6F2] rounded-lg p-3 items-center">
                   <Text className="text-[10px] text-gray-500 mb-1">{CHECKOUT_DATA.labels.duration}</Text>
-                  <Text className="font-bold text-[#4A3B2A] text-lg">{CHECKOUT_DATA.estimatedDuration}</Text>
+                  <Text className="font-bold text-[#4A3B2A] text-lg">{data.estimatedDuration}</Text>
                 </View>
               </View>
 
@@ -123,13 +170,13 @@ const CheckoutSuccess: React.FC = () => {
               <View className="bg-white rounded-lg p-3 flex-row items-center justify-between border border-gray-100 shadow-sm">
                 <View className="flex-row items-center gap-3">
                   <Image 
-                    source={{ uri: CHECKOUT_DATA.product.imageUrl }} 
+                    source={{ uri: data.product.imageUrl }} 
                     className="w-10 h-10 rounded-md bg-gray-200"
                   />
                   <View className="flex-col items-end">
                     <Text className="text-[10px] text-gray-400">{CHECKOUT_DATA.labels.productName}</Text>
                     <Text className="text-xs font-bold text-[#4A3B2A]">
-                      {CHECKOUT_DATA.product.name}
+                      {data.product.name}
                     </Text>
                   </View>
                 </View>
@@ -143,7 +190,11 @@ const CheckoutSuccess: React.FC = () => {
               <TouchableOpacity 
                 className="w-full bg-[#8A7042] py-3.5 rounded-full shadow-md items-center justify-center"
                 activeOpacity={0.8}
-                onPress={() => router.push("/order")}
+                onPress={() =>
+                  orderId
+                    ? router.push(`/order?orderId=${orderId}`)
+                    : router.push("/order")
+                }
               >
                 <Text className="text-white font-bold text-sm">
                   {CHECKOUT_DATA.buttons.trackOrder}

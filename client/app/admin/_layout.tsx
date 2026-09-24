@@ -13,7 +13,7 @@ export default function AdminLayout() {
     if (isLoaded && (!user || user.publicMetadata?.role !== "admin")) {
       router.replace("/");
     }
-  }, [isLoaded, user]);
+  }, [isLoaded, user, router]);
 
   if (!isLoaded) {
     return (

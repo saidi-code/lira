@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import useAddress from "@/hooks/useAddress";
+import { useAddress } from "@/hooks/useAddress";
 import { SelectList } from "react-native-dropdown-select-list";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,16 +28,14 @@ const ADDRESS_TYPE_MAP: Partial<Record<string, "Home" | "Work" | "Other">> = {
 const AddressScreen = () => {
   const {
     addresses,
-    isLoading,
     addAddress,
     updateAddress,
     deleteAddress,
-    canAddMore,
   } = useAddress();
 
   const [openModal, setOpenModal] = useState(false);
   const [addressType, setAddressType] = useState("المنزل");
-  const [addressCountry, setAddressCountry] = useState("");
+  const [, setAddressCountry] = useState("");
   const [addressState, setAdressState] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [addressAddress, setAdressAdress] = useState("");

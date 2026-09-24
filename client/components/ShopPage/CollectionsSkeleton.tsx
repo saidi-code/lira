@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,7 +10,6 @@ import Animated, {
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // approximate (accounting for padding)
-const CARD_HEIGHT = 220; // adjust to match your ProductCard height
 
 // Number of skeleton collections to show
 const SKELETON_COUNT = 2;
@@ -33,7 +32,7 @@ const CollectionsSkeleton = () => {
       -1,
       true
     );
-  }, []);
+  }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: 0.4 + 0.6 * shimmer.value,

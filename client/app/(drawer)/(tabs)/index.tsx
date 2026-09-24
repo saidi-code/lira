@@ -29,7 +29,7 @@ export default function Index() {
   const [searchText, setSearchText] = useState("");
   const [searchResult, setSearchResult] = useState<any[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const [isSearchError, setIsSearchError] = useState(false);
+  const [, setIsSearchError] = useState(false);
 
   // ----- 1. Main product list (infinite scroll) -----
   const {

@@ -1,4 +1,3 @@
-import { COLORS } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
