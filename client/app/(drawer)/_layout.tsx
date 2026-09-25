@@ -80,7 +80,7 @@ function CustomDrawerContent(props: any) {
                   <Ionicons
                     name="notifications-outline"
                     size={16}
-                    color={colors.primary}
+                    color={COLORS.primary}
                   />
                 </View>
               </View>
@@ -99,7 +99,7 @@ function CustomDrawerContent(props: any) {
                   <Ionicons
                     name="mail-outline"
                     size={16}
-                    color={colors.primary}
+                    color={COLORS.primary}
                   />
                 </View>
               </View>
@@ -276,11 +276,11 @@ function SettingRow({
     >
       <View className="flex-row justify-end items-center gap-6">
         <Text className="text-lg font-body font-meduim">{label}</Text>
-        <Ionicons name={icon} size={16} color={colors.primary} />
+        <Ionicons name={icon} size={16} color={COLORS.primary} />
       </View>
       <View className="flex-row items-center gap-2">
         <Text className="text-base font-body text-primary">{value}</Text>
-        <Ionicons name="chevron-back" size={14} color={colors.inactive} />
+        <Ionicons name="chevron-back" size={14} color={COLORS.inactive} />
       </View>
     </TouchableOpacity>
   );
@@ -307,7 +307,7 @@ function OptionRow({
         {label}
       </Text>
       {selected && (
-        <Ionicons name="checkmark" size={18} color={colors.primary} />
+        <Ionicons name="checkmark" size={18} color={COLORS.primary} />
       )}
     </TouchableOpacity>
   );

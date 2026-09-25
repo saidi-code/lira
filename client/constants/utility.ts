@@ -3,6 +3,10 @@ import { Dimensions } from "react-native";
 import Toast from "react-native-toast-message";
 import { DARK_COLORS, LIGHT_COLORS, type Colors } from "./index";
 import { getThemeIsDark, subscribeToTheme } from "./themeStore";
+
+// Re-exported so components can import the theme type from this module
+// alongside `useAppColors`.
+export type { Colors };
 const screenHeight = Dimensions.get("window").height;
 export const ShowToast = (type: string, text: string) => {
   Toast.show({

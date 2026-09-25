@@ -36,7 +36,14 @@ export const DARK_COLORS = {
   skeleton: "#3A342E",
 } as const;
 
-export type Colors = typeof LIGHT_COLORS;
+/**
+ * Structural shape shared by both palettes.
+ *
+ * Deliberately widened to `string` — deriving it via `typeof LIGHT_COLORS`
+ * would pin every key to a single literal (that object is `as const`), and the
+ * dark palette could then no longer be assignable to it.
+ */
+export type Colors = Record<keyof typeof LIGHT_COLORS, string>;
 
 /**
  * Theme-aware colours.
