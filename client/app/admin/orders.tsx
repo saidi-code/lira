@@ -168,10 +168,10 @@ export default function AdminOrders() {
           orders.map((order: any) => (
             <View
               key={order._id}
-              className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100"
+              className="bg-card p-4 rounded-xl shadow-sm mb-4 border border-subtle-border"
             >
               <View className="flex-row justify-between mb-2">
-                <Text className="font-medium text-sm text-gray-400 ">
+                <Text className="font-medium text-sm text-muted ">
                   Order ID : #{order._id}
                 </Text>
                 <Text className="text-secondary text-xs">
@@ -179,7 +179,7 @@ export default function AdminOrders() {
                 </Text>
               </View>
 
-              <View className="mb-3 bg-gray-50 p-3 rounded-lg">
+              <View className="mb-3 bg-subtle p-3 rounded-lg">
                 <Text className="text-xs text-secondary font-bold mb-1">
                   CUSTOMER
                 </Text>
@@ -190,13 +190,13 @@ export default function AdminOrders() {
                   {order.user?.email || "No email"}
                 </Text>
                 {!order.user && (
-                  <Text className="text-xs text-gray-400 mt-1">
+                  <Text className="text-xs text-muted mt-1">
                     ID: {order.user?._id || "N/A"}
                   </Text>
                 )}
               </View>
 
-              <View className="mb-3 bg-gray-50 p-3 rounded-lg">
+              <View className="mb-3 bg-subtle p-3 rounded-lg">
                 <Text className="text-xs text-secondary font-bold mb-1">
                   SHIPPING ADDRESS
                 </Text>
@@ -222,7 +222,7 @@ export default function AdminOrders() {
                     <Text className="text-secondary text-xs flex-1">
                       {item.quantity}x {item.product?.name || item.name}
                       {item.size && (
-                        <Text className="text-gray-400">
+                        <Text className="text-muted">
                           {" "}
                           ({item.size || "-"})
                         </Text>
@@ -235,7 +235,7 @@ export default function AdminOrders() {
                 ))}
               </View>
 
-              <View className="flex-row justify-between items-center mt-2 pt-3 border-t border-gray-100">
+              <View className="flex-row justify-between items-center mt-2 pt-3 border-t border-subtle-border">
                 <Text className="text-primary font-bold text-lg">
                   ${order.totalAmount.toFixed(2)}
                 </Text>
@@ -264,8 +264,8 @@ export default function AdminOrders() {
       <Modal visible={statusModalVisible} animationType="fade" transparent>
         <TouchableWithoutFeedback onPress={() => setStatusModalVisible(false)}>
           <View className="flex-1 justify-end bg-black/50">
-            <View className="bg-white rounded-t-2xl p-4 max-h-[60%]">
-              <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-gray-100">
+            <View className="bg-card rounded-t-2xl p-4 max-h-[60%]">
+              <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-subtle-border">
                 <Text className="text-lg font-bold text-primary">
                   Update Order Status
                 </Text>
@@ -290,7 +290,7 @@ export default function AdminOrders() {
                       className={`p-4 rounded-xl mb-2 flex-row justify-between items-center ${
                         selectedOrder?.orderStatus === item
                           ? "bg-primary/10"
-                          : "bg-gray-50"
+                          : "bg-subtle"
                       }`}
                       onPress={() => updateStatus(item)}
                     >

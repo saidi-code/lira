@@ -1,4 +1,10 @@
-export const COLORS = {
+import { getThemeIsDark } from "./themeStore";
+
+// ==========================================
+// 1. Palettes
+// ==========================================
+/** Light palette — the original Lyra design values (unchanged). */
+export const LIGHT_COLORS = {
   primary: "#B89354",
   accent: "#785920",
   secondary: "#4B5563",
@@ -9,7 +15,79 @@ export const COLORS = {
   active: "#B45309",
   white: "#FFFFFF",
   skeleton: "#E5E7EB",
-};
+} as const;
+
+/**
+ * Dark palette — same design language (warm sand / gold) tuned for a dark
+ * canvas. Brand `primary` and text tones are lightened so they keep their
+ * contrast against the dark surfaces; `white` intentionally stays white
+ * because it is used as a foreground on coloured (brand) fills.
+ */
+export const DARK_COLORS = {
+  primary: "#D9B87C",
+  accent: "#B8A88A",
+  secondary: "#A8A29E",
+  canvas: "#1A1714",
+  body: "#F5EFE9",
+  surface: "#2C2723",
+  inactive: "#8A837B",
+  active: "#E08A2E",
+  white: "#FFFFFF",
+  skeleton: "#3A342E",
+} as const;
+
+export type Colors = typeof LIGHT_COLORS;
+
+/**
+ * Theme-aware colours.
+ *
+ * Each value is a getter, so `COLORS.primary` resolves to the palette of the
+ * *currently active* theme at the moment it is read. That keeps every existing
+ * call site (`color={COLORS.primary}`, `styles.header`) working without edits
+ * while still following the theme.
+ *
+ * NOTE: getters are only evaluated when read. Values captured at module scope
+ * (e.g. inside a module-level `StyleSheet.create`) freeze to the light palette
+ * — those stylesheets must be created inside the component via
+ * `useAppColors()` instead.
+ */
+export const COLORS = {
+  get primary() {
+    return getThemeIsDark() ? DARK_COLORS.primary : LIGHT_COLORS.primary;
+  },
+  get accent() {
+    return getThemeIsDark() ? DARK_COLORS.accent : LIGHT_COLORS.accent;
+  },
+  get secondary() {
+    return getThemeIsDark() ? DARK_COLORS.secondary : LIGHT_COLORS.secondary;
+  },
+  get canvas() {
+    return getThemeIsDark() ? DARK_COLORS.canvas : LIGHT_COLORS.canvas;
+  },
+  get body() {
+    return getThemeIsDark() ? DARK_COLORS.body : LIGHT_COLORS.body;
+  },
+  get surface() {
+    return getThemeIsDark() ? DARK_COLORS.surface : LIGHT_COLORS.surface;
+  },
+  get inactive() {
+    return getThemeIsDark() ? DARK_COLORS.inactive : LIGHT_COLORS.inactive;
+  },
+  get active() {
+    return getThemeIsDark() ? DARK_COLORS.active : LIGHT_COLORS.active;
+  },
+  get white() {
+    return getThemeIsDark() ? DARK_COLORS.white : LIGHT_COLORS.white;
+  },
+  get skeleton() {
+    return getThemeIsDark() ? DARK_COLORS.skeleton : LIGHT_COLORS.skeleton;
+  },
+} as const;
+
+/** Snapshot of the active palette (handy for building stylesheets). */
+export function getColors(): Colors {
+  return getThemeIsDark() ? { ...DARK_COLORS } : { ...LIGHT_COLORS };
+}
 
 export const CURRENCY = "د.ت";
 

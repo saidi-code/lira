@@ -200,7 +200,7 @@ export default function Index() {
 
       {/* Search Bar */}
       <View
-        className="mx-4 my-3 flex-row items-center bg-white rounded-xl overflow-hidden"
+        className="mx-4 my-3 flex-row items-center bg-card rounded-xl overflow-hidden"
         style={{
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -224,7 +224,7 @@ export default function Index() {
         )}
 
         <TextInput
-          className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
+          className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-body"
           placeholder="ابحث عن مجموعتنا الحصرية..."
           placeholderTextColor="#a8a29e"
           value={searchText}

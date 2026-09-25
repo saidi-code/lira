@@ -32,7 +32,7 @@ const Settings = () => {
                 إعدادات الحساب
               </Text>
             </View>
-            <View className=" bg-white rounded-xl shadow">
+            <View className=" bg-card rounded-xl shadow">
               <TouchableOpacity
                 onPress={() => router.push("/profile" as any)}
                 className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100"
@@ -69,7 +69,7 @@ const Settings = () => {
                 التنبيهات
               </Text>
             </View>
-            <View className=" bg-white rounded-xl shadow">
+            <View className=" bg-card rounded-xl shadow">
               <View className="flex-row items-center justify-between">
                 <Switch
                   trackColor={{ false: "#ECE0D9", true: "#B89354" }}
@@ -119,7 +119,7 @@ const Settings = () => {
                 التفضيلات
               </Text>
             </View>
-            <View className=" bg-white rounded-xl shadow">
+            <View className=" bg-card rounded-xl shadow">
               <View className="flex-row items-center justify-between ps-2">
                 <Text className="font-tajwal font-medium text-primary">
                   العربية

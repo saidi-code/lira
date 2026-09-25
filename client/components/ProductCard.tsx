@@ -53,7 +53,7 @@ const ProductCard = memo(({ product }: ProductCardProps) => {
         <AddToFavorisBtn product={product} />
       </View>
 
-      <View className="p-3 bg-white rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch">
+      <View className="p-3 bg-card rounded-3xl shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline outline-1 outline-offset-[-1px] outline-[#b89354]/5 self-stretch">
         <ProductCardCategoryComponent productCategory={categoryTitle} />
         <ProductNameComponent productName={product.name} />
 

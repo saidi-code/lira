@@ -26,23 +26,23 @@ export default function ShopScreen() {
 
   if (isError) {
     return (
-      <SafeAreaView className="bg-surface flex-1" edges={["top"]}>
-        <Header showSearch showBack={false} />
+    
+        
         <View className="flex-1 items-center justify-center p-4">
           <Text className="text-primary text-lg font-tajwal text-center mb-4">
             حدث خطأ أثناء تحميل البيانات
           </Text>
-          <Text className="text-gray-500 text-sm mb-6">
+          <Text className="text-muted text-sm mb-6">
             {(error as Error)?.message || "يرجى المحاولة مرة أخرى"}
           </Text>
           <TouchableOpacity
             onPress={() => refetch()}
-            className="px-6 py-2 bg-primary rounded-lg"
+            className="px-6 py-2 bg-primary-solid rounded-lg"
           >
             <Text className="text-white font-tajwal">إعادة المحاولة</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+   
     );
   }
 

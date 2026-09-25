@@ -34,7 +34,7 @@ const CollectionsSections = memo(({ collections, isLoading }: CollectionsSection
 
         return (
           <View key={item._id || `col-${index}`} className="mb-8">
-            <View className="relative bg-white/0 rounded-3xl shadow-[0px_2px_4px_-2px_rgba(0,0,0,0.10)] overflow-hidden mb-4">
+            <View className="relative bg-card/0 rounded-3xl shadow-[0px_2px_4px_-2px_rgba(0,0,0,0.10)] overflow-hidden mb-4">
               <Image
                 source={{ uri: item.banner }}
                 contentFit="cover"

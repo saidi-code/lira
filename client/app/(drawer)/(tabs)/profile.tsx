@@ -53,7 +53,7 @@ const Profile = () => {
           </View>
           <View
             className="mx-4 justify-center items-center
-           bg-white/90 shadow shadow-primary-100 rounded-md px-4 py-8 "
+           bg-card/90 shadow shadow-primary-100 rounded-md px-4 py-8 "
           >
             <Text
               className="text-body font-tajwal 
@@ -114,7 +114,7 @@ const Profile = () => {
               </View>
               <TouchableOpacity
                 onPress={() => router.push("/profile")}
-                className="absolute h-7 w-7 bg-primary  border-white border-2 rounded-full right-[-3px] bottom-[-3px] items-center justify-center z-10"
+                className="absolute h-7 w-7 bg-primary-solid  border-white border-2 rounded-full right-[-3px] bottom-[-3px] items-center justify-center z-10"
               >
                 <MaterialCommunityIcons name="pencil" size={14} color="white" />
               </TouchableOpacity>
@@ -130,13 +130,13 @@ const Profile = () => {
             {user.publicMetadata?.role === "admin" && (
               <TouchableOpacity
                 onPress={() => router.push("/admin")}
-                className="mt-4 px-6 py-2 bg-primary rounded-full"
+                className="mt-4 px-6 py-2 bg-primary-solid rounded-full"
               >
                 <Text className="font-bold text-white">Go to Admin Panel</Text>
               </TouchableOpacity>
             )}
           </View>
-          <View className="mx-4  bg-white shadow shadow-accent/5 rounded-md mb-3 ">
+          <View className="mx-4  bg-card shadow shadow-accent/5 rounded-md mb-3 ">
             {PROFILE_MENU.map((m, index) => (
               <TouchableOpacity
                 onPress={() => router.push(m.route as any)}
@@ -174,7 +174,7 @@ const Profile = () => {
             }}
             className="mx-4 p-4 rounded-lg flex-row justify-center gap-2 items-center bg-[#BA1A1A]/5 border border-[#BA1A1A]/10 mt-6"
           >
-            <Text className="font-body text-red-600 font-semibold text-lg">
+            <Text className="font-body text-danger font-semibold text-lg">
               تسجيل الخروج
             </Text>
             <Ionicons name="log-out-outline" color={"red"} size={24} />

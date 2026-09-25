@@ -48,15 +48,15 @@ const BannerSkeleton: React.FC<BannerSkeletonProps> = ({ count = 4 }) => {
       <View className="absolute bottom-4 right-4 z-10 items-end">
         <Animated.View
           style={[animatedStyle, { width: 120, height: 24 }]}
-          className="bg-gray-300 rounded mb-1"
+          className="bg-skeleton rounded mb-1"
         />
         <Animated.View
           style={[animatedStyle, { width: 96, height: 16 }]}
-          className="bg-gray-300 rounded mb-2"
+          className="bg-skeleton rounded mb-2"
         />
         <Animated.View
           style={[animatedStyle, { width: 80, height: 40 }]}
-          className="bg-gray-300 rounded-lg"
+          className="bg-skeleton rounded-lg"
         />
       </View>
       <View className="absolute inset-0 bg-black/10" />
@@ -82,7 +82,7 @@ const BannerSkeleton: React.FC<BannerSkeletonProps> = ({ count = 4 }) => {
           <View
             key={index}
             className={`h-2 rounded-full ${
-              index === 0 ? 'w-6 bg-primary' : 'w-2 bg-gray-300'
+              index === 0 ? 'w-6 bg-primary' : 'w-2 bg-skeleton'
             }`}
           />
         ))}

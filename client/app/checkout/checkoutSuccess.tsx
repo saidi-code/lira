@@ -115,7 +115,7 @@ const CheckoutSuccess: React.FC = () => {
       >
         
         {/* Card Container */}
-        <View className="w-full bg-white rounded-3xl shadow-lg overflow-hidden relative pb-6">
+        <View className="w-full bg-card rounded-3xl shadow-lg overflow-hidden relative pb-6">
           
           {/* Top Decorative Background Shape */}
           <View className="absolute top-0 left-0 w-full h-48 bg-[#F9EEE8] rounded-b-[200px] z-0" />
@@ -141,11 +141,11 @@ const CheckoutSuccess: React.FC = () => {
             </Text>
 
             {/* --- Order Details Card --- */}
-            <View className="w-full bg-[#FAFAFA] rounded-xl p-4 mb-6 border border-gray-100">
+            <View className="w-full bg-[#FAFAFA] rounded-xl p-4 mb-6 border border-subtle-border">
               
               {/* Order Number Row */}
               <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-xs text-gray-400">{CHECKOUT_DATA.labels.orderNumber}</Text>
+                <Text className="text-xs text-muted">{CHECKOUT_DATA.labels.orderNumber}</Text>
                 <Text className="font-bold text-[#8A7042] text-lg tracking-wider">
                   {data.orderId}
                 </Text>
@@ -155,26 +155,26 @@ const CheckoutSuccess: React.FC = () => {
               <View className="flex-row gap-3 mb-3">
                 {/* Total Price Box */}
                 <View className="flex-1 bg-[#FDF6F2] rounded-lg p-3 items-center">
-                  <Text className="text-[10px] text-gray-500 mb-1">{CHECKOUT_DATA.labels.total}</Text>
+                  <Text className="text-[10px] text-muted mb-1">{CHECKOUT_DATA.labels.total}</Text>
                   <Text className="font-bold text-[#4A3B2A] text-lg">{data.totalAmount}</Text>
                 </View>
                 
                 {/* Duration Box */}
                 <View className="flex-1 bg-[#FDF6F2] rounded-lg p-3 items-center">
-                  <Text className="text-[10px] text-gray-500 mb-1">{CHECKOUT_DATA.labels.duration}</Text>
+                  <Text className="text-[10px] text-muted mb-1">{CHECKOUT_DATA.labels.duration}</Text>
                   <Text className="font-bold text-[#4A3B2A] text-lg">{data.estimatedDuration}</Text>
                 </View>
               </View>
 
               {/* Product Info Row */}
-              <View className="bg-white rounded-lg p-3 flex-row items-center justify-between border border-gray-100 shadow-sm">
+              <View className="bg-card rounded-lg p-3 flex-row items-center justify-between border border-subtle-border shadow-sm">
                 <View className="flex-row items-center gap-3">
                   <Image 
                     source={{ uri: data.product.imageUrl }} 
                     className="w-10 h-10 rounded-md bg-gray-200"
                   />
                   <View className="flex-col items-end">
-                    <Text className="text-[10px] text-gray-400">{CHECKOUT_DATA.labels.productName}</Text>
+                    <Text className="text-[10px] text-muted">{CHECKOUT_DATA.labels.productName}</Text>
                     <Text className="text-xs font-bold text-[#4A3B2A]">
                       {data.product.name}
                     </Text>

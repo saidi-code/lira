@@ -225,7 +225,7 @@ const SingleProduct = () => {
                       className={`h-2 rounded-full ${
                         index === activeBannerIndex
                           ? "w-8 bg-primary"
-                          : "w-2 bg-gray-300"
+                          : "w-2 bg-skeleton"
                       }`}
                     />
                   ),
@@ -392,7 +392,7 @@ const SingleProduct = () => {
       {/* ============ تقييمات المنتج (تُحقن قبل تفاصيل إضافية) ============ */}
       <ReviewsSection productId={product._id} />
 
-        <View className="pb-32 mt-16 px-4 bg-white rounded-t-[32px] shadow-lg mb-12">
+        <View className="pb-32 mt-16 px-4 bg-card rounded-t-[32px] shadow-lg mb-12">
           <Text className="text-right text-body text-2xl font-tajwal font-medium my-6">
             تفاصيل إضافية
           </Text>

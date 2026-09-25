@@ -93,14 +93,14 @@ export default function AdminDashboard() {
           Recent Orders
         </Text>
         {stats.recentOrders.length === 0 ? (
-          <View className="bg-white p-6 rounded-2xl border border-gray-100 items-center">
+          <View className="bg-card p-6 rounded-2xl border border-subtle-border items-center">
             <Text className="text-secondary">No recent orders</Text>
           </View>
         ) : (
           stats.recentOrders.map((order: any) => (
             <View
               key={order._id}
-              className="bg-white p-5 rounded-2xl border border-gray-100 mb-3"
+              className="bg-card p-5 rounded-2xl border border-subtle-border mb-3"
             >
               <View className="flex-row justify-between items-center mb-3">
                 <View>
@@ -134,11 +134,11 @@ export default function AdminDashboard() {
                 ))}
               </View>
 
-              <View className="h-[1px] bg-gray-100 mb-3" />
+              <View className="h-[1px] bg-subtle mb-3" />
 
               <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center">
-                  <View className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center mr-2">
+                  <View className="w-8 h-8 rounded-full bg-subtle items-center justify-center mr-2">
                     <Text className="text-primary font-bold text-xs">
                       {(order.user?.name || "?").charAt(0).toUpperCase()}
                     </Text>
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
 }
 
 const StatCard = ({ label, value }: { label: string; value: string }) => (
-  <View className="bg-white p-5 rounded-2xl border border-gray-100 w-[48%] mb-4 justify-center">
+  <View className="bg-card p-5 rounded-2xl border border-subtle-border w-[48%] mb-4 justify-center">
     <Text className="text-xl font-bold text-primary mb-1">{value}</Text>
     <Text className="text-secondary text-xs font-medium uppercase tracking-wide">
       {label}

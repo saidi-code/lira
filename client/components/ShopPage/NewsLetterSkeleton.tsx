@@ -50,11 +50,11 @@ const NewsLetterSkeleton = () => {
 
       {/* Input + Button */}
       <View className="w-full max-w-[448px] relative">
-        <View className="relative w-full bg-white rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
+        <View className="relative w-full bg-card rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
           {/* Input placeholder (full width) */}
           <Animated.View
             style={[animatedStyle, { minHeight: 66 }]}
-            className="w-full py-[23px] pl-[104px] pr-8 rounded-full bg-gray-100"
+            className="w-full py-[23px] pl-[104px] pr-8 rounded-full bg-subtle"
           />
         </View>
         {/* Button placeholder (overlaid) */}
@@ -70,7 +70,7 @@ const NewsLetterSkeleton = () => {
               height: 48,
             },
           ]}
-          className="bg-gray-300 rounded-full"
+          className="bg-skeleton rounded-full"
         />
       </View>
     </View>

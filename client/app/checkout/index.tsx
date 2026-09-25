@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -15,8 +15,7 @@ import { useAddress } from "@/hooks/useAddress";
 import { useCreateOrder } from "@/hooks/useOrder";
 import { BackendAddress } from "@/config/addressApi";
 import { PaymentMethod } from "@/config/orderApi";
-import { COLORS } from "@/constants";
-import { replaceTo } from "@/constants/utility";
+import { replaceTo, useAppColors, type Colors } from "@/constants/utility";
 import SkeletonAddressCard from "@/components/SkeletonAddressCard";
 import SkeletonCheckoutTotals from "@/components/SkeletonCheckoutTotals";
 
@@ -26,6 +25,10 @@ const TAX_RATE = 0; // مثل 0.19 لـ 19%
 const CheckoutScreen = () => {
   const router = useRouter();
   const { isSignedIn } = useAuth();
+
+  // ---------- المظهر ----------
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // ---------- السلة ----------
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -317,8 +320,9 @@ export default CheckoutScreen;
 // ==========================================
 // الأنماط
 // ==========================================
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f7f7f7" },
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: 16, paddingBottom: 60 },
   btnRow: {
   flexDirection: "row",
@@ -330,12 +334,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    backgroundColor: "#f7f7f7",
+    backgroundColor: colors.canvas,
   },
 
   emptyText: {
     fontSize: 16,
-    color: "#555",
+    color: colors.secondary,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -346,12 +350,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     textAlign: "right",
-    color: COLORS.primary,
+    color: colors.primary,
     writingDirection: "rtl",
   },
 
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
@@ -359,8 +363,8 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   cardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: "#fff",
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
   },
   cardHeader: {
     flexDirection: "row-reverse",
@@ -372,19 +376,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     textAlign: "right",
-    color: "#111",
+    color: colors.body,
     writingDirection: "rtl",
   },
   cardText: {
     fontSize: 13,
-    color: "#555",
+    color: colors.secondary,
     marginTop: 4,
     textAlign: "right",
     writingDirection: "rtl",
   },
 
   badge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -396,7 +400,7 @@ const styles = StyleSheet.create({
   },
 
   summaryBox: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
   },
@@ -407,23 +411,23 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 14,
-    color: "#333",
+    color: colors.body,
     writingDirection: "rtl",
   },
   divider: {
     height: 1,
-    backgroundColor: "#eee",
+    backgroundColor: colors.surface,
     marginVertical: 8,
   },
   totalLabel: {
     fontSize: 16,
     fontWeight: "800",
-    color: COLORS.primary,
+    color: colors.primary,
     writingDirection: "rtl",
   },
 
   primaryBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
@@ -442,11 +446,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     marginBottom: 8,
   },
   secondaryBtnText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 14,
     fontWeight: "700",
     writingDirection: "rtl",

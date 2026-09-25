@@ -9,18 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/index'; // Adjust the path as needed
 import {
   CURRENCIES,
   LANGUAGES,
   THEME_MODES,
   useSettings,
 } from '../../context/SettingsContext';
+import { useAppColors, type Colors } from '../../constants/utility';
 
 // --- 1. CUSTOM DRAWER CONTENT COMPONENT ---
 function CustomDrawerContent(props: any) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   // الإعدات، تُقرأ Context
   const {
     settings,
@@ -62,7 +64,7 @@ function CustomDrawerContent(props: any) {
                 التنبيهات
               </Text>
             </View>
-            <View className=" bg-white rounded-xl shadow">
+            <View className=" bg-card rounded-xl shadow">
               <View className="flex-row items-center justify-between">
                 <Switch
                   trackColor={{ false: "#ECE0D9", true: "#B89354" }}
@@ -78,7 +80,7 @@ function CustomDrawerContent(props: any) {
                   <Ionicons
                     name="notifications-outline"
                     size={16}
-                    color={COLORS.primary}
+                    color={colors.primary}
                   />
                 </View>
               </View>
@@ -97,7 +99,7 @@ function CustomDrawerContent(props: any) {
                   <Ionicons
                     name="mail-outline"
                     size={16}
-                    color={COLORS.primary}
+                    color={colors.primary}
                   />
                 </View>
               </View>
@@ -112,21 +114,21 @@ function CustomDrawerContent(props: any) {
                 التفضيلات
               </Text>
             </View>
-            <View className="bg-white rounded-xl shadow overflow-hidden">
+            <View className="bg-card rounded-xl shadow overflow-hidden">
               <SettingRow
                 icon="earth-outline"
                 label="اللغة"
                 value={languageLabel}
                 onPress={() => openPicker("language")}
               />
-              <View className="h-px bg-gray-100 mx-4" />
+              <View className="h-px bg-subtle mx-4" />
               <SettingRow
                 icon="cash-outline"
                 label="العملة"
                 value={`${currencySymbol} ${settings.currency}`}
                 onPress={() => openPicker("currency")}
               />
-              <View className="h-px bg-gray-100 mx-4" />
+              <View className="h-px bg-subtle mx-4" />
               <SettingRow
                 icon="moon-outline"
                 label="المظهر"
@@ -149,7 +151,7 @@ function CustomDrawerContent(props: any) {
             
               value={isDark}
               onValueChange={toggleDarkMode}
-              trackColor={{ false: COLORS.inactive, true: COLORS.primary }}
+              trackColor={{ false: colors.inactive, true: colors.primary }}
               thumbColor={isDark ? '#f5dd4b' : '#f4f3f4'}
             />
             
@@ -192,7 +194,7 @@ function CustomDrawerContent(props: any) {
       >
         <View className="flex-1 justify-end">
           <Pressable className="flex-1 bg-black/40" onPress={closePicker} />
-          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
+          <View className="bg-card rounded-t-3xl px-5 pt-5 pb-10">
             <Text className="font-tajwal text-lg font-bold text-primary text-center mb-5">
               {picker ? PICKER_TITLES[picker] : ""}
             </Text>
@@ -274,11 +276,11 @@ function SettingRow({
     >
       <View className="flex-row justify-end items-center gap-6">
         <Text className="text-lg font-body font-meduim">{label}</Text>
-        <Ionicons name={icon} size={16} color={COLORS.primary} />
+        <Ionicons name={icon} size={16} color={colors.primary} />
       </View>
       <View className="flex-row items-center gap-2">
         <Text className="text-base font-body text-primary">{value}</Text>
-        <Ionicons name="chevron-back" size={14} color={COLORS.inactive} />
+        <Ionicons name="chevron-back" size={14} color={colors.inactive} />
       </View>
     </TouchableOpacity>
   );
@@ -305,7 +307,7 @@ function OptionRow({
         {label}
       </Text>
       {selected && (
-        <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+        <Ionicons name="checkmark" size={18} color={colors.primary} />
       )}
     </TouchableOpacity>
   );
@@ -329,7 +331,8 @@ export default function DrawerLayout() {
 }
 
 // --- 3. STYLES ---
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   drawerContainer: {
     flex: 1,
   },
@@ -337,7 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.surface,
     marginBottom: 10,
    
     direction:"rtl"
@@ -345,12 +348,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: colors.primary,
     direction:"rtl"
   },
   divider: {
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.surface,
     marginVertical: 10,
     marginHorizontal: 15,
   },
@@ -364,7 +367,7 @@ const styles = StyleSheet.create({
  
   labelText: {
   
-    color: COLORS.primary,
+    color: colors.primary,
   },
   languageSection: {
     paddingHorizontal: 15,
@@ -400,4 +403,4 @@ const styles = StyleSheet.create({
     color: '#4f6ef7',
     fontWeight: '600',
   },
-});
+  });

@@ -8,6 +8,9 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { useColorScheme as useRNColorScheme } from "react-native";
+
+import { setThemeIsDark } from "../constants/themeStore";
 
 // ==========================================
 // 1. Available options
@@ -110,7 +113,7 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
-  const { setColorScheme, colorScheme } = useColorScheme();
+  const { setColorScheme } = useColorScheme();
 
   // --- Load persisted settings once on mount ---
   useEffect(() => {
@@ -143,6 +146,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setColorScheme(settings.theme);
   }, [settings.theme, setColorScheme]);
 
+  // `useColorScheme()` from nativewind echoes back what we *set*, so for the
+  // "system" mode it would report "system" rather than a concrete value.
+  // Resolve it against the OS scheme to get the colour actually in effect.
+  const systemScheme = useRNColorScheme();
+  const isDark =
+    settings.theme === "system" ? systemScheme === "dark" : settings.theme === "dark";
+
+  // Keep the themeStore flag in sync so the `COLORS` getters (used by inline
+  // styles and icon colours) resolve to the active palette.
+  useEffect(() => {
+    setThemeIsDark(isDark);
+  }, [isDark]);
+
   const update = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
@@ -165,9 +181,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       currencyLabel: currency.label,
       currencySymbol: currency.symbol,
       isRTL: language.dir === "rtl",
-      isDark: colorScheme === "dark",
+      isDark,
     };
-  }, [settings, hydrated, update, colorScheme]);
+  }, [settings, hydrated, update, isDark]);
 
   return (
     <SettingsContext.Provider value={value}>

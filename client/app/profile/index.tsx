@@ -37,7 +37,7 @@ const UpdateProfile = () => {
               source={require("../../assets/images/user_profile.png")}
             />
           </View>
-          <View className="absolute h-7 w-7 bg-primary  border-white border-2 rounded-full right-[-3px] bottom-[-3px] items-center justify-center z-10">
+          <View className="absolute h-7 w-7 bg-primary-solid  border-white border-2 rounded-full right-[-3px] bottom-[-3px] items-center justify-center z-10">
             <MaterialCommunityIcons name="camera" size={14} color="white" />
           </View>
         </View>
@@ -78,7 +78,7 @@ const UpdateProfile = () => {
             {/* TextInput – flexible, right-aligned */}
             <TextInput
               className="flex-1 py-4 pr-2 text-right text-base font-medium 
-               font-tajwal text-stone-800"
+               font-tajwal text-body"
               placeholder="الإسم..."
               placeholderTextColor="#a8a29e"
               value={firstName}
@@ -117,7 +117,7 @@ const UpdateProfile = () => {
             {/* TextInput – flexible, right-aligned */}
             <TextInput
               className="flex-1 py-4 pr-2 text-right text-base font-medium 
-               font-tajwal text-stone-800"
+               font-tajwal text-body"
               placeholder="اللقب..."
               placeholderTextColor="#a8a29e"
               value={lastName}
@@ -156,7 +156,7 @@ const UpdateProfile = () => {
             {/* TextInput – flexible, right-aligned */}
             <TextInput
               className="flex-1 py-4 pr-2 text-right text-base font-medium 
-               font-tajwal text-stone-800"
+               font-tajwal text-body"
               placeholder=" رقم الهاتف..."
               placeholderTextColor="#a8a29e"
               value={phone}
@@ -170,7 +170,7 @@ const UpdateProfile = () => {
           </View>
         </View>
       </View>
-      <TouchableOpacity className="mx-4 p-4 rounded-lg flex-row justify-center gap-2 items-center bg-primary border border-primary/10">
+      <TouchableOpacity className="mx-4 p-4 rounded-lg flex-row justify-center gap-2 items-center bg-primary-solid border border-primary/10">
         <Text className="font-body text-white font-semibold text-lg">
           حفظ التغييرات
         </Text>

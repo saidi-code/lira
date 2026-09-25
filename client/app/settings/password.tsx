@@ -34,7 +34,7 @@ const PasswordField = ({
       {label}
     </Text>
     <View
-      className="my-2 flex-row items-center rounded-md overflow-hidden bg-white"
+      className="my-2 flex-row items-center rounded-md overflow-hidden bg-card"
       style={{
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
@@ -50,7 +50,7 @@ const PasswordField = ({
         <Ionicons name="lock-closed-outline" size={18} color={COLORS.primary} />
       </View>
       <TextInput
-        className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-stone-800"
+        className="flex-1 py-4 pr-2 text-right text-base font-medium font-tajwal text-body"
         placeholder={placeholder}
         placeholderTextColor="#a8a29e"
         value={value}
@@ -160,7 +160,7 @@ const ChangePasswordScreen = () => {
               activeOpacity={0.85}
               disabled={saving}
               onPress={handleSave}
-              className={`mt-4 p-4 rounded-lg flex-row justify-center gap-2 items-center bg-primary border border-primary/10 ${
+              className={`mt-4 p-4 rounded-lg flex-row justify-center gap-2 items-center bg-primary-solid border border-primary/10 ${
                 saving ? "opacity-70" : ""
               }`}
             >

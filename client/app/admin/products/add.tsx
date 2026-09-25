@@ -114,7 +114,7 @@ export default function AddProduct() {
 
   return (
     <ScrollView className="flex-1 bg-surface p-4">
-      <View className="bg-white p-4 rounded-xl shadow-sm mb-20">
+      <View className="bg-card p-4 rounded-xl shadow-sm mb-20">
         {/* NAME */}
         <Text className="text-secondary text-xs font-bold mb-1 uppercase">
           Product Name *
@@ -154,7 +154,7 @@ export default function AddProduct() {
         <Modal visible={modalVisible} animationType="slide" transparent>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View className="flex-1 justify-end bg-black/50">
-              <View className="bg-white rounded-t-2xl p-4 max-h-[50%]">
+              <View className="bg-card rounded-t-2xl p-4 max-h-[50%]">
                 <Text className="text-lg font-bold text-center mb-4">
                   Select Category
                 </Text>
@@ -238,7 +238,7 @@ export default function AddProduct() {
               ))}
             </ScrollView>
           ) : (
-            <View className="w-full h-32 rounded-lg bg-gray-100 justify-center items-center border border-dashed border-gray-300">
+            <View className="w-full h-32 rounded-lg bg-subtle justify-center items-center border border-dashed border-gray-300">
               <Ionicons
                 name="cloud-upload-outline"
                 size={32}
@@ -276,7 +276,7 @@ export default function AddProduct() {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={submitting}
-          className={`bg-primary p-4 rounded-xl items-center ${
+          className={`bg-primary-solid p-4 rounded-xl items-center ${
             submitting ? "opacity-70" : ""
           }`}
         >

@@ -207,7 +207,7 @@ export default function EditProduct() {
 
   return (
     <ScrollView className="flex-1 bg-surface p-4">
-      <View className="bg-white p-4 rounded-xl border border-gray-100 mb-20">
+      <View className="bg-card p-4 rounded-xl border border-subtle-border mb-20">
         <Text className="text-secondary text-xs font-bold mb-1 uppercase">
           Product Name *
         </Text>
@@ -261,7 +261,7 @@ export default function EditProduct() {
         <Modal visible={modalVisible} animationType="slide" transparent>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View className="flex-1 justify-end bg-black/50">
-              <View className="bg-white rounded-t-2xl p-4 max-h-[50%]">
+              <View className="bg-card rounded-t-2xl p-4 max-h-[50%]">
                 <Text className="text-lg font-bold text-center mb-4">
                   Select Category
                 </Text>
@@ -322,7 +322,7 @@ export default function EditProduct() {
                 />
                 <TouchableOpacity
                   onPress={() => removeNewImage(index)}
-                  className="absolute top-1 right-1 bg-primary rounded-full p-1"
+                  className="absolute top-1 right-1 bg-primary-solid rounded-full p-1"
                 >
                   <Ionicons name="close" size={12} color="white" />
                 </TouchableOpacity>
@@ -331,7 +331,7 @@ export default function EditProduct() {
             {existingImages.length + newImages.length < 5 && (
               <TouchableOpacity
                 onPress={pickImages}
-                className="w-24 h-24 rounded-lg bg-gray-100 justify-center items-center border border-dashed border-gray-300"
+                className="w-24 h-24 rounded-lg bg-subtle justify-center items-center border border-dashed border-gray-300"
               >
                 <Ionicons name="add" size={24} color={COLORS.secondary} />
                 <Text className="text-xs text-secondary mt-1">Add</Text>
@@ -361,7 +361,7 @@ export default function EditProduct() {
         </View>
 
         <TouchableOpacity
-          className={`bg-primary p-4 rounded-xl items-center ${submitting ? "opacity-70" : ""}`}
+          className={`bg-primary-solid p-4 rounded-xl items-center ${submitting ? "opacity-70" : ""}`}
           onPress={handleSubmit}
           disabled={submitting}
         >

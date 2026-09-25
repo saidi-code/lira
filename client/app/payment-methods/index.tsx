@@ -12,7 +12,7 @@ const METHODS = [
     description:
       "ادفع نقداً عند وصول طلبك إلى العنوان المحدد. متاح لجميع الطلبات داخل تونس.",
     badge: "متاح",
-    badgeClass: "bg-green-50 text-green-700",
+    badgeClass: "bg-success-surface text-success",
   },
   {
     icon: "card-outline",
@@ -20,7 +20,7 @@ const METHODS = [
     description:
       "ادفع بأمان عبر بطاقات Visa و Mastercard مع تشفير كامل لبياناتك.",
     badge: "متاح",
-    badgeClass: "bg-green-50 text-green-700",
+    badgeClass: "bg-success-surface text-success",
   },
 ];
 
@@ -46,7 +46,7 @@ const PaymentMethodsScreen = () => {
           {METHODS.map((method) => (
             <View
               key={method.title}
-              className="bg-white rounded-xl border border-primary-100 shadow-sm p-4 mb-4"
+              className="bg-card rounded-xl border border-primary-100 shadow-sm p-4 mb-4"
             >
               <View className="flex-row-reverse justify-between items-center mb-2">
                 <View className="flex-row-reverse items-center gap-3">

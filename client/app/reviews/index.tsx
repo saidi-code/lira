@@ -117,7 +117,7 @@ const MyReviewsScreen = () => {
       return (
         <View
           key={review._id}
-          className="bg-white mx-4 mb-4 rounded-xl border border-primary-100 shadow-sm p-4"
+          className="bg-card mx-4 mb-4 rounded-xl border border-primary-100 shadow-sm p-4"
         >
           <View className="flex-row-reverse items-center gap-3">
             {product?.images?.[0] ? (

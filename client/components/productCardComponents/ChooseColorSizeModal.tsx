@@ -75,7 +75,7 @@ const [, setUiSize] = useState<string | null>(selectedSize);
     >
       <View className="flex-1 bg-black/50 items-center justify-center px-6">
         <View
-          className="w-full rounded-3xl bg-white p-5"
+          className="w-full rounded-3xl bg-card p-5"
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 8 },
@@ -99,7 +99,7 @@ const [, setUiSize] = useState<string | null>(selectedSize);
               </Text>
 
               
-                <Text className="text-gray-500 text-sm font-tajwal mt-2 text-center">
+                <Text className="text-muted text-sm font-tajwal mt-2 text-center">
                   اختر اللون والمقاس أولاً
                 </Text>
               
@@ -210,7 +210,7 @@ const [, setUiSize] = useState<string | null>(selectedSize);
               activeOpacity={0.8}
               className="w-full items-center mt-3 py-3 border border-gray-500 rounded-2xl"
             >
-              <Text className="text-gray-500 text-base font-tajwal">إلغاء</Text>
+              <Text className="text-muted text-base font-tajwal">إلغاء</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

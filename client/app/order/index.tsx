@@ -129,14 +129,14 @@ const OrdersScreen = () => {
     return (
       <>
         {justCreatedOrder && (
-          <View className="mx-4 mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+          <View className="mx-4 mb-4 p-4 bg-success-surface rounded-xl border border-success-surface">
             <View className="flex-row-reverse items-center gap-3">
               <Ionicons name="checkmark-circle" size={28} color="#16a34a" />
               <View className="flex-1">
-                <Text className="text-right font-tajwal text-lg text-green-900 font-bold">
+                <Text className="text-right font-tajwal text-lg text-success font-bold">
                   تم إنشاء طلبك بنجاح!
                 </Text>
-                <Text className="text-right font-body text-sm text-green-800 mt-1">
+                <Text className="text-right font-body text-sm text-success mt-1">
                   رقم الطلب: {justCreatedOrder.orderNumber}
                 </Text>
               </View>
@@ -158,7 +158,7 @@ const OrdersScreen = () => {
             key={order._id}
             activeOpacity={0.85}
             onPress={() => router.push(`/order/${order._id}`)}
-            className="bg-white mx-4 mb-4 rounded-xl border border-primary-100 shadow-sm p-4"
+            className="bg-card mx-4 mb-4 rounded-xl border border-primary-100 shadow-sm p-4"
           >
             <View className="flex-row-reverse justify-between items-center">
               <Text className="font-tajwal text-body text-lg">
@@ -216,9 +216,9 @@ const OrdersScreen = () => {
                   activeOpacity={0.7}
                   disabled={cancelOrder.isLoading}
                   onPress={() => handleCancel(order)}
-                  className="px-3 py-1 rounded-full bg-red-50 border border-red-100"
+                  className="px-3 py-1 rounded-full bg-danger-surface border border-danger-surface"
                 >
-                  <Text className="text-red-600 text-xs font-body font-semibold">
+                  <Text className="text-danger text-xs font-body font-semibold">
                     إلغاء الطلب
                   </Text>
                 </TouchableOpacity>
@@ -271,7 +271,7 @@ const OrdersScreen = () => {
               className={`px-4 py-2 rounded-full border ${
                 filter === f.key
                   ? "bg-[#785920] border-[#785920]"
-                  : "bg-white border-primary-200"
+                  : "bg-card border-primary-200"
               }`}
             >
               <Text

@@ -4,7 +4,7 @@ import { CURRENCY } from "../constants/index";
 import { OrderSummaryProps } from "../constants/types";
 const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
   return (
-    <View className="self-stretch p-6 bg-white/50 rounded-2xl flex-col justify-start items-start gap-4">
+    <View className="self-stretch p-6 bg-card/50 rounded-2xl flex-col justify-start items-start gap-4">
       {/* Header with bottom border */}
       <View className="self-stretch pb-2 border-b border-[#d1c5b4] flex-row justify-end items-center">
         <Text className="text-right text-body  font-body text-lg ">

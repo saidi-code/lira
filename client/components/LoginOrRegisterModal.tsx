@@ -15,7 +15,7 @@ const LoginOrRegisterModal = ({ show,setShow }: { show: boolean ,setShow:any}) =
       }}
     >
       <View className="flex-1 bg-black/50 items-center justify-center px-6">
-        <View className="w-full rounded-3xl bg-white p-5" style={{
+        <View className="w-full rounded-3xl bg-card p-5" style={{
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.15,
@@ -74,7 +74,7 @@ const LoginOrRegisterModal = ({ show,setShow }: { show: boolean ,setShow:any}) =
             activeOpacity={0.8}
             className="w-full items-center mt-3 py-2"
           >
-            <Text className="text-gray-500 text-base font-tajwal">إلغاء</Text>
+            <Text className="text-muted text-base font-tajwal">إلغاء</Text>
           </TouchableOpacity>
         </View>
       </View>

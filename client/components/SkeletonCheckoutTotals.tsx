@@ -1,5 +1,5 @@
 // components/skeletons/SkeletonCheckoutTotals.tsx (animated)
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { COLORS } from "../constants/index";
+import { useAppColors, type Colors } from "../constants/utility";
 
 const AnimatedBox = ({ style }: { style: any }) => {
   const shimmer = useSharedValue(0.4);
@@ -29,6 +29,8 @@ const AnimatedBox = ({ style }: { style: any }) => {
 };
 
 const SkeletonCheckoutTotals = () => {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.box}>
       <View style={styles.row}>
@@ -56,9 +58,10 @@ const SkeletonCheckoutTotals = () => {
 
 export default SkeletonCheckoutTotals;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   box: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
   },
@@ -71,16 +74,16 @@ const styles = StyleSheet.create({
   line: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: COLORS.skeleton ?? "#e5e7eb",
+    backgroundColor: colors.skeleton,
   },
   lineStrong: {
     height: 16,
     borderRadius: 6,
-    backgroundColor: COLORS.skeleton ?? "#e5e7eb",
+    backgroundColor: colors.skeleton,
   },
   divider: {
     height: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.surface,
     marginVertical: 8,
   },
-});
+  });

@@ -96,7 +96,7 @@ export default function Page() {
 
   if (pendingVerification) {
     return (
-      <SafeAreaView className="flex-1 bg-white" style={{ padding: 28 }}>
+      <SafeAreaView className="flex-1 bg-card" style={{ padding: 28 }}>
       
         <Text style={styles.title}>تحقق من بريدك الإلكتروني</Text>
         <Text style={styles.description}>
@@ -136,7 +136,7 @@ export default function Page() {
        
        
       }} showsVerticalScrollIndicator={false}>
-        <View className="bg-white/90 mx-4 py-8 px-4 rounded-lg shadow shadow-primary-500">
+        <View className="bg-card/90 mx-4 py-8 px-4 rounded-lg shadow shadow-primary-500">
             <View className="flex gap-4 items-center  mb-8">
                      <View className=" justify-center items-center  w-20 h-20 rounded-full bg-[#b89354]/5 mb-2  ">
                                    <Image
@@ -153,8 +153,8 @@ export default function Page() {
                     </Text>
                   </View>
           {authError && (
-            <View className="p-4 rounded-lg bg-red-100 mb-4">
-              <Text className="text-red-500 text-sm font-semibold">
+            <View className="p-4 rounded-lg bg-danger-surface mb-4">
+              <Text className="text-danger text-sm font-semibold">
                 {authError}
               </Text>
             </View>
@@ -228,7 +228,7 @@ export default function Page() {
                 تسجيل الدخول
               </Text>
             </Link>
-            <Text className="text-base text-gray-400">هل لديك حساب؟ </Text>
+            <Text className="text-base text-muted">هل لديك حساب؟ </Text>
           </View>
           <View className="mt-6 items-center justify-center">
             <Link

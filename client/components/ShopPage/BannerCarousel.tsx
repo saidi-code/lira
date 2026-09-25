@@ -59,7 +59,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({collections,isLoading}) 
           <Text className="text-white font-tajwal text-sm font-medium">
             {item.subtitle}
           </Text>
-          <TouchableOpacity className="mt-2 px-4 py-2 bg-white self-end rounded-lg">
+          <TouchableOpacity className="mt-2 px-4 py-2 bg-card self-end rounded-lg">
             <Text className="text-primary text-right text-base">
               {item.cta}
             </Text>
@@ -79,8 +79,8 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({collections,isLoading}) 
   // If no data, show a placeholder (optional)
   if (collections.length === 0) {
     return (
-      <View className="mb-6 items-center justify-center h-48 bg-gray-100 rounded-lg">
-        <Text className="text-gray-500">No banners available</Text>
+      <View className="mb-6 items-center justify-center h-48 bg-subtle rounded-lg">
+        <Text className="text-muted">No banners available</Text>
       </View>
     );
   }
@@ -116,7 +116,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({collections,isLoading}) 
             className={`h-2 rounded-full ${
               index === activeBannerIndex
                 ? 'w-6 bg-primary'
-                : 'w-2 bg-gray-300'
+                : 'w-2 bg-skeleton'
             }`}
           />
         ))}

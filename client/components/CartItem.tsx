@@ -163,7 +163,7 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
             });
           }}
         >
-          <View className="rounded-lg overflow-hidden bg-gray-100">
+          <View className="rounded-lg overflow-hidden bg-subtle">
             <Image
               source={{ uri: imageUri }}
               style={{ width: 100, height: 130 }}

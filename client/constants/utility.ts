@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Dimensions } from "react-native";
 import Toast from "react-native-toast-message";
+import { DARK_COLORS, LIGHT_COLORS, type Colors } from "./index";
+import { getThemeIsDark, subscribeToTheme } from "./themeStore";
 const screenHeight = Dimensions.get("window").height;
 export const ShowToast = (type: string, text: string) => {
   Toast.show({
@@ -33,17 +36,17 @@ export const showErrorToast = (text: string = "") => {
 export const getStatusColor = (status: string) => {
   switch (status) {
     case "placed":
-      return "bg-yellow-50 text-yellow-900";
+      return "bg-active/15 text-active";
     case "processing":
-      return "bg-indigo-50 text-indigo-900";
+      return "bg-info-surface text-info";
     case "shipped":
-      return "bg-purple-50 text-purple-900";
+      return "bg-shipped-surface text-shipped";
     case "delivered":
-      return "bg-green-50 text-green-900";
+      return "bg-success-surface text-success";
     case "cancelled":
-      return "bg-red-50 text-red-900";
+      return "bg-danger-surface text-danger";
     default:
-      return "bg-gray-50 text-gray-900";
+      return "bg-subtle text-muted";
   }
 };
 
@@ -116,3 +119,23 @@ export const replaceTo = (
   href: string,
   params?: RouteParams
 ) => asParamsMethod(router.replace)(href, params);
+
+// ==========================================
+// 5. Theme hook
+// ==========================================
+/**
+ * Returns the active palette and re-renders the caller whenever the theme
+ * changes.
+ *
+ * Use this (instead of a module-level `StyleSheet.create`) in components whose
+ * styles read `COLORS` — a stylesheet built at module scope would capture the
+ * light palette before the user ever toggles the theme.
+ *
+ *   const colors = useAppColors();
+ *   const styles = useMemo(() => makeStyles(colors), [colors]);
+ */
+export function useAppColors(): Colors {
+  const [isDark, setIsDark] = useState(getThemeIsDark);
+  useEffect(() => subscribeToTheme(() => setIsDark(getThemeIsDark())), []);
+  return isDark ? DARK_COLORS : LIGHT_COLORS;
+}

@@ -91,7 +91,7 @@ const AddressScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-red-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-danger-surface" edges={["top"]}>
       <Header showBack />
 
       <ScrollView
@@ -116,7 +116,7 @@ const AddressScreen = () => {
             </Text>
             <TouchableOpacity
               onPress={() => setOpenModal(true)}
-              className="w-full flex-row justify-center items-center gap-2 px-4 py-4 bg-primary rounded-lg border border-accent"
+              className="w-full flex-row justify-center items-center gap-2 px-4 py-4 bg-primary-solid rounded-lg border border-accent"
             >
               <Ionicons name="locate-outline" color={"white"} size={24} />
               <Text className="text-white text-center font-semibold font-tajwal">
@@ -128,10 +128,10 @@ const AddressScreen = () => {
           addresses.map((a) => (
             <View
               key={a._id}
-              className="bg-white relative rounded-md shadow border border-1 border-primary-100 overflow-hidden pt-8 px-6 mb-6"
+              className="bg-card relative rounded-md shadow border border-1 border-primary-100 overflow-hidden pt-8 px-6 mb-6"
             >
               {a.isDefault && (
-                <View className="absolute top-0 right-0 bg-primary py-1 px-4 rounded-bl-md">
+                <View className="absolute top-0 right-0 bg-primary-solid py-1 px-4 rounded-bl-md">
                   <Text className="font-body text-sm text-white">
                     العنوان الافتراضي
                   </Text>
@@ -182,7 +182,7 @@ const AddressScreen = () => {
                   onPress={() => deleteAddress(a._id)}
                   className="flex-row items-center gap-1"
                 >
-                  <Text className="font-body text-sm text-red-500">حذف</Text>
+                  <Text className="font-body text-sm text-danger">حذف</Text>
                   <Ionicons name="trash-outline" color={"#ef4444"} size={16} />
                 </TouchableOpacity>
                 <Pressable
@@ -205,7 +205,7 @@ const AddressScreen = () => {
       {addresses.length !== 0 && (
         <TouchableOpacity
           onPress={() => setOpenModal(true)}
-          className="mx-4 py-4 bg-primary rounded-lg border border-accent mb-12"
+          className="mx-4 py-4 bg-primary-solid rounded-lg border border-accent mb-12"
         >
           <Text className="text-white text-center font-semibold font-tajwal">
             إضافة عنوان جديد
@@ -251,7 +251,7 @@ const AddressScreen = () => {
               </Text>
             </View>
 
-            <View className="mb-12 mx-2 bg-white rounded-xl shadow p-6">
+            <View className="mb-12 mx-2 bg-card rounded-xl shadow p-6">
               <View className="mb-4">
                 <Text className="text-body text-lg font-tajwal text-right">
                   نوع العنوان
@@ -391,7 +391,7 @@ const AddressScreen = () => {
                     : "تم إضافة عنوان جديد بنجاح"
                 );
               }}
-              className="flex-row justify-center items-center gap-2 mx-4 py-4 bg-green-500 rounded-lg border border-green-300 mb-12"
+              className="flex-row justify-center items-center gap-2 mx-4 py-4 bg-green-500 rounded-lg border border-success mb-12"
             >
               <Text className="text-white leading-6 text-center font-semibold font-tajwal">
                 {isEditing ? "حفظ التغيرات" : "إضافة عنوان جديد"}

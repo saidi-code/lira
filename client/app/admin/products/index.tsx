@@ -124,7 +124,7 @@ export default function AdminProducts() {
 
   return (
     <View className="flex-1 bg-surface">
-      <View className="p-4 bg-white border border-gray-100 flex-row justify-between items-center">
+      <View className="p-4 bg-card border border-subtle-border flex-row justify-between items-center">
         <Text className="text-lg font-semibold text-primary">
           Total Products ({products.length})
         </Text>
@@ -151,7 +151,7 @@ export default function AdminProducts() {
           products.map((product: any) => (
             <View
               key={product._id}
-              className="bg-white p-3 rounded-lg border border-gray-100 mb-3 flex-row items-center"
+              className="bg-card p-3 rounded-lg border border-subtle-border mb-3 flex-row items-center"
             >
               <Image
                 source={{
@@ -160,7 +160,7 @@ export default function AdminProducts() {
                       ? product.images[0]
                       : "https://via.placeholder.com/150",
                 }}
-                className="w-16 h-16 rounded-lg bg-gray-100 mr-3"
+                className="w-16 h-16 rounded-lg bg-subtle mr-3"
                 resizeMode="cover"
               />
 
@@ -198,7 +198,7 @@ export default function AdminProducts() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => deleteProduct(product._id)}
-                  className="p-2 bg-gray-50 rounded-full"
+                  className="p-2 bg-subtle rounded-full"
                 >
                   <Ionicons name="trash-outline" size={18} color="#333333" />
                 </TouchableOpacity>

@@ -96,7 +96,7 @@ const ReviewsSection = ({ productId }: { productId: string }) => {
       </View>
 
       {/* Add review */}
-      <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4 mb-4">
+      <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4 mb-4">
         <Text className="text-right font-tajwal text-sm text-body font-medium mb-3">
           أضف تقييمك
         </Text>
@@ -151,14 +151,14 @@ const ReviewsSection = ({ productId }: { productId: string }) => {
           <ActivityIndicator size="small" color={COLORS.primary} />
         </View>
       ) : reviews.length === 0 ? (
-        <View className="bg-white rounded-xl border border-primary border-dashed p-6 items-center">
+        <View className="bg-card rounded-xl border border-primary border-dashed p-6 items-center">
           <Ionicons name="chatbubble-ellipses-outline" size={28} color={COLORS.inactive} />
           <Text className="font-tajwal text-sm text-secondary mt-2 text-center">
             لا توجد تقييمات بعد — كن أول من يقيّم هذا المنتج
           </Text>
         </View>
       ) : (
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm px-4">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm px-4">
           {reviews.map((review) => (
             <ReviewCard key={review._id} review={review} />
           ))}

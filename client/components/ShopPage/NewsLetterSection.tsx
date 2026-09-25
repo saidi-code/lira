@@ -20,9 +20,9 @@ const NewsLetterSection = ({ isLoading}:{isLoading:boolean}) => {
               </View>
             </View>
             <View className="w-full max-w-[448px] relative">
-              <View className="relative w-full bg-white rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
+              <View className="relative w-full bg-card rounded-full shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
                 <TextInput
-                  className="w-full py-[23px] pl-[104px] pr-8 text-end text-gray-500 text-base font-normal font-tajawal"
+                  className="w-full py-[23px] pl-[104px] pr-8 text-end text-muted text-base font-normal font-tajawal"
                   placeholder="بريدك الإلكتروني"
                   placeholderTextColor="#9CA3AF"
                   value={email}

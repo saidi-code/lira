@@ -104,7 +104,7 @@ const OrderDetailScreen = () => {
         </View>
 
         {/* Status + date */}
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4">
           <View className="flex-row-reverse justify-between items-center">
             <View
               className={`px-3 py-1 rounded-full ${getStatusColor(order.orderStatus)}`}
@@ -124,7 +124,7 @@ const OrderDetailScreen = () => {
 
         {/* Items */}
         <SectionTitle>المنتجات</SectionTitle>
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4">
           {order.items.map((item, index) => (
             <View
               key={`${item.product}-${index}`}
@@ -160,7 +160,7 @@ const OrderDetailScreen = () => {
 
         {/* Shipping address */}
         <SectionTitle>عنوان الشحن</SectionTitle>
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4 flex-row-reverse items-start gap-3">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4 flex-row-reverse items-start gap-3">
           <Ionicons name="location-outline" size={20} color={COLORS.primary} />
           <View className="flex-1">
             <Text className="text-right font-body text-sm text-body leading-6">
@@ -175,7 +175,7 @@ const OrderDetailScreen = () => {
 
         {/* Payment */}
         <SectionTitle>الدفع</SectionTitle>
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4">
           <View className="flex-row-reverse justify-between items-center mb-2">
             <Text className="font-body text-sm text-secondary">طريقة الدفع</Text>
             <Text className="font-tajwal text-sm text-body">
@@ -192,7 +192,7 @@ const OrderDetailScreen = () => {
 
         {/* Totals */}
         <SectionTitle>ملخص الطلب</SectionTitle>
-        <View className="bg-white rounded-xl border border-primary-100 shadow-sm p-4">
+        <View className="bg-card rounded-xl border border-primary-100 shadow-sm p-4">
           <View className="flex-row-reverse justify-between mb-2">
             <Text className="font-body text-sm text-secondary">المجموع الفرعي</Text>
             <Text className="font-body text-sm text-body">
@@ -227,14 +227,14 @@ const OrderDetailScreen = () => {
             activeOpacity={0.85}
             disabled={cancelOrder.isLoading}
             onPress={handleCancel}
-            className="mt-6 py-4 rounded-lg items-center bg-red-50 border border-red-100 flex-row justify-center gap-2"
+            className="mt-6 py-4 rounded-lg items-center bg-danger-surface border border-danger-surface flex-row justify-center gap-2"
           >
             {cancelOrder.isLoading ? (
               <ActivityIndicator size="small" color="#dc2626" />
             ) : (
               <>
                 <Ionicons name="close-circle-outline" size={20} color="#dc2626" />
-                <Text className="font-body text-red-600 font-semibold text-base">
+                <Text className="font-body text-danger font-semibold text-base">
                   إلغاء الطلب
                 </Text>
               </>

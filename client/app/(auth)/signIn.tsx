@@ -146,7 +146,7 @@ export default function Page() {
                            source={require("../../assets/images/logo2.png")}
                            />
         </View>
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-card">
           <View className="flex  items-center ">
             <Text className="text-3xl  text-center font-bold  text-primary">
               تحقق من بريدك الإلكتروني
@@ -163,8 +163,8 @@ export default function Page() {
             </View>
           </View>
           {authError && (
-            <View className="p-4 rounded-lg bg-red-100 mb-4">
-              <Text className="text-red-500 text-sm font-semibold">
+            <View className="p-4 rounded-lg bg-danger-surface mb-4">
+              <Text className="text-danger text-sm font-semibold">
                 {authError}
               </Text>
             </View>
@@ -205,7 +205,7 @@ export default function Page() {
 
       <View className="flex-1 justify-center">
       
-        <View className="bg-white/90 mx-4 py-4 px-4 rounded-lg shadow shadow-primary-500">
+        <View className="bg-card/90 mx-4 py-4 px-4 rounded-lg shadow shadow-primary-500">
             <View className="flex gap-4 items-center  mb-8">
            <View className=" justify-center items-center  w-20 h-20 rounded-full bg-[#b89354]/5 mb-2  ">
                          <Image
@@ -222,8 +222,8 @@ export default function Page() {
           </Text>
         </View>
           {authError && (
-            <View className="p-4 rounded-lg bg-red-100 mb-4">
-              <Text className="text-red-500 text-sm font-semibold">
+            <View className="p-4 rounded-lg bg-danger-surface mb-4">
+              <Text className="text-danger text-sm font-semibold">
                 {authError}
               </Text>
             </View>
@@ -280,7 +280,7 @@ export default function Page() {
                 إنشاء حساب
               </Text>
             </Link>
-            <Text className="text-base text-gray-400 text-right">
+            <Text className="text-base text-muted text-right">
               لا تمتلك حساباً؟
             </Text>
           </View>

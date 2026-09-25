@@ -36,7 +36,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
   if (!product) return null;
 
   return (
-    <View className="self-stretch p-4 bg-white rounded-xl shadow-lg flex-row justify-start items-center gap-4 mb-4">
+    <View className="self-stretch p-4 bg-card rounded-xl shadow-lg flex-row justify-start items-center gap-4 mb-4">
       {/* Texts */}
       <View className="flex-1 flex-col justify-between items-start">
         <View className="self-stretch flex-col justify-start items-start gap-1">
@@ -89,7 +89,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
       </View>
 
       {/* Product image */}
-      <Pressable onPress={handleNavigate} className="w-28 h-32 rounded-lg overflow-hidden bg-gray-100">
+      <Pressable onPress={handleNavigate} className="w-28 h-32 rounded-lg overflow-hidden bg-subtle">
         <Image
           source={{ uri: imageUri }}
           style={{ width: 112, height: 128 }}
