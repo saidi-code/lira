@@ -12,7 +12,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useCart } from "@/hooks/useCart";
 import { useAddress } from "@/hooks/useAddress";
-import { useOrder } from "@/hooks/useOrder";
+import { useCreateOrder } from "@/hooks/useOrder";
 import { BackendAddress } from "@/config/addressApi";
 import { PaymentMethod } from "@/config/orderApi";
 import { COLORS } from "@/constants";
@@ -37,7 +37,11 @@ const CheckoutScreen = () => {
   } = useAddress();
 
   // ---------- الطلبات ----------
-  const { createOrder, loading: isCreatingOrder } = useOrder();
+  // Use the create-order mutation directly: the unified useOrder() hook also
+  // fetches the orders list, which made the confirm button appear stuck in its
+  // "confirming..." state on mount until that unrelated fetch settled.
+  const createOrderMutation = useCreateOrder();
+  const isCreatingOrder = createOrderMutation.isLoading;
 
   // ---------- الحالة المحلية ----------
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
@@ -73,7 +77,7 @@ const CheckoutScreen = () => {
     }
 
     try {
-      const order = await createOrder({
+      const order = await createOrderMutation.mutateAsync({
         items: cartItems.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,
@@ -113,7 +117,13 @@ const CheckoutScreen = () => {
         ),
       };
 
-      await clearCart();
+      // لا يجوز لفشل إفراغ السلة إخفاء نجاح الطلب — الطلب أُنشئ بالفعل،
+      // وستُحدَّث السلة تلقائيًا عبر invalidateQueries في useCreateOrder.
+      try {
+        await clearCart();
+      } catch (clearError) {
+        console.warn("clearCart after order failed:", clearError);
+      }
       router.replace({
         pathname: "/checkout/checkoutSuccess",
         params: successParams,
