@@ -8,9 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import CartItem from "../../../components/CartItem";
-import Header from "../../../components/Header";
 import OrderSummary from "../../../components/OrderSummary";
 import ProductCard from "../../../components/ProductCard";
 import { useCart } from "../../../hooks/useCart";
@@ -22,8 +20,7 @@ const Cart = () => {
 
 
   return (
-    <SafeAreaView className=" bg-surface flex-1" edges={["top"]}>
-      <Header showBack />
+    <View className="flex-1">
       {/* Page Title */}
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 justify-center items-center gap-2 mt-8 mb-6">
@@ -163,7 +160,7 @@ const Cart = () => {
           </>)
         }
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

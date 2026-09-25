@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { COLORS, PROFILE_MENU } from "@/constants";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -6,7 +5,6 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const Profile = () => {
   const { user } = useUser();
@@ -18,8 +16,7 @@ const Profile = () => {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
-      <Header showBack />
+    <View className="flex-1">
       {!user ? (
         <View className="flex-1">
           <View className="items-center mt-6 mb-12">
@@ -181,7 +178,7 @@ const Profile = () => {
           </TouchableOpacity>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

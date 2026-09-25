@@ -1,7 +1,5 @@
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../../components/Header";
 import BannerCarousel from "../../../components/ShopPage/BannerCarousel";
 import { useCollections } from "../../../hooks/useCollections";
 import { useCategories } from "../../../hooks/useCategories";
@@ -47,8 +45,7 @@ export default function ShopScreen() {
   }
 
   return (
-    <SafeAreaView className="bg-surface flex-1" edges={["top"]}>
-      <Header showSearch showBack={false} />
+    <View className="flex-1">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <BannerCarousel collections={collections} isLoading={isLoading} />
         <CategoriesSections
@@ -58,6 +55,6 @@ export default function ShopScreen() {
         <CollectionsSections collections={collections} isLoading={isLoading} />
         <NewsLetterSection isLoading={isLoading || categoriesIsLoading} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

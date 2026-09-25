@@ -7,16 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import FavorisItem from "../../../components/FavorisItem";
-import Header from "../../../components/Header";
 import { useFavoris } from "../../../hooks/useFavoris";
 const Wishlist = () => {
   const router = useRouter();
   const { favorisItem, itemsCount } = useFavoris();
   return (
-    <SafeAreaView className=" bg-surface flex-1" edges={["top"]}>
-      <Header showBack />
+    <View className="flex-1">
       {/* Page Title */}
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 justify-center items-center gap-2 mt-8 mb-6">
@@ -90,7 +87,7 @@ const Wishlist = () => {
             </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

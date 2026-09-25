@@ -8,8 +8,6 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../../components/Header";
 import { Ionicons } from "@expo/vector-icons";
 import { useProducts } from "../../../hooks/useProducts";
 import { COLORS } from "../../../constants";
@@ -195,8 +193,7 @@ export default function Index() {
   }
 
   return (
-    <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
-      <Header showBack />
+    <View className="flex-1">
 
       {/* Search Bar */}
       <View
@@ -300,7 +297,7 @@ export default function Index() {
         onApply={handleApplyFilters}
         searchResultsCount={searchResult.length}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
