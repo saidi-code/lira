@@ -8,8 +8,9 @@
    Every Tailwind colour below resolves to one of these variables, so switching
    the theme re-paints all ~250 className usages with no component changes.
 
-   The `.dark:root` selector is what NativeWind/nativewind emits for
-   `darkMode: "class"` once `setColorScheme("dark")` is applied.
+   The dark values live in a `prefers-color-scheme: dark` media query:
+   css-interop maps that to the `dark` subtype of the root variables, which the
+   runtime resolves from the active color scheme (Appearance / setColorScheme).
 
    `primary`      – brand tone used for TEXT/icons  → lightens in dark
    `primary-solid`– brand tone used as a BUTTON fill → stays dark so white
@@ -41,27 +42,29 @@
   --color-shipped-surface: 243 232 255; /* #F3E8FF */
 }
 
-.dark:root {
-  --color-canvas: 26 23 20; /* #1A1714 */
-  --color-surface: 26 23 20; /* #1A1714 */
-  --color-card: 45 40 36; /* #2D2824 */
-  --color-body: 245 239 233; /* #F5EFE9 */
-  --color-secondary: 168 162 158; /* #A8A29E */
-  --color-muted: 138 131 123; /* #8A837B */
-  --color-primary: 217 184 124; /* #D9B87C */
-  --color-primary-solid: 120 89 32; /* unchanged: white text sits on it */
-  --color-accent: 201 165 105; /* #C9A569 */
-  --color-inactive: 138 131 123; /* #8A837B */
-  --color-active: 224 138 46; /* #E08A2E */
-  --color-skeleton: 58 52 46; /* #3A342E */
-  --color-subtle: 38 34 31; /* #26221F */
-  --color-subtle-border: 55 49 45; /* #37312D */
-  --color-danger: 252 165 165; /* #FCA5A5 */
-  --color-danger-surface: 69 26 26; /* #451A1A */
-  --color-success: 134 239 172; /* #86EFAC */
-  --color-success-surface: 20 60 38; /* #143C26 */
-  --color-info: 165 180 252; /* #A5B4FC */
-  --color-info-surface: 30 27 75; /* #1E1B4B */
-  --color-shipped: 216 180 254; /* #D8B4FE */
-  --color-shipped-surface: 59 7 100; /* #3B0764 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: 26 23 20; /* #1A1714 */
+    --color-surface: 26 23 20; /* #1A1714 */
+    --color-card: 45 40 36; /* #2D2824 */
+    --color-body: 245 239 233; /* #F5EFE9 */
+    --color-secondary: 168 162 158; /* #A8A29E */
+    --color-muted: 138 131 123; /* #8A837B */
+    --color-primary: 217 184 124; /* #D9B87C */
+    --color-primary-solid: 120 89 32; /* unchanged: white text sits on it */
+    --color-accent: 201 165 105; /* #C9A569 */
+    --color-inactive: 138 131 123; /* #8A837B */
+    --color-active: 224 138 46; /* #E08A2E */
+    --color-skeleton: 58 52 46; /* #3A342E */
+    --color-subtle: 38 34 31; /* #26221F */
+    --color-subtle-border: 55 49 45; /* #37312D */
+    --color-danger: 252 165 165; /* #FCA5A5 */
+    --color-danger-surface: 69 26 26; /* #451A1A */
+    --color-success: 134 239 172; /* #86EFAC */
+    --color-success-surface: 20 60 38; /* #143C26 */
+    --color-info: 165 180 252; /* #A5B4FC */
+    --color-info-surface: 30 27 75; /* #1E1B4B */
+    --color-shipped: 216 180 254; /* #D8B4FE */
+    --color-shipped-surface: 59 7 100; /* #3B0764 */
+  }
 }

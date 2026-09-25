@@ -5,10 +5,13 @@ import Order from "../models/Order.js";
 import Product from "../models/Products.js";
 import Address from "../models/Address.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
+import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 
 // ==================== TYPES ====================
 interface AuthUser {
   _id: mongoose.Types.ObjectId;
+  name?: string;
+  email?: string;
   role?: string;
 }
 
@@ -205,6 +208,42 @@ export const createOrder = async (
         { $inc: { stock: -item.quantity } }
       );
     }
+
+    // ---------- Send the invoice email ----------
+    // Fire-and-forget: the order is already committed, so a slow or failing
+    // SMTP call must never delay or fail the checkout response. We respond
+    // first and let the send settle in the background.
+    void sendOrderInvoiceEmail(
+      { name: req.user?.name ?? "عميلنا العزيز", email: req.user?.email ?? "" },
+      {
+        orderNumber: order.orderNumber ?? "",
+        items: orderItems.map((i) => ({
+          name: i.name,
+          image: i.image,
+          price: i.price,
+          quantity: i.quantity,
+          size: i.size,
+          color: i.color,
+          subtotal: i.subtotal,
+        })),
+        shippingAddress: {
+          type: addressDoc.type ?? "Other",
+          street: addressDoc.street,
+          city: addressDoc.city,
+          state: addressDoc.state,
+          zipCode: addressDoc.zipCode,
+          phoneNumber: addressDoc.phoneNumber,
+        },
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.orderStatus,
+        subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
+        tax: order.tax,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt ?? new Date(),
+      }
+    );
 
     return res.status(201).json({
       success: true,
