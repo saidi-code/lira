@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../../constants/index';
 import {
   CURRENCIES,
   LANGUAGES,
