@@ -1,18 +1,44 @@
 import {Drawer} from "@/config/Drawer/Drawer";
 import { DrawerContentScrollView } from '@react-navigation/drawer';
-import { View, Text, Switch, StyleSheet } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/index'; // Adjust the path as needed
+import {
+  CURRENCIES,
+  LANGUAGES,
+  THEME_MODES,
+  useSettings,
+} from '../../context/SettingsContext';
 
 // --- 1. CUSTOM DRAWER CONTENT COMPONENT ---
 function CustomDrawerContent(props: any) {
-  // التنبيهات
-  // ملاحظة: تم تعليق كود تبديل الوضع الليلي وواجهة اختيار اللغة مؤقتًا
-  // أسفل هذا الملف، لذلك حُذفت متغيراته من هنا.
-  // نسخة احتياطية: %TEMP%\drawer_layout_WIP_backup_20260925_180512.tsx
- const [phoneNotification, setPhoneNotification] = useState<boolean>(false);
-  const [emailNoatification, setEmailNoatification] = useState<boolean>(false);
+  // الإعدات، تُقرأ Context
+  const {
+    settings,
+    setLanguage,
+    setCurrency,
+    setTheme,
+    setPhoneNotifications,
+    setEmailNotifications,
+    languageLabel,
+    currencySymbol,
+  } = useSettings();
+
+  const [picker, setPicker] = useState<PickerKind | null>(null);
+  const openPicker = (kind: PickerKind) => setPicker(kind);
+  const closePicker = () => setPicker(null);
+
+  const themeLabel =
+    THEME_MODES.find((t) => t.code === settings.theme)?.label ?? '';
 
   return (
     
@@ -42,8 +68,8 @@ function CustomDrawerContent(props: any) {
                   trackColor={{ false: "#ECE0D9", true: "#B89354" }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => setPhoneNotification((prev) => !prev)}
-                  value={phoneNotification}
+                  onValueChange={setPhoneNotifications}
+                  value={settings.phoneNotifications}
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">
@@ -61,8 +87,8 @@ function CustomDrawerContent(props: any) {
                   trackColor={{ false: "#ECE0D9", true: "#B89354" }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => setEmailNoatification((prev) => !prev)}
-                  value={emailNoatification}
+                  onValueChange={setEmailNotifications}
+                  value={settings.emailNotifications}
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">
@@ -86,46 +112,27 @@ function CustomDrawerContent(props: any) {
                 التفضيلات
               </Text>
             </View>
-            <View className=" bg-white rounded-xl shadow">
-              <View className="flex-row items-center justify-between ps-2">
-                <Text className="font-tajwal font-medium text-primary">
-                  العربية
-                </Text>
-                <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
-                  <Text className="text-lg font-body font-meduim">اللغة</Text>
-                  <Ionicons
-                    name="globe-outline"
-                    size={16}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </View>
-              <View className="flex-row items-center justify-between ps-2">
-                <Text className="font-tajwal font-medium text-primary">
-                  د.ت
-                </Text>
-                <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
-                  <Text className="text-lg font-body font-meduim">العملة</Text>
-                  <Ionicons
-                    name="mail-outline"
-                    size={16}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </View>
-              <View className="flex-row items-center justify-between ps-2">
-                <Text className="font-tajwal font-medium text-primary">
-                  فاتح
-                </Text>
-                <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
-                  <Text className="text-lg font-body font-meduim">المظهر</Text>
-                  <Ionicons
-                    name="moon-outline"
-                    size={16}
-                    color={COLORS.primary}
-                  />
-                </View>
-              </View>
+            <View className="bg-white rounded-xl shadow overflow-hidden">
+              <SettingRow
+                icon="earth-outline"
+                label="اللغة"
+                value={languageLabel}
+                onPress={() => openPicker("language")}
+              />
+              <View className="h-px bg-gray-100 mx-4" />
+              <SettingRow
+                icon="cash-outline"
+                label="العملة"
+                value={`${currencySymbol} ${settings.currency}`}
+                onPress={() => openPicker("currency")}
+              />
+              <View className="h-px bg-gray-100 mx-4" />
+              <SettingRow
+                icon="moon-outline"
+                label="المظهر"
+                value={themeLabel}
+                onPress={() => openPicker("theme")}
+              />
             </View>
           </View>
         </View>
@@ -175,11 +182,134 @@ function CustomDrawerContent(props: any) {
           ))}
         </View>
       </View> */}
+
+      {/* --- SETTINGS PICKER MODAL --- */}
+      <Modal
+        visible={picker !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closePicker}
+      >
+        <View className="flex-1 justify-end">
+          <Pressable className="flex-1 bg-black/40" onPress={closePicker} />
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-10">
+            <Text className="font-tajwal text-lg font-bold text-primary text-center mb-5">
+              {picker ? PICKER_TITLES[picker] : ""}
+            </Text>
+
+            {picker === "language" &&
+              LANGUAGES.map((option) => (
+                <OptionRow
+                  key={option.code}
+                  label={option.label}
+                  selected={settings.language === option.code}
+                  onPress={() => {
+                    setLanguage(option.code);
+                    closePicker();
+                  }}
+                />
+              ))}
+
+            {picker === "currency" &&
+              CURRENCIES.map((option) => (
+                <OptionRow
+                  key={option.code}
+                  label={`${option.label} (${option.symbol})`}
+                  selected={settings.currency === option.code}
+                  onPress={() => {
+                    setCurrency(option.code);
+                    closePicker();
+                  }}
+                />
+              ))}
+
+            {picker === "theme" &&
+              THEME_MODES.map((option) => (
+                <OptionRow
+                  key={option.code}
+                  label={option.label}
+                  selected={settings.theme === option.code}
+                  onPress={() => {
+                    setTheme(option.code);
+                    closePicker();
+                  }}
+                />
+              ))}
+          </View>
+        </View>
+      </Modal>
     </DrawerContentScrollView>
    
   );
 }
 
+
+// --- 1b. SETTINGS ROW COMPONENTS ---
+type PickerKind = "language" | "currency" | "theme";
+
+const PICKER_TITLES: Record<PickerKind, string> = {
+  language: "اختيار اللغة",
+  currency: "اختيار العملة",
+  theme: "اختيار المظهر",
+};
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
+function SettingRow({
+  icon,
+  label,
+  value,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="flex-row items-center justify-between p-4"
+      activeOpacity={0.7}
+    >
+      <View className="flex-row justify-end items-center gap-6">
+        <Text className="text-lg font-body font-meduim">{label}</Text>
+        <Ionicons name={icon} size={16} color={COLORS.primary} />
+      </View>
+      <View className="flex-row items-center gap-2">
+        <Text className="text-base font-body text-primary">{value}</Text>
+        <Ionicons name="chevron-back" size={14} color={COLORS.inactive} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function OptionRow({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="flex-row items-center justify-between py-4 px-2"
+      activeOpacity={0.7}
+    >
+      <Text
+        className={`text-base font-body ${selected ? "text-primary font-bold" : "text-gray-700"}`}
+      >
+        {label}
+      </Text>
+      {selected && (
+        <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+      )}
+    </TouchableOpacity>
+  );
+}
 // --- 2. MAIN DRAWER LAYOUT ---
 export default function DrawerLayout() {
   return (

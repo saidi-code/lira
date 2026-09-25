@@ -10,6 +10,7 @@ import Toast from "react-native-toast-message";
 import { toastConfig } from "../constants/config";
 import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
 import { useAuthModal } from "../hooks/useCart";
+import { SettingsProvider } from "../context/SettingsContext";
 import "../global.css";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -48,6 +49,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
+        <SettingsProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
             <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
@@ -55,6 +57,7 @@ export default function RootLayout() {
         </GestureHandlerRootView>
         <AuthModalContainer />
         <Toast config={toastConfig} />
+        </SettingsProvider>
       </ClerkProvider>
     </QueryClientProvider>
   );
