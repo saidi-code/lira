@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, memo } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { CURRENCY } from "../constants/index";
+import { pushTo } from "../constants/utility";
 import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
@@ -155,13 +156,10 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
         <Pressable
           onPress={() => {
             if (!item?.product?._id) return;
-            router.push({
-              pathname: "/product/[id]",
-              params: {
-                id: item.product._id,
-                color: item.color ?? "",
-                size: item.size ?? "",
-              },
+            pushTo(router, "/product/[id]", {
+              id: String(item.product._id),
+              color: item.color ?? "",
+              size: item.size ?? "",
             });
           }}
         >

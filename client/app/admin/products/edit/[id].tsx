@@ -60,16 +60,16 @@ export default function EditProduct() {
         });
         if (data?.success) {
           const product: any = data.data;
-          setName(product.name);
+          setName(product.name ?? "");
           setDescription(product.description || "");
-          setPrice(product.price.toString());
-          setStock(product.stock.toString());
+          setPrice(product.price != null ? String(product.price) : "");
+          setStock(product.stock != null ? String(product.stock) : "");
           setCategory(
-            typeof product.category === "object"
-              ? product.category.name
-              : product.category,
+            product.category && typeof product.category === "object"
+              ? (product.category.name ?? "")
+              : (product.category ?? ""),
           );
-          setIsFeatured(product.isFeatured);
+          setIsFeatured(Boolean(product.isFeatured));
 
           if (product.sizes)
             setSizes(

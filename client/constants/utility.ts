@@ -74,3 +74,45 @@ export const formatDate = (iso: string) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
 };
+
+
+// ==========================================
+// Navigation helpers
+// ==========================================
+export type RouteParams = Record<
+  string,
+  string | number | boolean | undefined | null
+>;
+
+type RouterMethod = (href: string, params?: RouteParams) => void;
+
+const asParamsMethod = (method: unknown): RouterMethod =>
+  method as RouterMethod;
+
+/**
+ * `navigate` / `push` / `replace` returned by `useRouter()`.
+ *
+ * expo-router 6.0.24 declares them as `(href, options?)`, while the runtime
+ * deprecates the single-object form and expects `(href, params, options)`.
+ * These wrappers keep the non-deprecated call shape and narrow `params` so the
+ * calls type-check against the current (incomplete) declarations.
+ *
+ * TODO: drop these helpers once expo-router types the `params` argument.
+ */
+export const navigateTo = (
+  router: { navigate: unknown },
+  href: string,
+  params?: RouteParams
+) => asParamsMethod(router.navigate)(href, params);
+
+export const pushTo = (
+  router: { push: unknown },
+  href: string,
+  params?: RouteParams
+) => asParamsMethod(router.push)(href, params);
+
+export const replaceTo = (
+  router: { replace: unknown },
+  href: string,
+  params?: RouteParams
+) => asParamsMethod(router.replace)(href, params);

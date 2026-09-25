@@ -16,6 +16,7 @@ import { useCreateOrder } from "@/hooks/useOrder";
 import { BackendAddress } from "@/config/addressApi";
 import { PaymentMethod } from "@/config/orderApi";
 import { COLORS } from "@/constants";
+import { replaceTo } from "@/constants/utility";
 import SkeletonAddressCard from "@/components/SkeletonAddressCard";
 import SkeletonCheckoutTotals from "@/components/SkeletonCheckoutTotals";
 
@@ -124,10 +125,7 @@ const CheckoutScreen = () => {
       } catch (clearError) {
         console.warn("clearCart after order failed:", clearError);
       }
-      router.replace({
-        pathname: "/checkout/checkoutSuccess",
-        params: successParams,
-      });
+      replaceTo(router, "/checkout/checkoutSuccess", successParams);
     } catch (e: any) {
       console.error("createOrder failed:", e);
       Alert.alert(

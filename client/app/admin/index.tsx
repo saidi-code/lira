@@ -124,8 +124,11 @@ export default function AdminDashboard() {
                 </View>
               </View>
               <View className="pb-2">
-                {order.items.map((item: any) => (
-                  <Text key={item._id} className="text-secondary text-xs mt-1">
+                {order.items.map((item: any, itemIndex: number) => (
+                  <Text
+                    key={`${item.product?._id ?? item.product ?? itemIndex}-${itemIndex}`}
+                    className="text-secondary text-xs mt-1"
+                  >
                     {item.name} x {item.quantity}
                   </Text>
                 ))}

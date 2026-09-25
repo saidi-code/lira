@@ -2,6 +2,7 @@ import { View, Text,FlatList, TouchableOpacity,Image  } from 'react-native'
 import React from 'react'
 import { Ionicons, MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { COLORS } from '../../constants/index';
+import { pushTo } from '../../constants/utility';
 import { useRouter } from "expo-router";
 import CategoriesSkeleton from './CategoriesSkeleton';
   const getIcon = (title: string) => {
@@ -79,10 +80,7 @@ const CategoriesSections = ({categories,isLoading}:{categories:any[],isLoading:b
                renderItem={({ item }) => (
                  <TouchableOpacity
                    onPress={() => {
-                     router.push({
-                       pathname: "/product",
-                       params: { category: item.title },
-                     });
+                      pushTo(router, "/product", { category: item.title });
                    }}
                    className="rounded-2xl mx-4 items-center justify-center"
                    activeOpacity={0.8}

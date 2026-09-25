@@ -214,9 +214,9 @@ export default function AdminOrders() {
                 <Text className="text-xs text-secondary font-bold mb-2">
                   ITEMS
                 </Text>
-                {order.items.map((item: any) => (
+                {order.items.map((item: any, itemIndex: number) => (
                   <View
-                    key={item._id}
+                    key={`${item.product?._id ?? item.product ?? itemIndex}-${itemIndex}`}
                     className="flex-row justify-between mb-1"
                   >
                     <Text className="text-secondary text-xs flex-1">
