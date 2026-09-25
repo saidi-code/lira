@@ -1,8 +1,9 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { CURRENCY } from "../constants/index";
+import { usePrice } from "../hooks/usePrice";
 import { OrderSummaryProps } from "../constants/types";
 const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
+  const price = usePrice();
   return (
     <View className="self-stretch p-6 bg-card/50 rounded-2xl flex-col justify-start items-start gap-4">
       {/* Header with bottom border */}
@@ -15,7 +16,7 @@ const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
       {/* Subtotal row */}
       <View className="self-stretch flex-row justify-between items-center">
         <Text className="text-right text-body  font-body text-base  ">
-          {subtotal} {CURRENCY}
+          {price(subtotal)}
         </Text>
         <Text className="text-right text-primary-600 text-base  font-body">
           المجموع الفرعي
@@ -25,7 +26,7 @@ const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
       {/* Shipping row */}
       <View className="self-stretch flex-row justify-between items-center">
         <Text className="text-right text-[#785920] text-base leading-6 font-medium">
-          {shipping} {CURRENCY}
+          {price(shipping)}
         </Text>
         <Text className="text-right text-[#645d59] text-base leading-6 font-normal">
           الشحن والتوصيل
@@ -35,7 +36,7 @@ const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
       {/* Total row with top border */}
       <View className="self-stretch pt-2 border-t border-[#d1c5b4] flex-row justify-between items-center">
         <Text className="text-right text-[#785920] text-base leading-6 font-normal">
-          {subtotal + shipping} {CURRENCY}
+          {price(subtotal + shipping)}
         </Text>
         <Text className="text-right text-[#201b16] text-base leading-6 font-normal">
           الإجمالي

@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { api } from '@/config/api';
-import { CURRENCY, COLORS } from '@/constants';
+import { COLORS } from '@/constants';
+import { usePrice } from '@/hooks/usePrice';
 
 const brandsOptions = [
     { label: 'الكل', value: '' },
@@ -66,6 +67,9 @@ const FilterProductsModal: React.FC<SearchPageProps> = ({
   setPriceRange: externalSetPrice,
   onApply,
 }) => {
+  // Formatter kept separate from the `price` slider state below.
+  const format = usePrice();
+
   const [localCategory, setLocalCategory] = useState('الكل');
   const [localColor, setLocalColor] = useState('');
   const [localSize, setLocalSize] = useState('');
@@ -291,7 +295,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
           <View className="mb-8">
             <View className="flex-row items-center justify-between border-r-2 border-primary-700 mb-8">
               <Text className="font-tajwal mr-4 text-xl leading-7 text-accent font-bold text-left">
-                {price[1]} - {price[0]} {CURRENCY}
+                {format(price[1])} - {format(price[0])}
               </Text>
               <Text className="font-tajwal mr-4 text-2xl leading-7 text-body font-bold text-right">
                 نطاق السعر
@@ -310,8 +314,8 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
                 trackStyle={{ height: 4, width: '100%' }}
               />
               <View className="flex-row items-end justify-between">
-                <Text className="text-body text-sm font-tajwal">0 {CURRENCY}</Text>
-                <Text className="text-body text-right text-sm font-tajwal">+5000 {CURRENCY}</Text>
+                <Text className="text-body text-sm font-tajwal">{format(0)}</Text>
+                <Text className="text-body text-right text-sm font-tajwal">+{format(5000)}</Text>
               </View>
             </View>
           </View>

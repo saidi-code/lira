@@ -2,7 +2,7 @@ import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import React, { useMemo, useCallback, memo } from "react";
 import { Text, TouchableOpacity, View, Pressable } from "react-native";
 import { Image } from "expo-image";
-import { CURRENCY } from "../constants/index";
+import { usePrice } from "../hooks/usePrice";
 import { FavorisItemsProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../hooks/useFavoris";
@@ -12,6 +12,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
   const router = useRouter();
   const { addToCart } = useCart();
   const { toggleLike } = useFavoris();
+  const price = usePrice();
 
   const imageUri = useMemo(() => {
     if (!product) return undefined;
@@ -81,7 +82,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
 
             <View className="flex-col justify-start items-end">
               <Text className="text-right text-[#785920] text-base font-body">
-                {product.price} {CURRENCY}
+                {price(product.price)}
               </Text>
             </View>
           </View>

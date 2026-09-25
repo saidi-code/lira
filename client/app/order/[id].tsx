@@ -13,7 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/components/Header";
-import { COLORS, CURRENCY } from "@/constants";
+import { COLORS } from "@/constants";
+import { usePrice } from "@/hooks/usePrice";
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -30,6 +31,7 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const OrderDetailScreen = () => {
+  const price = usePrice();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -152,7 +154,7 @@ const OrderDetailScreen = () => {
                 </Text>
               </View>
               <Text className="font-tajwal text-accent text-sm">
-                {item.subtotal.toFixed(2)} {CURRENCY}
+                {price(item.subtotal)}
               </Text>
             </View>
           ))}
@@ -196,19 +198,19 @@ const OrderDetailScreen = () => {
           <View className="flex-row-reverse justify-between mb-2">
             <Text className="font-body text-sm text-secondary">المجموع الفرعي</Text>
             <Text className="font-body text-sm text-body">
-              {order.subtotal.toFixed(2)} {CURRENCY}
+              {price(order.subtotal)}
             </Text>
           </View>
           <View className="flex-row-reverse justify-between mb-2">
             <Text className="font-body text-sm text-secondary">الشحن والتوصيل</Text>
             <Text className="font-body text-sm text-body">
-              {order.shippingCost.toFixed(2)} {CURRENCY}
+              {price(order.shippingCost)}
             </Text>
           </View>
           <View className="flex-row-reverse justify-between mb-2">
             <Text className="font-body text-sm text-secondary">الضريبة</Text>
             <Text className="font-body text-sm text-body">
-              {order.tax.toFixed(2)} {CURRENCY}
+              {price(order.tax)}
             </Text>
           </View>
           <View className="flex-row-reverse justify-between border-t border-primary-100 pt-3 mt-1">
@@ -216,7 +218,7 @@ const OrderDetailScreen = () => {
               الإجمالي
             </Text>
             <Text className="font-tajwal text-base text-primary font-bold">
-              {order.totalAmount.toFixed(2)} {CURRENCY}
+              {price(order.totalAmount)}
             </Text>
           </View>
         </View>

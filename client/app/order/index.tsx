@@ -14,7 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/components/Header";
-import { COLORS, CURRENCY } from "@/constants";
+import { COLORS } from "@/constants";
+import { usePrice } from "@/hooks/usePrice";
 import {
   ORDER_STATUS_LABELS,
   formatDate,
@@ -36,6 +37,7 @@ const isCancellable = (status: OrderStatus) =>
   status === "placed" || status === "processing";
 
 const OrdersScreen = () => {
+  const price = usePrice();
   const router = useRouter();
   const { orderId } = useLocalSearchParams<{ orderId?: string }>();
 
@@ -203,7 +205,7 @@ const OrdersScreen = () => {
                 </Text>
               </View>
               <Text className="font-tajwal text-accent text-base">
-                {order.totalAmount.toFixed(2)} {CURRENCY}
+                {price(order.totalAmount)}
               </Text>
             </View>
 

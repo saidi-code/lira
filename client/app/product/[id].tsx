@@ -19,13 +19,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
-import { COLORS, CURRENCY } from "../../constants/index";
+import { COLORS } from "../../constants/index";
+import { usePrice } from "../../hooks/usePrice";
 import { IProduct } from "../../constants/types";
 import { useCart } from "../../hooks/useCart";
 import { useProduct } from "../../hooks/useProducts";
 import ReviewsSection from "../../components/ReviewsSection";
 
 const SingleProduct = () => {
+  const price = usePrice();
   const { addToCart, updateCartItemQuantity, cartItems } = useCart();
   const { isLiked, addToFavoris, removeFromFavoris } = useFavoris();
 
@@ -249,7 +251,7 @@ const SingleProduct = () => {
         <View className="flex-1 px-4 mb-12">
           <View className="flex-1 flex flex-row flex-wrap items-center justify-between mt-6 mb-2">
             <Text className="text-right text-primary text-2xl font-jazera font-bold">
-              {product.price} {CURRENCY}
+              {price(product.price)}
             </Text>
             <Text className="text-right text-body text-[24px] font-jazera font-bold">
               {product.name}

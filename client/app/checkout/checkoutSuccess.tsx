@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CURRENCY } from '@/constants';
+import { formatPrice } from '@/constants/currency';
+import { useSettings } from '@/context/SettingsContext';
 
 // --- TYPES ---
 interface CheckoutData {
@@ -85,6 +86,7 @@ const ESTIMATED_DELIVERY_DAYS = 7;
 const CheckoutSuccess: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams<SuccessParams>();
+  const { settings, currencySymbol } = useSettings();
 
   const orderNumber = firstParam(params.orderNumber);
   const orderId = firstParam(params.orderId);
@@ -97,7 +99,7 @@ const CheckoutSuccess: React.FC = () => {
   const data: CheckoutData = {
     ...CHECKOUT_DATA,
     orderId: orderNumber || CHECKOUT_DATA.orderId,
-    totalAmount: total ? `${total} ${CURRENCY}` : CHECKOUT_DATA.totalAmount,
+    totalAmount: total ? formatPrice(Number(total), settings.currency, currencySymbol) : CHECKOUT_DATA.totalAmount,
     estimatedDuration: formatArabicDate(
       new Date(Date.now() + ESTIMATED_DELIVERY_DAYS * 24 * 60 * 60 * 1000)
     ),

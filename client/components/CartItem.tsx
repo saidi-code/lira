@@ -2,13 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
-import { CURRENCY } from "../constants/index";
+import { usePrice } from "../hooks/usePrice";
 import { pushTo } from "../constants/utility";
 import { CartItemProps } from "../constants/types";
 import { router } from "expo-router";
 
 const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) => {
   const [quantity, setQuantity] = useState(item?.quantity ?? 1);
+  const price = usePrice();
 
   useEffect(() => {
     setQuantity(item?.quantity ?? 1);
@@ -148,7 +149,7 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
             </View>
 
             <Text className="text-right text-primary-700 text-base font-body">
-              {item?.product?.price ? item.product.price * quantity : 0} {CURRENCY}
+              {price((item?.product?.price ?? 0) * quantity)}
             </Text>
           </View>
         </View>
