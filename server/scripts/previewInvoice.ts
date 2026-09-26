@@ -1,5 +1,20 @@
-import { invoiceEmailHtml, invoiceEmailText, invoiceEmailSubject } from "./templates/invoiceEmail.js";
-import type { InvoiceOrder, InvoiceRecipient } from "./types/invoice.js";
+// scripts/previewInvoice.ts
+// ==========================================
+// Dev-only harness for the invoice email.
+//
+// Renders the template with sample data, asserts the output is well formed,
+// and optionally performs a real send. Excluded from the production build
+// (see tsconfig.json) — it is a debugging tool, not application code.
+//
+//   npm run preview:invoice                  -> render + assert only
+//   npm run preview:invoice -- you@mail.com  -> also send a real test email
+// ==========================================
+import { writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { invoiceEmailHtml, invoiceEmailText, invoiceEmailSubject } from "../templates/invoiceEmail.js";
+import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
+import type { InvoiceOrder, InvoiceRecipient } from "../types/invoice.js";
 
 const recipient: InvoiceRecipient = {
   name: "سارة بن عمار",
@@ -56,19 +71,17 @@ for (const [name, ok] of checks) {
 }
 console.log(failed === 0 ? "\nALL CHECKS PASSED" : `\n${failed} CHECK(S) FAILED`);
 
-import { writeFileSync } from "fs";
-import { sendOrderInvoiceEmail } from "./services/invoiceEmailService.js";
+// Write artifacts to the OS temp dir so the script works on any platform
+// (process.env.TEMP only exists on Windows).
+const previewPath = join(tmpdir(), "invoice-preview.html");
+const subjectPath = join(tmpdir(), "invoice-subject.txt");
 
-writeFileSync(process.env.TEMP + "/invoice-preview.html", html);
-console.log("preview written to", process.env.TEMP + "/invoice-preview.html");
+writeFileSync(previewPath, html);
+console.log("preview written to", previewPath);
 
 // Verify the Arabic subject survives as real UTF-8 (console output above is
 // mangled by the Windows codepage, so round-trip through a file instead).
-writeFileSync(
-  process.env.TEMP + "/invoice-subject.txt",
-  subject,
-  "utf8"
-);
+writeFileSync(subjectPath, subject, "utf8");
 console.log("subject utf8 bytes:", Buffer.from(subject, "utf8").length);
 console.log("has arabic bytes  :", /[\u0600-\u06FF]/.test(subject));
 console.log("has rtl marks      :", /[\u200E\u200F\u061C]/.test(subject));
@@ -78,7 +91,7 @@ console.log("lang=ar in html    :", /lang=["']ar/i.test(html));
 
 // ---------- live transport test (opt-in) ----------
 // Only runs when a real recipient is supplied, so it never emails anyone
-// accidentally:  npx tsx previewInvoice.ts you@example.com
+// accidentally:  npm run preview:invoice -- you@example.com
 const liveTo = process.argv[2];
 if (liveTo) {
   console.log("\n--- sending live test to", liveTo, "---");
