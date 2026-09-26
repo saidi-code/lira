@@ -17,8 +17,11 @@ import {
   LANGUAGES,
   THEME_MODES,
   useSettings,
+  type CurrencyCode,
 } from '../../context/SettingsContext';
 import { useAppColors, type Colors } from '../../constants/utility';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { TranslationKey } from '../../constants/i18n';
 
 // --- 1. CUSTOM DRAWER CONTENT COMPONENT ---
 function CustomDrawerContent(props: any) {
@@ -40,8 +43,15 @@ function CustomDrawerContent(props: any) {
   const openPicker = (kind: PickerKind) => setPicker(kind);
   const closePicker = () => setPicker(null);
 
-  const themeLabel =
-    THEME_MODES.find((t) => t.code === settings.theme)?.label ?? '';
+  const { t, setTextDirection } = useTranslation();
+
+  const themeLabel = t(
+    settings.theme === "light"
+      ? "light"
+      : settings.theme === "dark"
+        ? "dark"
+        : "system"
+  );
 
   return (
     
@@ -51,7 +61,7 @@ function CustomDrawerContent(props: any) {
     >
       {/* --- DRAWER HEADER (Optional) --- */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}> الإعدادات <Ionicons name="settings-outline" size={16}/></Text>
+        <Text style={styles.headerTitle}> {t("settings")} <Ionicons name="settings-outline" size={16}/></Text>
       </View>
 
       {/* --- DEFAULT NAVIGATION ITEMS (Your screens) --- */}
@@ -62,7 +72,7 @@ function CustomDrawerContent(props: any) {
                 className="font-tajwal mr-4 text-2xl
                      text-primary font-bold text-right"
               >
-                التنبيهات
+                {t("notifications")}
               </Text>
             </View>
             <View className=" bg-card rounded-xl shadow">
@@ -76,7 +86,7 @@ function CustomDrawerContent(props: any) {
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">
-                    تنبيهات الهاتف
+                    {t("phoneNotifications")}
                   </Text>
                   <Ionicons
                     name="notifications-outline"
@@ -95,7 +105,7 @@ function CustomDrawerContent(props: any) {
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">
-                    تحديثات البريد الإلكتروني
+                    {t("emailNotifications")}
                   </Text>
                   <Ionicons
                     name="mail-outline"
@@ -112,27 +122,27 @@ function CustomDrawerContent(props: any) {
                 className="font-tajwal mr-4 text-2xl
                      text-primary font-bold text-right"
               >
-                التفضيلات
+                {t("preferences")}
               </Text>
             </View>
             <View className="bg-card rounded-xl shadow overflow-hidden">
               <SettingRow
                 icon="earth-outline"
-                label="اللغة"
+                label={t("language")}
                 value={languageLabel}
                 onPress={() => openPicker("language")}
               />
               <View className="h-px bg-subtle mx-4" />
               <SettingRow
                 icon="cash-outline"
-                label="العملة"
+                label={t("currency")}
                 value={`${currencySymbol} ${settings.currency}`}
                 onPress={() => openPicker("currency")}
               />
               <View className="h-px bg-subtle mx-4" />
               <SettingRow
                 icon="moon-outline"
-                label="المظهر"
+                label={t("theme")}
                 value={themeLabel}
                 onPress={() => openPicker("theme")}
               />
@@ -197,7 +207,7 @@ function CustomDrawerContent(props: any) {
           <Pressable className="flex-1 bg-black/40" onPress={closePicker} />
           <View className="bg-card rounded-t-3xl px-5 pt-5 pb-10">
             <Text className="font-tajwal text-lg font-bold text-primary text-center mb-5">
-              {picker ? PICKER_TITLES[picker] : ""}
+              {picker ? t(PICKER_TITLE_KEYS[picker]) : ""}
             </Text>
 
             {picker === "language" &&
@@ -208,6 +218,9 @@ function CustomDrawerContent(props: any) {
                   selected={settings.language === option.code}
                   onPress={() => {
                     setLanguage(option.code);
+                    // Arabic is RTL; French/English are LTR. Flipping here (from
+                    // a user gesture, as RN requires) mirrors the whole app.
+                    setTextDirection(option.code === "ar");
                     closePicker();
                   }}
                 />
@@ -217,7 +230,7 @@ function CustomDrawerContent(props: any) {
               CURRENCIES.map((option) => (
                 <OptionRow
                   key={option.code}
-                  label={`${option.label} (${option.symbol})`}
+                  label={`${t(CURRENCY_LABEL_KEYS[option.code])} (${option.symbol})`}
                   selected={settings.currency === option.code}
                   onPress={() => {
                     setCurrency(option.code);
@@ -250,10 +263,21 @@ function CustomDrawerContent(props: any) {
 // --- 1b. SETTINGS ROW COMPONENTS ---
 type PickerKind = "language" | "currency" | "theme";
 
-const PICKER_TITLES: Record<PickerKind, string> = {
-  language: "اختيار اللغة",
-  currency: "اختيار العملة",
-  theme: "اختيار المظهر",
+// Maps a picker to its translation key rather than a fixed string, so the
+// modal title follows the active language.
+const PICKER_TITLE_KEYS: Record<PickerKind, TranslationKey> = {
+  language: "chooseLanguage",
+  currency: "chooseCurrency",
+  theme: "chooseTheme",
+};
+
+// Currency names live in the catalog so the picker follows the active
+// language; the symbols and codes stay locale-independent.
+const CURRENCY_LABEL_KEYS: Record<CurrencyCode, TranslationKey> = {
+  TND: "currencyTND",
+  EUR: "currencyEUR",
+  USD: "currencyUSD",
+  SAR: "currencySAR",
 };
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
