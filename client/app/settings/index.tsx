@@ -72,7 +72,7 @@ const Settings = () => {
             <View className=" bg-card rounded-xl shadow">
               <View className="flex-row items-center justify-between">
                 <Switch
-                  trackColor={{ false: "#ECE0D9", true: "#B89354" }}
+                  trackColor={{ false: COLORS.surface, true: COLORS.primary }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
                   onValueChange={() => setPhoneNotification((prev) => !prev)}
@@ -91,7 +91,7 @@ const Settings = () => {
               </View>
               <View className="flex-row items-center justify-between">
                 <Switch
-                  trackColor={{ false: "#ECE0D9", true: "#B89354" }}
+                  trackColor={{ false: COLORS.surface, true: COLORS.primary }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
                   onValueChange={() => setEmailNoatification((prev) => !prev)}

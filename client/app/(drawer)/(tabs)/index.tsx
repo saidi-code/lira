@@ -11,12 +11,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useProducts } from "../../../hooks/useProducts";
 import { COLORS } from "../../../constants";
+import { useAppColors } from "@/constants/utility";
 import ProductCard from "@/components/ProductCard";
 import FilterProductsModal from "@/components/FilterProductsModal";
 import { api } from "../../../config/api";
 import LoadingPage from "@/components/searchPage/LoadingPage";
 
 export default function Index() {
+  // Page background comes from the active theme; the module-level `styles`
+  // below is created once, so it is overridden inline at each use site.
+  const colors = useAppColors();
   // ----- Filter state -----
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState("الكل");
@@ -186,7 +190,7 @@ export default function Index() {
 
   if (isError) {
     return (
-      <View style={styles.center}>
+          <View style={[styles.center, { backgroundColor: colors.canvas }]}>
         <Text style={styles.errorText}>حدث خطأ أثناء تحميل المنتجات</Text>
       </View>
     );
@@ -256,7 +260,7 @@ export default function Index() {
         {isSearchActive && isSearchLoading ? (
           <LoadingPage />
         ) : uniqueProducts.length === 0 ? (
-          <View style={styles.center}>
+          <View style={[styles.center, { backgroundColor: colors.canvas }]}>
             <Text style={{ color: "#888", fontSize: 16, fontFamily: "Tajawal-Medium" }}>
               {isSearchActive ? "لا توجد منتجات مطابقة لبحثك" : "لا توجد منتجات متاحة حالياً"}
             </Text>
@@ -274,7 +278,7 @@ export default function Index() {
             maxToRenderPerBatch={6}
             initialNumToRender={6}
             removeClippedSubviews={true}
-            contentContainerStyle={styles.listContainer}
+      contentContainerStyle={[styles.listContainer, { backgroundColor: colors.canvas }]}
             columnWrapperStyle={styles.columnWrapper}
           />
         )}

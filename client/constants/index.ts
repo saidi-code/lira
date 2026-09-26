@@ -15,6 +15,7 @@ export const LIGHT_COLORS = {
   active: "#B45309",
   white: "#FFFFFF",
   skeleton: "#E5E7EB",
+  card: "#FFFFFF",
 } as const;
 
 /**
@@ -34,6 +35,7 @@ export const DARK_COLORS = {
   active: "#E08A2E",
   white: "#FFFFFF",
   skeleton: "#3A342E",
+  card: "#2D2824", // keep in sync with --color-card in global.css
 } as const;
 
 /**
@@ -88,6 +90,9 @@ export const COLORS = {
   },
   get skeleton() {
     return getThemeIsDark() ? DARK_COLORS.skeleton : LIGHT_COLORS.skeleton;
+  },
+  get card() {
+    return getThemeIsDark() ? DARK_COLORS.card : LIGHT_COLORS.card;
   },
 } as const;
 

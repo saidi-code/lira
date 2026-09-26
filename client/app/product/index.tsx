@@ -92,7 +92,7 @@ console.log("Received category param:", category);
     <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       <Header showBack />
       <View className="px-4 py-3">
-        <Text className="text-right font-tajwal font-bold text-lg text-[#201b16]" numberOfLines={1}>
+        <Text className="text-right font-tajwal font-bold text-lg text-body" numberOfLines={1}>
           {normalizedCategory}
         </Text>
       </View>

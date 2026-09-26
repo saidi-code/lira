@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { COLORS } from "../../constants/index";
 import {
   FlatList,
   Image,
@@ -175,7 +176,7 @@ const [, setUiSize] = useState<string | null>(selectedSize);
                       >
                         <Text
                           className="font-tajwal text-xs uppercase font-bold"
-                          style={{ color: isSelected ? "#201b16" : "#807668" }}
+                          style={{ color: isSelected ? COLORS.body : COLORS.secondary }}
                         >
                           {size}
                         </Text>

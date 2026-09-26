@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native'
+import { COLORS } from "../../constants/index";
 import React from 'react'
 
 interface ProductNameProps {
@@ -11,7 +12,7 @@ const ProductNameComponent = ({ productName }: ProductNameProps) => {
               <Text style = {{ 
     fontSize: 14,
     fontWeight: '600',
-    color: '#201B16',
+    color: COLORS.body,
     textAlign: 'right',
     // paddingHorizontal: 8,
     // paddingTop: ,

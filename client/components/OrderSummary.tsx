@@ -38,7 +38,7 @@ const OrderSummary = ({ subtotal, shipping }: OrderSummaryProps) => {
         <Text className="text-right text-[#785920] text-base leading-6 font-normal">
           {price(subtotal + shipping)}
         </Text>
-        <Text className="text-right text-[#201b16] text-base leading-6 font-normal">
+        <Text className="text-right text-body text-base leading-6 font-normal">
           الإجمالي
         </Text>
       </View>

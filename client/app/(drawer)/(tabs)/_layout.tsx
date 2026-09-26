@@ -62,7 +62,7 @@ export default function TabLayout() {
           
             borderWidth: 1,
             // borderColor: COLORS.active,
-            borderTopColor: "#fff8f5",
+            borderTopColor: COLORS.canvas,
           shadowColor: "#000",
           // shadowOffset: { width: 0, height: 6 },
             borderRadius:14,

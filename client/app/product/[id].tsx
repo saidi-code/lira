@@ -368,7 +368,7 @@ const SingleProduct = () => {
                 </Text>
               </View>
               <View className="self-stretch flex-col items-end">
-                <Text className="text-right text-[#201b16] text-base font-[FreeSerif]">
+                <Text className="text-right text-body text-base font-[FreeSerif]">
                   يدوية فاخرة
                 </Text>
               </View>
@@ -383,7 +383,7 @@ const SingleProduct = () => {
                 </Text>
               </View>
               <View className="self-stretch flex-col items-end">
-                <Text className="text-right text-[#201b16] text-base font-[FreeSerif]">
+                <Text className="text-right text-body text-base font-[FreeSerif]">
                   طبيعية ١٠٠٪
                 </Text>
               </View>

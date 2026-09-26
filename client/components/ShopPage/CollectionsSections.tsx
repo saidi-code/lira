@@ -22,7 +22,7 @@ const CollectionsSections = memo(({ collections, isLoading }: CollectionsSection
   return (
     <View className="py-12 px-3">
       <View className="items-center mb-8">
-        <Text className="text-center text-[#201b16] text-[32px] font-bold font-jazera leading-[38.4px]">
+        <Text className="text-center text-body text-[32px] font-bold font-jazera leading-[38.4px]">
           مجموعات مختارة
         </Text>
       </View>

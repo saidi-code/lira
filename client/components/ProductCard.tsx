@@ -11,11 +11,16 @@ import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/config/api";
 import ProductImage from "./productCardComponents/ProductImage";
+import { useAppColors } from "@/constants/utility";
 
 const ProductCard = memo(({ product }: ProductCardProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  // Resolved per render: the module-level `styles` below is created once, so a
+  // token read there freezes to the light palette. Overriding the card fill
+  // inline keeps it in sync with the active theme.
+  const colors = useAppColors();
 
   const handleOpenVariableModal = useCallback(() => {
     setShowModal(true);
@@ -47,7 +52,10 @@ const ProductCard = memo(({ product }: ProductCardProps) => {
     (typeof product?.category === "string" ? product.category : "");
 
   return (
-    <Pressable style={styles.productCard} onPress={handlePress}>
+    <Pressable
+      style={[styles.productCard, { backgroundColor: colors.card }]}
+      onPress={handlePress}
+    >
       <View style={styles.imageContainer}>
         <ProductImage product={product} />
         <AddToFavorisBtn product={product} />
@@ -83,7 +91,8 @@ const styles = StyleSheet.create({
   productCard: {
     flex: 1,
     marginHorizontal: 6,
-    backgroundColor: "#FFFFFF",
+    // Card fill is overridden inline above so it follows the active theme.
+    backgroundColor: "transparent",
     borderRadius: 16,
     overflow: "hidden",
     shadowColor: "#000",

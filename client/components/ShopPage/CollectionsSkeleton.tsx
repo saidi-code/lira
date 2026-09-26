@@ -1,4 +1,5 @@
 import React from 'react';
+import { COLORS } from "../../constants/index";
 import { View, FlatList, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 48,
     paddingHorizontal: 12,
-    backgroundColor: '#FFF8F5', // match your background
+    backgroundColor: COLORS.canvas,
   },
   header: {
     alignItems: 'center',

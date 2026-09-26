@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
+import { COLORS } from "@/constants/index";
 
 const SuccessToast = (props: any) => {
   const text1 = props?.text1;
@@ -11,7 +12,7 @@ const SuccessToast = (props: any) => {
         display: "flex",
         alignItems: "center",
         flexDirection: "column",
-        backgroundColor: "#fff8f5",
+        backgroundColor: COLORS.card,
         borderRadius: 8,
         padding: 16,
         minWidth: 300,
