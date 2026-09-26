@@ -28,6 +28,21 @@ const CURRENCY = "د.ت"; // Tunisian dinar — matches client/constants/index.t
 const money = (value: number) =>
   `${Number(value ?? 0).toFixed(2)} ${CURRENCY}`;
 
+// ---------- Bidirectional text ----------
+// A line like "رقم الطلب: ORD-2025-A3F9K2" mixes strong RTL (Arabic) with
+// strong LTR (the order number) and the colon between them is neutral, so
+// where it lands depends on the paragraph direction the client happens to
+// pick. Subjects have no dir attribute at all, which is why the number can
+// jump to the wrong end of the line in Outlook.
+//
+// Prefixing a RIGHT-TO-LEFT MARK pins the base direction to RTL, so the
+// Arabic keeps its natural order and the trailing Latin runs resolve to the
+// left. Lines with no Arabic are left alone, since LTR base is correct for
+// them. The HTML body does not need this: it carries dir="rtl" already.
+const RLM = "\u200F";
+const hasArabic = (line: string) => /[\u0600-\u06FF]/.test(line);
+const bidi = (line: string) => (hasArabic(line) ? RLM + line : line);
+
 const formatDate = (value: Date | string) => {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
@@ -335,8 +350,10 @@ export const invoiceEmailText = (
     "",
     "شكراً لثقتك بلي را.",
   ];
-  return lines.join("\n");
+  // Each plain-text line is its own bidi paragraph, so the base direction has
+  // to be set per line rather than once for the document.
+  return lines.map(bidi).join("\n");
 };
 
 export const invoiceEmailSubject = (order: InvoiceOrder): string =>
-  `شكراً لشرائك — فاتورة طلبك ${order.orderNumber}`;
+  bidi(`شكراً لشرائك — فاتورة طلبك ${order.orderNumber}`);

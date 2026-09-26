@@ -62,6 +62,19 @@ const checks: Array<[string, boolean]> = [
   ["table tags balanced", (html.match(/<tr/g) || []).length === (html.match(/<\/tr>/g) || []).length],
   ["td tags balanced", (html.match(/<td/g) || []).length === (html.match(/<\/td>/g) || []).length],
   ["text has order number", text.includes("LR-2024-000123")],
+  // Mixed-direction guard: the subject and the plain-text body embed a Latin
+  // order number inside Arabic, so they need a RIGHT-TO-LEFT MARK to pin the
+  // base direction. Without it the number can jump to the wrong end of the
+  // line in Outlook. See the `bidi` helper in the template.
+  ["subject pinned RTL", subject.startsWith("\u200F")],
+  [
+    "text order-number line pinned RTL",
+    text.split("\n").some((l) => l.startsWith("\u200F") && l.includes("LR-2024-000123")),
+  ],
+  [
+    "no RTL mark inside the HTML body",
+    !/[\u200E\u200F\u061C]/.test(html),
+  ],
 ];
 
 let failed = 0;
