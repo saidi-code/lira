@@ -6,10 +6,12 @@ import Product from "../models/Products.js";
 import Address from "../models/Address.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
 import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
+import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
 
 // ==================== TYPES ====================
 interface AuthUser {
   _id: mongoose.Types.ObjectId;
+  clerkId?: string;
   name?: string;
   email?: string;
   role?: string;
@@ -211,11 +213,19 @@ export const createOrder = async (
 
     // ---------- Send the invoice email ----------
     // Fire-and-forget: the order is already committed, so a slow or failing
-    // SMTP call must never delay or fail the checkout response. We respond
-    // first and let the send settle in the background.
-    void sendOrderInvoiceEmail(
-      { name: req.user?.name ?? "عميلنا العزيز", email: req.user?.email ?? "" },
-      {
+    // Clerk lookup or SMTP call must never delay or fail the checkout
+    // response. We respond first and let the work settle in the background.
+    //
+    // The recipient is resolved from Clerk (the auth source of truth) rather
+    // than the local `users` doc, which is only a webhook-written cache and can
+    // hold a stale name/email if the customer changed it in Clerk.
+    void (async () => {
+      const recipient = await resolveInvoiceRecipient(
+        req.user?.clerkId,
+        { name: req.user?.name, email: req.user?.email }
+      );
+
+      await sendOrderInvoiceEmail(recipient, {
         orderNumber: order.orderNumber ?? "",
         items: orderItems.map((i) => ({
           name: i.name,
@@ -242,8 +252,8 @@ export const createOrder = async (
         tax: order.tax,
         totalAmount: order.totalAmount,
         createdAt: order.createdAt ?? new Date(),
-      }
-    );
+      });
+    })();
 
     return res.status(201).json({
       success: true,

@@ -58,7 +58,6 @@ console.log(failed === 0 ? "\nALL CHECKS PASSED" : `\n${failed} CHECK(S) FAILED`
 
 import { writeFileSync } from "fs";
 import { sendOrderInvoiceEmail } from "./services/invoiceEmailService.js";
-import type { InvoiceRecipient } from "./types/invoice.js";
 
 writeFileSync(process.env.TEMP + "/invoice-preview.html", html);
 console.log("preview written to", process.env.TEMP + "/invoice-preview.html");
