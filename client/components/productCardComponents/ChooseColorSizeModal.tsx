@@ -27,43 +27,59 @@ const ChooseColorSizeModal = ({
 
 }: Props) => {
   const { addToCart } = useCart();
-   const defaultColor = product?.colors?.[0]?.hex ?? null;
-     const defaultSize = product?.colors?.[0]?.variants?.[0]?.size ?? null;
-  const [selectedSize] = useState<string | null>(defaultSize);
-  const [selectedColor, setSelectedColor] = useState<string | null>(
-    defaultColor,
-  );
-    
-const [uiColor, setUiColor] = useState<string | null>(selectedColor);
-const [, setUiSize] = useState<string | null>(selectedSize);
+  const defaultColor = product?.colors?.[0]?.name ?? product?.colors?.[0]?.hex ?? null;
+  const rawFirstSize = product?.colors?.[0]?.variants?.[0]?.size;
+  const defaultSize = rawFirstSize != null
+    ? (Array.isArray(rawFirstSize) ? String(rawFirstSize[0]) : String(rawFirstSize))
+    : null;
+
+  const [selectedColor, setSelectedColor] = useState<string | null>(defaultColor);
+  const [selectedSize, setSelectedSize] = useState<string | null>(defaultSize);
   const isVariable = product?.type === "variable";
 
-  
-
-  // Keep UI state in sync when parent changes (first open / reset)
+  // Keep state in sync when modal opens with a new product
   React.useEffect(() => {
-    setUiColor(selectedColor);
-    setUiSize(selectedSize);
-  }, [selectedColor, selectedSize, show]);
+    if (show && isVariable && product?.colors?.length) {
+      const c = product.colors[0];
+      const cVal = c?.name ?? c?.hex ?? null;
+      const sVal = c?.variants?.[0]?.size != null
+        ? (Array.isArray(c.variants[0].size) ? String(c.variants[0].size[0]) : String(c.variants[0].size))
+        : null;
+      setSelectedColor(cVal);
+      setSelectedSize(sVal);
+    }
+  }, [show, product, isVariable]);
 
   const colors = useMemo(() => (product as any)?.colors ?? [], [product]);
   const activeColorObj = useMemo(() => {
     if (!isVariable) return null;
-    return colors.find((c: any) => c?.name === uiColor) ?? colors?.[0] ?? null;
-  }, [colors, isVariable, uiColor]);
+    return colors.find((c: any) => c?.name === selectedColor || c?.hex === selectedColor) ?? colors?.[0] ?? null;
+  }, [colors, isVariable, selectedColor]);
 
   const sizes = useMemo(() => {
     if (!isVariable) return [];
     const variants = activeColorObj?.variants ?? [];
-    // In your schema variants.size is an array of strings.
     const allSizes: string[] = [];
     variants.forEach((v: any) => {
-      if (Array.isArray(v?.size)) allSizes.push(...v.size);
+      if (Array.isArray(v?.size)) allSizes.push(...v.size.map(String));
       else if (v?.size != null) allSizes.push(String(v.size));
     });
-    // de-dup
     return Array.from(new Set(allSizes));
   }, [activeColorObj, isVariable]);
+
+  const handleSelectColor = (colorObj: any) => {
+    const cVal = colorObj?.name ?? colorObj?.hex;
+    setSelectedColor(cVal);
+    const variants = colorObj?.variants ?? [];
+    const colorSizes: string[] = [];
+    variants.forEach((v: any) => {
+      if (Array.isArray(v?.size)) colorSizes.push(...v.size.map(String));
+      else if (v?.size != null) colorSizes.push(String(v.size));
+    });
+    if (colorSizes.length > 0 && (!selectedSize || !colorSizes.includes(selectedSize))) {
+      setSelectedSize(colorSizes[0]);
+    }
+  };
 
 
 
@@ -119,16 +135,11 @@ const [, setUiSize] = useState<string | null>(selectedSize);
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ paddingHorizontal: 2, gap: 12,justifyContent:"flex-end" }}
                   renderItem={({ item: colorObj }: any) => {
-                    const colorName = colorObj?.name;
-                    const isSelected = uiColor === colorName;
+                    const colorIdentifier = colorObj?.name ?? colorObj?.hex;
+                    const isSelected = selectedColor === colorIdentifier || selectedColor === colorObj?.hex || selectedColor === colorObj?.name;
                     return (
                       <Pressable
-                        onPress={() => {
-                          setSelectedColor(colorName);
-                          setUiColor(colorName);
-                          // // When switching color, reset size; user chooses again
-                          // setUiSize(null);
-                        }}
+                        onPress={() => handleSelectColor(colorObj)}
                         className="h-8 w-8 rounded-full"
                         style={{
                           backgroundColor: colorObj?.hex ?? "#000",
@@ -162,7 +173,7 @@ const [, setUiSize] = useState<string | null>(selectedSize);
                     const isSelected = selectedSize === String(size);
                     return (
                       <Pressable
-                        onPress={() => setUiSize(String(size))}
+                        onPress={() => setSelectedSize(String(size))}
                         className="flex items-center justify-center rounded-lg"
                         style={{
                           height: 36,

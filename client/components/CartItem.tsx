@@ -58,7 +58,7 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
           removeItem(
             item?.product?._id ?? item?._id,
             item?.size ?? null,
-            item?.product?.colors?.[0]?.hex ?? item?.color ?? null
+            item?.color ?? null
           );
         }}
         className="absolute z-10 top-4 left-4 flex-col justify-center items-center p-1"
@@ -92,8 +92,8 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
                       style={{
                         backgroundColor:
                           (item as any)?.product?.colors?.find(
-                            (c: any) => c?.name === item?.color
-                          )?.hex ?? "#000",
+                            (c: any) => c?.name === item?.color || c?.hex === item?.color
+                          )?.hex ?? item?.color ?? "#000",
                         borderWidth: 1,
                         borderColor: "#B89354",
                         margin: 2,

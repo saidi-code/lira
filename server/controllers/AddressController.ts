@@ -143,13 +143,6 @@ export const getAddressByUser = async (
       .populate("user", "name email")
       .sort({ isDefault: -1, createdAt: -1 }); // default first, then newest
 
-    if (!addresses || addresses.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No addresses found for this user",
-      });
-    }
-
     return res.status(200).json({
       success: true,
       count: addresses.length,

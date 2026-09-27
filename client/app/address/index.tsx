@@ -35,8 +35,8 @@ const AddressScreen = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const [addressType, setAddressType] = useState("المنزل");
-  const [, setAddressCountry] = useState("");
-  const [addressState, setAdressState] = useState("");
+  const [, setAddressCountry] = useState("تونس");
+  const [addressState, setAdressState] = useState("مدنين");
   const [addressCity, setAddressCity] = useState("");
   const [addressAddress, setAdressAdress] = useState("");
   const [addressCodePostal, setAdressCodePostal] = useState("");
@@ -46,6 +46,33 @@ const AddressScreen = () => {
   );
   const [isEditing, setIsEditing] = useState(false);
 
+  const handleOpenAddModal = () => {
+    setIsEditing(false);
+    setSelectedAddress(null);
+    setAddressType("المنزل");
+    setAddressCity("");
+    setAdressState("مدنين");
+    setAdressAdress("");
+    setAdressCodePostal("");
+    setAddressPhone("");
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setIsEditing(false);
+    setSelectedAddress(null);
+  };
+
+  const handleResetForm = () => {
+    setAddressType("المنزل");
+    setAddressCity("");
+    setAdressState("مدنين");
+    setAdressAdress("");
+    setAdressCodePostal("");
+    setAddressPhone("");
+  };
+
   const handleEditAddress = (address: BackendAddress) => {
     setIsEditing(true);
     setSelectedAddress(address);
@@ -54,7 +81,7 @@ const AddressScreen = () => {
         "المنزل"
     );
     setAddressCity(address.city);
-    setAdressState(address.state);
+    setAdressState(address.state || "مدنين");
     setAdressAdress(address.street);
     setAdressCodePostal(address.zipCode);
     setAddressPhone(address.phoneNumber);
@@ -62,13 +89,18 @@ const AddressScreen = () => {
   };
 
   const handleAddAddress = async () => {
+    if (!addressAddress.trim() || !addressCity.trim() || !addressPhone.trim() || !addressCodePostal.trim()) {
+      ShowToast("error", "يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
     const payload = {
       type: ADDRESS_TYPE_MAP[addressType] ?? "Other",
-      city: addressCity,
-      zipCode: addressCodePostal,
-      phoneNumber: addressPhone,
-      state: addressState,
-      street: addressAddress,
+      city: addressCity.trim(),
+      zipCode: addressCodePostal.trim(),
+      phoneNumber: addressPhone.trim(),
+      state: addressState.trim() || "مدنين",
+      street: addressAddress.trim(),
       isDefault: true,
     };
 
@@ -85,13 +117,11 @@ const AddressScreen = () => {
       await addAddress(payload);
     }
 
-    setOpenModal(false);
-    setIsEditing(false);
-    setSelectedAddress(null);
+    handleCloseModal();
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-danger-surface" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
       <Header showBack />
 
       <ScrollView
@@ -115,7 +145,7 @@ const AddressScreen = () => {
               طلباتك وتأكيدها بسلاسة.
             </Text>
             <TouchableOpacity
-              onPress={() => setOpenModal(true)}
+              onPress={handleOpenAddModal}
               className="w-full flex-row justify-center items-center gap-2 px-4 py-4 bg-primary-solid rounded-lg border border-accent"
             >
               <Ionicons name="locate-outline" color={"white"} size={24} />
@@ -204,7 +234,7 @@ const AddressScreen = () => {
 
       {addresses.length !== 0 && (
         <TouchableOpacity
-          onPress={() => setOpenModal(true)}
+          onPress={handleOpenAddModal}
           className="mx-4 py-4 bg-primary-solid rounded-lg border border-accent mb-12"
         >
           <Text className="text-white text-center font-semibold font-tajwal">
@@ -218,12 +248,12 @@ const AddressScreen = () => {
         visible={openModal}
         animationType="fade"
         transparent
-        onRequestClose={() => setOpenModal(false)}
+        onRequestClose={handleCloseModal}
       >
         <View className="bg-surface flex-1 rounded-t-2xl p-4 relative">
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-primary-100">
-              <View className="flex flex-row items-center gap-2">
+              <TouchableOpacity onPress={handleResetForm} className="flex flex-row items-center gap-2">
                 <Ionicons
                   name="repeat-outline"
                   size={18}
@@ -232,8 +262,8 @@ const AddressScreen = () => {
                 <Text className="text-sm font-base font-body text-primary-700">
                   إعادة تعيين
                 </Text>
-              </View>
-              <TouchableOpacity onPress={() => setOpenModal(false)}>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleCloseModal}>
                 <Ionicons
                   name="close-outline"
                   size={24}

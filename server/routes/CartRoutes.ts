@@ -8,7 +8,6 @@ router.use(protect);
 router.get("/",getCart)
 router.post("/add",addToCart)
 router.put("/item/:productId",updateCartItem)
-router.get("/item/:productId",updateCartItem)
 router.delete("/item/:productId",deleteCartItem)
 router.delete("/",clearCart)
 

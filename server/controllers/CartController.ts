@@ -67,7 +67,7 @@ if(product.type==="simple"){
           });
       }
 
-      const variant = product.colors?.find((c) => c.hex === color)?.variants?.find((v) => {
+      const variant = product.colors?.find((c) => c.hex === color || c.name === color)?.variants?.find((v) => {
         const variantSizes = (v as any)?.size;
         return Array.isArray(variantSizes) ? variantSizes.includes(size) : String(variantSizes) === String(size);
       });
@@ -210,7 +210,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
           });
         }
 
-        const variant = product.colors?.find((c) => c.hex === color)?.variants?.find((v) => {
+        const variant = product.colors?.find((c) => c.hex === color || c.name === color)?.variants?.find((v) => {
           const variantSizes = (v as any)?.size;
           return Array.isArray(variantSizes) ? variantSizes.includes(size) : String(variantSizes) === String(size);
         });

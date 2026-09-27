@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Products.js";
 import Address from "../models/Address.js";
+import Cart from "../models/Cart.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
 import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
@@ -209,6 +210,16 @@ export const createOrder = async (
         { _id: item.product },
         { $inc: { stock: -item.quantity } }
       );
+    }
+
+    // Clear user cart in DB after successful order placement
+    try {
+      await Cart.findOneAndUpdate(
+        { user: req.user!._id },
+        { $set: { items: [], totalAmount: 0 } }
+      );
+    } catch (cartClearErr) {
+      console.warn("Failed to clear cart after order:", cartClearErr);
     }
 
     // ---------- Send the invoice email ----------
