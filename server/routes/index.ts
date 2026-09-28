@@ -8,9 +8,7 @@ import addressesRoutes from "./addressesRoutes.js"
 import ordersRoutes from "./OrderRoutes.js"
 import reviewsRoutes from "./reviewsRoutes.js";
 import adminRouter from "./adminRoutes.js";
-import clerkWebhook from "../controllers/webhooks.js";
 const router = express.Router();
-router.post('/clerk', express.raw({ type: 'application/json' }),clerkWebhook) 
 router.use('/products', productsRouter); 
 router.use('/addresses',addressesRoutes)
 router.use('/cart', cartRouter);

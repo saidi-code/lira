@@ -8,6 +8,7 @@ const ProductImage = ({ product}:{product:any}) => {
   const [error, setError] = useState(false);
   const blurhash ='U9IqZ800009FWAx]D%-n00bv%#~p01R*_2D*';
   const imageUri = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
+  const isOutOfStock = product.stock === 0;
 
   return (
     <View style={{ position: 'relative' }}>
@@ -28,7 +29,7 @@ const ProductImage = ({ product}:{product:any}) => {
       
       <Image
         source={{ uri:imageUri }}
-        style={{ width:"auto", height: 150 }}
+        style={{ width:"auto", height: 150, opacity: isOutOfStock ? 0.5 : 1 }}
         onLoad={() => setLoaded(true)}
         onError={() => {
           setLoaded(true);
@@ -43,6 +44,24 @@ const ProductImage = ({ product}:{product:any}) => {
       {error && (
         <View style={{ position: 'absolute', top: '40%', width: '100%', alignItems: 'center' }}>
           <Text style={{ color: '#666' }}>⚠️ Image manquante</Text>
+        </View>
+      )}
+
+      {isOutOfStock && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 8,
+            left: 8,
+            backgroundColor: 'rgba(30,20,10,0.72)',
+            borderRadius: 6,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'tajwal-medium', letterSpacing: 0.5 }}>
+            rupture de stock
+          </Text>
         </View>
       )}
     </View>

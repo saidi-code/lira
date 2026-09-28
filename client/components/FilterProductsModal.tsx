@@ -178,7 +178,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
                   borderRadius: 8,
                 }}
                 textStyle={{
-                  fontFamily: 'tajwal-meduim',
+                  fontFamily: 'tajwal-medium',
                   fontSize: 16,
                   color: COLORS.primary,
                   textAlign: 'right',
@@ -193,7 +193,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
                   borderBottomWidth: 1,
                 }}
                 listItemLabelStyle={{
-                  fontFamily: 'tajwal-meduim',
+                  fontFamily: 'tajwal-medium',
                   fontSize: 16,
                   color: '#201b16',
                 }}
@@ -268,7 +268,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
                   borderRadius: 8,
                 }}
                 textStyle={{
-                  fontFamily: 'tajwal-meduim',
+                  fontFamily: 'tajwal-medium',
                   fontSize: 16,
                   color: COLORS.primary,
                   textAlign: 'right',
@@ -283,7 +283,7 @@ const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; valu
                   borderBottomWidth: 1,
                 }}
                 listItemLabelStyle={{
-                  fontFamily: 'tajwal-meduim',
+                  fontFamily: 'tajwal-medium',
                   fontSize: 16,
                   color: '#201b16',
                 }}

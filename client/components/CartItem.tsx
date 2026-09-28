@@ -10,16 +10,22 @@ import { router } from "expo-router";
 const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) => {
   const [quantity, setQuantity] = useState(item?.quantity ?? 1);
   const price = usePrice();
+  const stock: number = (item?.product as any)?.stock ?? Infinity;
 
   useEffect(() => {
     setQuantity(item?.quantity ?? 1);
   }, [item?.quantity]);
 
-  const addQuantity = useCallback(() => {
+  const addQuantity = useCallback(async () => {
+    if (quantity >= stock) return;           // already at limit — button is disabled but guard anyway
     const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    updateItemQuantity(item._id, newQuantity, item.size ?? null, item.color ?? null);
-  }, [item._id, item.size, item.color, quantity, updateItemQuantity]);
+    setQuantity(newQuantity);                // optimistic update
+    try {
+      await updateItemQuantity(item._id, newQuantity, item.size ?? null, item.color ?? null);
+    } catch {
+      setQuantity(quantity);                 // rollback on server rejection
+    }
+  }, [item._id, item.size, item.color, quantity, stock, updateItemQuantity]);
 
   const subtractQuantity = useCallback(() => {
     if (quantity <= 1) return;
@@ -28,6 +34,7 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
     updateItemQuantity(item._id, newQuantity, item.size ?? null, item.color ?? null);
   }, [item._id, item.size, item.color, quantity, updateItemQuantity]);
 
+  const isAtStockLimit = quantity >= stock;
   const isVariable = item?.product?.type === "variable";
   const isProductHasColors = Boolean(item?.color);
   const isProductHasSizes = Boolean(item?.size);
@@ -141,10 +148,15 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
 
               <TouchableOpacity
                 onPress={addQuantity}
-                activeOpacity={0.7}
+                activeOpacity={isAtStockLimit ? 1 : 0.7}
                 className="w-5 h-5 rounded-full items-center justify-center"
+                disabled={isAtStockLimit}
               >
-                <Ionicons name="add-outline" color="#785920" size={12} />
+                <Ionicons
+                  name="add-outline"
+                  color={isAtStockLimit ? '#cfcfcf' : '#785920'}
+                  size={12}
+                />
               </TouchableOpacity>
             </View>
 

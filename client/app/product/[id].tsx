@@ -43,6 +43,7 @@ const SingleProduct = () => {
 
   const { data: productData, isLoading: loading } = useProduct(id);
   const product: IProduct | null = productData ?? null;
+  const isOutOfStock = product?.stock === 0;
 
   // route params can be string | string[]
   const routeColor = useMemo(() => {
@@ -258,6 +259,28 @@ const SingleProduct = () => {
             </Text>
           </View>
 
+          {isOutOfStock && (
+            <View className="flex-row justify-end mb-4">
+              <View
+                style={{
+                  backgroundColor: 'rgba(180,40,30,0.1)',
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: 'rgba(180,40,30,0.25)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Text style={{ color: '#b42818', fontSize: 13, fontFamily: 'tajwal-medium' }}>
+                  rupture de stock — نفدت الكمية
+                </Text>
+              </View>
+            </View>
+          )}
+
           <Text className="text-right tracking-widest text-[#4E4639] text-base font-body leading-8 mb-6">
             {product.subtitle}
           </Text>
@@ -434,18 +457,20 @@ const SingleProduct = () => {
       <View className=" px-6 pt-4 pb-12 absolute left-0 bottom-0 bg-stone-50/90 shadow-md border-t border-amber-900/10 backdrop-blur-md flex-row justify-start items-center gap-4">
         <TouchableOpacity
           onPress={handleAddOrUpdate}
-          disabled={product?.type === "variable" && (!routeColor || !routeSize)}
+          disabled={isOutOfStock || (product?.type === "variable" && (!routeColor || !routeSize))}
           className="flex-1 h-[59px] rounded-xl flex-row justify-center items-center gap-2"
           style={{
             backgroundColor:
-              product?.type === "variable" && (!routeColor || !routeSize)
+              isOutOfStock
+                ? '#cfcfcf'
+                : product?.type === "variable" && (!routeColor || !routeSize)
                 ? "#cfcfcf"
                 : "#785920",
           }}
         >
           <MaterialIcons name="add-shopping-cart" size={16} color="white" />
           <Text className="text-center text-white text-base font-tajwal">
-            إضافة إلى الحقيبة
+            {isOutOfStock ? 'غير متوفر' : 'إضافة إلى الحقيبة'}
           </Text>
         </TouchableOpacity>
 

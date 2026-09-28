@@ -67,7 +67,7 @@ module.exports = {
       },
       fontFamily: {
         jazera: ["jazera-bold"],
-        tajwal: ["tajwal-meduim"],
+        tajwal: ["tajwal-medium"],
         body: ["arabic-body"],
       },
     },

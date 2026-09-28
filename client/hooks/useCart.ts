@@ -140,7 +140,16 @@ export function useAddToCart() {
     },
     onError: (error: any) => {
       if (error?.message === "Authentication required") return;
+      const msg =
+        error?.response?.data?.message ??
+        error?.message ??
+        "Erreur lors de l'ajout au panier";
       console.error("useAddToCart error:", error?.response?.data ?? error);
+      toast.show({
+        type: "errorToast",
+        text2: msg,
+        topOffset: 100,
+      });
     },
   });
 }
@@ -196,7 +205,16 @@ export function useUpdateCartItem() {
     },
     onError: (error: any) => {
       if (error?.message === "Authentication required") return;
+      const msg =
+        error?.response?.data?.message ??
+        error?.message ??
+        "Erreur lors de la mise à jour du panier";
       console.error("useUpdateCartItem error:", error?.response?.data ?? error);
+      toast.show({
+        type: "errorToast",
+        text2: msg,
+        topOffset: 100,
+      });
     },
   });
 }

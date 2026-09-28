@@ -39,7 +39,7 @@ export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
     "jazera-bold": require("../assets/fonts/Al-Jazeera-Arabic-Bold.ttf"),
-    "tajwal-meduim": require("../assets/fonts/Tajawal-Medium.ttf"),
+    "tajwal-medium": require("../assets/fonts/Tajawal-Medium.ttf"),
     "arabic-body": require("../assets/fonts/IBMPlexSansArabic-Regular.ttf"),
   });
   useEffect(() => {

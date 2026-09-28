@@ -50,7 +50,7 @@ if(product.type==="simple"){
     if (product.stock < quantity) {
       return res
         .status(400)
-        .json({ success: false, message: "Insufficent stock" });
+        .json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
     }
 }
     let cart = await Cart.findOne({ user: req.user._id });
@@ -82,7 +82,7 @@ if(product.type==="simple"){
       if ((variant as any).stock < quantity) {
         return res
           .status(400)
-          .json({ success: false, message: "Insufficent stock for selected variant" });
+          .json({ success: false, message: `Stock insuffisant : seulement ${(variant as any).stock} article(s) disponible(s) pour cette variante` });
       }
     }
 
@@ -198,7 +198,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
       // stock validation (simple vs variable)
       if (product.type === "simple") {
         if (product.stock < quantity) {
-          return res.status(400).json({ success: false, message: "Insufficent stock" });
+          return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
         }
       }
 
@@ -220,7 +220,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
         }
 
         if ((variant as any).stock < quantity) {
-          return res.status(400).json({ success: false, message: "Insufficent stock for selected variant" });
+          return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${(variant as any).stock} article(s) disponible(s) pour cette variante` });
         }
       }
 
