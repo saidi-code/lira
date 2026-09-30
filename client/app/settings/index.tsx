@@ -6,10 +6,16 @@ import React, { useState } from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSettings } from "@/context/SettingsContext";
+import { useTranslation } from "@/hooks/useTranslation";
 const Settings = () => {
   const [phoneNotification, setPhoneNotification] = useState<boolean>(false);
   const [emailNoatification, setEmailNoatification] = useState<boolean>(false);
   const router = useRouter();
+  // Language / currency / theme rows read the saved preference instead of
+  // hardcoding "العربية" / "د.ت" / "فاتح" (AGENT.md §3.6.2, §7 i18n).
+  const { currencySymbol, languageLabel, settings } = useSettings();
+  const { t } = useTranslation();
   return (
     <SafeAreaView className="bg-surface  flex-1" edges={["top"]}>
       <Header showBack />
@@ -122,7 +128,7 @@ const Settings = () => {
             <View className=" bg-card rounded-xl shadow">
               <View className="flex-row items-center justify-between ps-2">
                 <Text className="font-tajwal font-medium text-primary">
-                  العربية
+                  {languageLabel}
                 </Text>
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">اللغة</Text>
@@ -135,7 +141,7 @@ const Settings = () => {
               </View>
               <View className="flex-row items-center justify-between ps-2">
                 <Text className="font-tajwal font-medium text-primary">
-                  د.ت
+                  {currencySymbol} {settings.currency}
                 </Text>
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">العملة</Text>
@@ -148,7 +154,7 @@ const Settings = () => {
               </View>
               <View className="flex-row items-center justify-between ps-2">
                 <Text className="font-tajwal font-medium text-primary">
-                  فاتح
+                  {t(settings.theme)}
                 </Text>
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">المظهر</Text>

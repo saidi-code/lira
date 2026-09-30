@@ -65,7 +65,7 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({collections,isLoading}) 
             </Text>
           </TouchableOpacity>
         </View>
-        <View className="absolute inset-0 bg-black/20" />
+        <View className="absolute inset-0 bg-scrim/20" />
       </View>
     ),
     [width]

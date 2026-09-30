@@ -100,9 +100,9 @@ const Cart = () => {
               <View className="self-stretch flex-col justify-start items-start gap-4">
                 {/* Main Button */}
                 <TouchableOpacity
-                onPress={
-                  ()=>router.navigate("/checkout")
-                }
+                  onPress={
+                    () => router.navigate("/checkout")
+                  }
                   activeOpacity={0.8}
                   className="self-stretch py-5 bg-[#785920] rounded-full shadow-md flex-row justify-center items-center gap-2"
                   style={{

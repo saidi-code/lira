@@ -75,7 +75,7 @@ export default function Index() {
         setIsSearchError(false);
 
         const cleanParams: Record<string, any> = { ...params };
-       console.log("cleanParams", cleanParams);
+        console.log("cleanParams", cleanParams);
         if (cleanParams.category === "الكل") delete cleanParams.category;
         Object.keys(cleanParams).forEach((k) => {
           if (!cleanParams[k]) delete cleanParams[k];
@@ -114,7 +114,7 @@ export default function Index() {
     const timer = setTimeout(() => {
       performSearch({
         q: searchText.trim(),
-       
+
       });
     }, 400);
     return () => clearTimeout(timer);
@@ -135,7 +135,7 @@ export default function Index() {
 
   const isSearchActive =
     searchText.trim().length > 0 ||
-    category !== "الكل" 
+    category !== "الكل"
     ||
     brand !== "الكل" ||
     Boolean(color || size);
@@ -185,12 +185,12 @@ export default function Index() {
   );
 
   if (isLoading) {
-    return <LoadingPage  />;
+    return <LoadingPage />;
   }
 
   if (isError) {
     return (
-          <View style={[styles.center, { backgroundColor: colors.canvas }]}>
+      <View style={[styles.center, { backgroundColor: colors.canvas }]}>
         <Text style={styles.errorText}>حدث خطأ أثناء تحميل المنتجات</Text>
       </View>
     );
@@ -203,11 +203,12 @@ export default function Index() {
       <View
         className="mx-4 my-3 flex-row items-center bg-card rounded-xl overflow-hidden"
         style={{
-          shadowColor: "#000",
+          shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
           shadowRadius: 8,
           elevation: 3,
+          backgroundColor: colors.canvas,
         }}
       >
         <TouchableOpacity
@@ -242,11 +243,11 @@ export default function Index() {
             performSearch({
               q: searchText.trim(),
               category: category === "الكل" ? "" : category,
-                color:  color === "الكل" ? "" : color,
-                brand:  brand === "الكل" ? "" : brand,
-                size:  size === "الكل" ? "" : size,
-                minPrice: price[0]|| 0,
-              maxPrice: price[1]|| 10000,
+              color: color === "الكل" ? "" : color,
+              brand: brand === "الكل" ? "" : brand,
+              size: size === "الكل" ? "" : size,
+              minPrice: price[0] || 0,
+              maxPrice: price[1] || 10000,
             })
           }
           className="p-4 pl-3 border-l border-stone-100"
@@ -261,7 +262,7 @@ export default function Index() {
           <LoadingPage />
         ) : uniqueProducts.length === 0 ? (
           <View style={[styles.center, { backgroundColor: colors.canvas }]}>
-            <Text style={{ color: "#888", fontSize: 16, fontFamily: "Tajawal-Medium" }}>
+            <Text style={{ color: colors.secondary, fontSize: 16, fontFamily: "Tajawal-Medium" }}>
               {isSearchActive ? "لا توجد منتجات مطابقة لبحثك" : "لا توجد منتجات متاحة حالياً"}
             </Text>
           </View>
@@ -278,7 +279,7 @@ export default function Index() {
             maxToRenderPerBatch={6}
             initialNumToRender={6}
             removeClippedSubviews={true}
-      contentContainerStyle={[styles.listContainer, { backgroundColor: colors.canvas }]}
+            contentContainerStyle={[styles.listContainer, { backgroundColor: colors.canvas }]}
             columnWrapperStyle={styles.columnWrapper}
           />
         )}

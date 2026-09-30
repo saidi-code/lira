@@ -1,20 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../Header';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAppColors, type Colors } from '@/constants/utility';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // approximate (accounting for padding)
 
-// Skeleton colors
-const SKELETON_BASE = '#e5e5e5';
-const COLORS = {
-  primary: '#a8a29e', // muted for skeleton look
-};
+// Shared divider token — AGENT.md §3.1 (rgba(184,147,84,0.15)).
+const HAIRLINE = 'rgba(184,147,84,0.15)';
 
 const LoadingPage = () => {
   const opacity = useRef(new Animated.Value(0.3)).current;
+  // Palette resolved per render: a module-level stylesheet would freeze the
+  // light values and paint a white skeleton over the dark canvas.
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -49,40 +50,40 @@ const LoadingPage = () => {
 
   return (
     <SafeAreaView className="bg-surface shadow flex-1" edges={["top"]}>
-      <Header showBack />
-    <View style={styles.container}>
-      {/* Search bar skeleton */}
-      <Animated.View style={[styles.searchContainer, { opacity }]}>
-        {/* Filter button (right side, RTL) */}
-        <View style={styles.searchSideButton}>
-          <Ionicons name="filter-sharp" size={20} color={COLORS.primary} />
-        </View>
+      <View style={styles.container}>
+        {/* Search bar skeleton */}
+        <Animated.View style={[styles.searchContainer, { opacity }]}>
+          {/* Filter button (right side, RTL) */}
+          <View style={styles.searchSideButton}>
+            <Ionicons name="filter-sharp" size={20} color={colors.inactive} />
+          </View>
 
-        {/* Text placeholder */}
-        <View style={styles.searchInputPlaceholder}>
-          <View style={styles.searchTextBar} />
-        </View>
+          {/* Text placeholder */}
+          <View style={styles.searchInputPlaceholder}>
+            <View style={styles.searchTextBar} />
+          </View>
 
-        {/* Search button (left side) */}
-        <View style={[styles.searchSideButton, styles.searchSideButtonLeft]}>
-          <Ionicons name="search-outline" size={20} color={COLORS.primary} />
-        </View>
-      </Animated.View>
+          {/* Search button (left side) */}
+          <View style={[styles.searchSideButton, styles.searchSideButtonLeft]}>
+            <Ionicons name="search-outline" size={20} color={colors.inactive} />
+          </View>
+        </Animated.View>
 
-      {/* Cards grid */}
-      <View style={styles.grid}>
-        {skeletonCards}
+        {/* Cards grid */}
+        <View style={styles.grid}>
+          {skeletonCards}
+        </View>
       </View>
-    </View>
     </SafeAreaView>
 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     paddingTop: 8,
   },
   // --- Search bar skeleton ---
@@ -91,10 +92,10 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -104,14 +105,14 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingRight: 12,
     borderRightWidth: 1,
-    borderRightColor: '#f5f5f4',
+    borderRightColor: HAIRLINE,
     justifyContent: 'center',
     alignItems: 'center',
   },
   searchSideButtonLeft: {
     borderRightWidth: 0,
     borderLeftWidth: 1,
-    borderLeftColor: '#f5f5f4',
+    borderLeftColor: HAIRLINE,
     paddingRight: 16,
     paddingLeft: 12,
   },
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   searchTextBar: {
     height: 14,
     width: '65%',
-    backgroundColor: SKELETON_BASE,
+    backgroundColor: colors.skeleton,
     borderRadius: 4,
   },
   // --- Cards grid ---
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
@@ -144,13 +145,13 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: SKELETON_BASE,
+    backgroundColor: colors.skeleton,
     borderRadius: 8,
     marginBottom: 12,
   },
   textPlaceholder: {
     height: 12,
-    backgroundColor: SKELETON_BASE,
+    backgroundColor: colors.skeleton,
     borderRadius: 4,
     marginBottom: 8,
   },

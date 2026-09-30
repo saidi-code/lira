@@ -204,7 +204,7 @@ function CustomDrawerContent(props: any) {
         onRequestClose={closePicker}
       >
         <View className="flex-1 justify-end">
-          <Pressable className="flex-1 bg-black/40" onPress={closePicker} />
+          <Pressable className="flex-1 bg-scrim/40" onPress={closePicker} />
           <View className="bg-card rounded-t-3xl px-5 pt-5 pb-10">
             <Text className="font-tajwal text-lg font-bold text-primary text-center mb-5">
               {picker ? t(PICKER_TITLE_KEYS[picker]) : ""}

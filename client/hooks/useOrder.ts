@@ -107,18 +107,27 @@ export function useOrderByIdQuery(orderId?: string) {
 // ==========================================
 // 5. Mutation Hook: useCreateOrder
 // ==========================================
+export interface CreateOrderVariables {
+  payload: CreateOrderInput;
+  /** Replayed by the API as `Idempotency-Key`; see newIdempotencyKey(). */
+  idempotencyKey?: string | null;
+}
+
 export function useCreateOrder() {
   const queryClient = useQueryClient();
   const { getToken, isSignedIn } = useAuth();
 
   return useMutation({
-    mutationFn: async (payload: CreateOrderInput) => {
+    mutationFn: async ({
+      payload,
+      idempotencyKey,
+    }: CreateOrderVariables) => {
       if (!isSignedIn) {
         openAuthModal();
         throw new Error("Authentication required");
       }
       const token = await getToken();
-      return orderApi.createOrder(payload, token);
+      return orderApi.createOrder(payload, token, idempotencyKey);
     },
     onSuccess: (order) => {
       // Invalidate all paginated "my" queries
@@ -243,12 +252,12 @@ export function useOrder(params?: OrderQueryParams, orderId?: string) {
     cancelOrderMutation.isLoading;
 
   const createOrder = useCallback(
-    async (payload: CreateOrderInput) => {
+    async (payload: CreateOrderInput, idempotencyKey?: string | null) => {
       if (!isSignedIn) {
         openAuthModal();
         return;
       }
-      return createOrderMutation.mutateAsync(payload);
+      return createOrderMutation.mutateAsync({ payload, idempotencyKey });
     },
     [isSignedIn, createOrderMutation]
   );

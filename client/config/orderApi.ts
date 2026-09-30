@@ -1,4 +1,5 @@
 import { api } from "./api";
+import * as Crypto from "expo-crypto";
 
 // ==================== Types ====================
 
@@ -83,9 +84,24 @@ export interface CreateOrderInput {
   shippingAddress?: BackendShippingAddress;
   paymentMethod: PaymentMethod;
   notes?: string;
-  shippingCost?: number;
-  tax?: number;
+  // shippingCost / tax are intentionally absent: the server recomputes them
+  // from the prices it stores (server/config/pricing.ts) and ignores anything
+  // the client sends, so the screen cannot inflate or deflate what is charged.
 }
+
+/**
+ * One key per checkout attempt, reused across retries of that attempt so the
+ * API can recognise a replay (double tap, network retry) and return the order
+ * it already created instead of creating a second one.
+ */
+export const newIdempotencyKey = (): string => {
+  try {
+    return Crypto.randomUUID();
+  } catch {
+    // Web / older runtimes without expo-crypto: still unique enough per device.
+    return `ord-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+};
 
 export interface OrderQueryParams {
   page?: number;
@@ -104,15 +120,21 @@ const EMPTY_PAGINATION: Pagination = { total: 0, page: 1, pages: 1 };
 export const orderApi = {
   /**
    * POST /api/orders
+   *
+   * `idempotencyKey` travels as a header (not in the body) so a retried submit
+   * is recognised by the server as the same checkout attempt.
    */
   createOrder: async (
     payload: CreateOrderInput,
-    token?: string | null
+    token?: string | null,
+    idempotencyKey?: string | null
   ): Promise<BackendOrder | null> => {
     const res = await api.post<OrderResponse>("/orders", payload, {
-      headers: authHeaders(token),
+      headers: {
+        ...(authHeaders(token) ?? {}),
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      },
     });
-    console.log("create order response",res)
     return !Array.isArray(res.data) ? res.data ?? null : null;
   },
 

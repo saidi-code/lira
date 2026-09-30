@@ -1,0 +1,67 @@
+# .github/workflows/ci.yml
+# ==========================================
+# Nothing in this repo enforced anything before: `tsc` errors and failing tests
+# reached `production` silently. This runs exactly the two commands an agent runs
+# by hand (see AGENT.md §13) on every push and PR.
+#
+# Both jobs are DB-free on purpose — the unit tests use fakes, so CI needs no
+# MongoDB, Redis or Clerk secrets and cannot flake on them.
+# ==========================================
+name: CI
+
+on:
+  push:
+    branches: [production]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: server — typecheck + unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit --pretty false
+
+      - name: Unit tests
+        run: npm test
+
+  client:
+    name: client — typecheck + lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit --pretty false
+
+      - name: Lint
+        run: npx expo lint

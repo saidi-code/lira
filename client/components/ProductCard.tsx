@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/config/api";
 import ProductImage from "./productCardComponents/ProductImage";
 import { useAppColors } from "@/constants/utility";
+import { COLORS } from "@/constants";
 
 const ProductCard = memo(({ product }: ProductCardProps) => {
   const router = useRouter();
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,

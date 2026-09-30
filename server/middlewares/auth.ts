@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User.js';
-import mongoose from "mongoose"
 export const protect = async (req:Request, res:Response, next:NextFunction) => {
     try {
         const {userId } = await req.auth()

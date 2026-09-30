@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, Text,Image, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
+import { COLORS } from "../constants";
 
 const LoginOrRegisterModal = ({ show,setShow }: { show: boolean ,setShow:any}) => {
   const router = useRouter();
@@ -14,9 +15,9 @@ const LoginOrRegisterModal = ({ show,setShow }: { show: boolean ,setShow:any}) =
         router.back();
       }}
     >
-      <View className="flex-1 bg-black/50 items-center justify-center px-6">
+      <View className="flex-1 bg-scrim/50 items-center justify-center px-6">
         <View className="w-full rounded-3xl bg-card p-5" style={{
-          shadowColor: "#000",
+          shadowColor: COLORS.shadow,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.15,
           shadowRadius: 20,

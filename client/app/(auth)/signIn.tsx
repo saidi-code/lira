@@ -15,9 +15,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "@expo/vector-icons/build/Entypo";
 import { COLORS } from "@/constants";
+import { useAppColors, type Colors } from "@/constants/utility";
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
+  // The form used to pin #111111 / #ccc / #F7F7F7, i.e. light-only greys that
+  // also broke the "no pure black text" rule. Build the stylesheet from the
+  // active palette instead (same pattern as checkout/index.tsx).
+  const colors = useAppColors();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -289,7 +295,7 @@ export default function Page() {
             <Link
               href="/"
               className="flex-row-reverse items-center  px-6 py-3 rounded-full"
-              style={{ backgroundColor: "#f7efe1" }}
+              style={{ backgroundColor: colors.card }}
             >
               <Text
                 className="text-primary font-tajwal  font-bold text-lg"
@@ -305,7 +311,8 @@ export default function Page() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
@@ -322,18 +329,18 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "600",
     fontSize: 14,
-    color: "#111111",
+    color: colors.body,
     marginBottom: 8,
     textAlign: "right",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.inactive,
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#F7F7F7",
-    color: "#111111",
+    backgroundColor: colors.card,
+    color: colors.body,
   },
   button: {
     paddingVertical: 14,
@@ -341,17 +348,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 8,
-    backgroundColor: "#785920",
+    backgroundColor: colors.solid,
   },
   buttonPressed: {
-    backgroundColor: "#333333",
+    opacity: 0.85,
   },
   buttonDisabled: {
-    // opacity: 0.5,
-    backgroundColor: "#333333",
+    backgroundColor: colors.inactive,
   },
   buttonText: {
-    color: "#fff",
+    color: colors.white,
     fontWeight: "600",
   },
   linkContainer: {

@@ -260,7 +260,7 @@ export default function EditProduct() {
 
         <Modal visible={modalVisible} animationType="slide" transparent>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-            <View className="flex-1 justify-end bg-black/50">
+            <View className="flex-1 justify-end bg-scrim/50">
               <View className="bg-card rounded-t-2xl p-4 max-h-[50%]">
                 <Text className="text-lg font-bold text-center mb-4">
                   Select Category
@@ -308,7 +308,7 @@ export default function EditProduct() {
                 <Image source={{ uri }} className="w-24 h-24 rounded-lg" />
                 <TouchableOpacity
                   onPress={() => removeExistingImage(index)}
-                  className="absolute top-1 right-1 bg-black/50 rounded-full p-1"
+                  className="absolute top-1 right-1 bg-scrim/50 rounded-full p-1"
                 >
                   <Ionicons name="close" size={12} color="white" />
                 </TouchableOpacity>

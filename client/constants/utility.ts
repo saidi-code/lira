@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dimensions } from "react-native";
 import Toast from "react-native-toast-message";
+import * as Haptics from "expo-haptics";
 import { DARK_COLORS, LIGHT_COLORS, type Colors } from "./index";
 import { getThemeIsDark, subscribeToTheme } from "./themeStore";
 
@@ -37,6 +38,28 @@ export const showErrorToast = (text: string = "") => {
     topOffset: screenHeight / 2 - 50, // Subtract half the height of your toast to center it exactl
   });
 };
+
+// ==========================================
+// Haptics (AGENT.md §3.5 "Motion & Micro-interactions", §3.6.4)
+// ==========================================
+/**
+ * Light tap feedback for chip / toggle selections (colour, size, wishlist).
+ *
+ * Failures are swallowed on purpose: there is no haptic engine on the web
+ * target and on some Android devices, and a missing vibration must never
+ * break the interaction it is meant to reinforce.
+ */
+export const hapticLight = () => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+};
+
+/** Success feedback — "add to bag" and order placement. */
+export const hapticSuccess = () => {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+    () => {}
+  );
+};
+
 export const getStatusColor = (status: string) => {
   switch (status) {
     case "placed":

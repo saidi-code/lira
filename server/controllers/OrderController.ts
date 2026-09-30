@@ -1,11 +1,16 @@
 // controllers/orderController.ts
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Products.js";
 import Address from "../models/Address.js";
 import Cart from "../models/Cart.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
+import { computeTotals, roundMoney } from "../config/pricing.js";
+import {
+  sessionOption,
+  withOptionalTransaction,
+} from "../utils/transaction.js";
 import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
 
@@ -78,6 +83,206 @@ interface OrderItemDoc {
   subtotal: number;
 }
 
+// ==================== STOCK HELPERS ====================
+class InsufficientStockError extends Error {
+  constructor(productName: string) {
+    super(`Not enough stock for ${productName}`);
+    this.name = "InsufficientStockError";
+  }
+}
+
+interface StockLine {
+  product: mongoose.Types.ObjectId;
+  name: string;
+  quantity: number;
+}
+
+const isDuplicateKeyError = (error: unknown): boolean =>
+  (error as { code?: number })?.code === 11000;
+
+/**
+ * Replay guard. The client mints one key per checkout attempt and repeats it on
+ * retry, so a double tap or a network retry can never create two orders.
+ */
+const readIdempotencyKey = (req: Request): string | null => {
+  const raw = req.get("Idempotency-Key");
+  const key = typeof raw === "string" ? raw.trim() : "";
+  return key ? key.slice(0, 120) : null;
+};
+
+/**
+ * Atomically reserves stock for every line.
+ *
+ * The `stock: { $gte: quantity }` predicate makes the check-and-decrement a
+ * single server-side operation, so two concurrent checkouts can never both pass
+ * a stale read and oversell (AGENT.md §9, "concurrency: atomic deduction").
+ */
+const deductStock = async (
+  lines: StockLine[],
+  session?: ClientSession
+): Promise<StockLine[]> => {
+  const deducted: StockLine[] = [];
+
+  for (const line of lines) {
+    const updated = await Product.findOneAndUpdate(
+      { _id: line.product, stock: { $gte: line.quantity } },
+      { $inc: { stock: -line.quantity } },
+      { new: true, ...sessionOption(session) }
+    );
+
+    if (!updated) throw new InsufficientStockError(line.name);
+    deducted.push(line);
+  }
+
+  return deducted;
+};
+
+/** Puts quantities back (failed checkout, cancellation, admin deletion). */
+const restoreStock = async (lines: StockLine[], session?: ClientSession) => {
+  for (const line of lines) {
+    await Product.updateOne(
+      { _id: line.product },
+      { $inc: { stock: line.quantity } },
+      sessionOption(session)
+    );
+  }
+};
+
+const toStockLines = (
+  items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[]
+): StockLine[] =>
+  items.map((item) => ({
+    product: item.product,
+    name: item.name,
+    quantity: item.quantity,
+  }));
+
+/**
+ * Statuses whose order still holds its units. Stock is deducted when the order is
+ * placed, so anything not shipped yet has to give it back; `shipped`/`delivered`
+ * sold the units and `cancelled` already returned them.
+ */
+const STOCK_HELD_STATUSES = ["placed", "processing"];
+
+type StockHeldStatus = (typeof STOCK_HELD_STATUSES)[number];
+
+/**
+ * True for orders whose units are still reserved by it (see STOCK_HELD_STATUSES).
+ * It takes a plain string because callers read the status off a Mongo document,
+ * where mongoose types it as `string` rather than the schema's enum union.
+ */
+const holdsStock = (orderStatus: string): orderStatus is StockHeldStatus =>
+  (STOCK_HELD_STATUSES as readonly string[]).includes(orderStatus);
+
+/** The parts of an order the cancel path touches. */
+export interface CancellableOrder {
+  _id: mongoose.Types.ObjectId;
+  orderStatus: string;
+  items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[];
+}
+
+/**
+ * Everything the cancel path touches in the database, injected into
+ * `runCancellation` so its guards can be tested without a running MongoDB.
+ */
+export interface CancellationStore {
+  /**
+   * Flip the order to `cancelled` only if it still holds stock, and report the
+   * status that was replaced. The status filter IS the claim: when two cancels
+   * race, exactly one of them gets a document back, and therefore exactly one
+   * restocks. Resolves to `null` when the order was not cancellable.
+   */
+  claimCancellation(
+    order: CancellableOrder,
+    extraSet: Record<string, string>,
+    session?: ClientSession
+  ): Promise<{ orderStatus: string } | null>;
+
+  /** Put the given lines back on the shelf. */
+  restoreStock(lines: StockLine[], session?: ClientSession): Promise<void>;
+
+  /** Undo a claim when there is no transaction to roll it back for us. */
+  revertCancellation(
+    orderId: mongoose.Types.ObjectId,
+    previousStatus: string
+  ): Promise<void>;
+}
+
+/** The real store: mongoose, against MongoDB. */
+const orderStore: CancellationStore = {
+  claimCancellation: async (order, extraSet, session) => {
+    // `new: false` hands back the document as it was, i.e. the status that was
+    // really replaced — the one a compensating rollback has to restore.
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, orderStatus: { $in: STOCK_HELD_STATUSES } },
+      { $set: { orderStatus: "cancelled", ...extraSet } },
+      { new: false, ...sessionOption(session) }
+    );
+
+    return claimed ? { orderStatus: claimed.orderStatus } : null;
+  },
+
+  restoreStock: (lines, session) => restoreStock(lines, session),
+
+  revertCancellation: async (orderId, previousStatus) => {
+    await Order.updateOne(
+      { _id: orderId },
+      { $set: { orderStatus: previousStatus } }
+    );
+  },
+};
+
+/**
+ * The decision logic of a cancellation: claim the order, restock it, and on
+ * failure undo the claim when there is no transaction that can do it for us.
+ *
+ * Kept separate from `cancelAndRestock` (which supplies the real store and the
+ * session) so the guarantees below are unit-testable. Exported for tests only —
+ * production code always goes through `cancelAndRestock`.
+ *
+ * Returns `false` when the order was not cancellable; throws if the stock could
+ * not be returned.
+ */
+export const runCancellation = async (
+  order: CancellableOrder,
+  store: CancellationStore,
+  extraSet: Record<string, string> = {},
+  session?: ClientSession
+): Promise<boolean> => {
+  const claimed = await store.claimCancellation(order, extraSet, session);
+  if (!claimed) return false;
+
+  try {
+    await store.restoreStock(toStockLines(order.items), session);
+  } catch (error) {
+    // No session => no rollback, so undo our own status flip. With a session the
+    // transaction aborts and takes the claim with it.
+    if (!session) {
+      await store
+        .revertCancellation(order._id, claimed.orderStatus)
+        .catch(() => undefined);
+    }
+    throw error;
+  }
+
+  return true;
+};
+
+/**
+ * Marks an order cancelled and puts its units back, or does nothing.
+ *
+ * Every entry point that can end an order — the customer's cancel, the admin
+ * status change, the admin delete — goes through here, because `order.orderStatus
+ * = "cancelled"; order.save()` silently loses the stock that checkout reserved.
+ */
+const cancelAndRestock = async (
+  order: CancellableOrder,
+  extraSet: Record<string, string> = {}
+): Promise<boolean> =>
+  withOptionalTransaction((session) =>
+    runCancellation(order, orderStore, extraSet, session)
+  );
+
 // ==================== CREATE ORDER ====================
 // @desc    Create a new order
 // @route   POST /api/orders
@@ -87,21 +292,32 @@ export const createOrder = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const {
-      items,
-      shippingAddressId,
-      shippingAddress,
-      paymentMethod,
-      notes,
-      shippingCost = 0,
-      tax = 0,
-    } = req.body as CreateOrderBody;
+    // `shippingCost` / `tax` are deliberately NOT read from the body: totals are
+    // recomputed server-side from the DB prices (config/pricing.ts).
+    const { items, shippingAddressId, shippingAddress, paymentMethod, notes } =
+      req.body as CreateOrderBody;
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Order must contain at least one item",
       });
+    }
+
+    // ---------- Replay guard ----------
+    const idempotencyKey = readIdempotencyKey(req);
+    if (idempotencyKey) {
+      const alreadyPlaced = await Order.findOne({
+        idempotencyKey,
+        user: req.user!._id,
+      });
+      if (alreadyPlaced) {
+        return res.status(200).json({
+          success: true,
+          message: "Order already placed",
+          data: alreadyPlaced,
+        });
+      }
     }
 
     // ---------- Resolve address ----------
@@ -138,7 +354,6 @@ export const createOrder = async (
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
     const orderItems: OrderItemDoc[] = [];
-    let subtotal = 0;
 
     for (const item of items) {
       const product = productMap.get(item.product?.toString());
@@ -165,8 +380,8 @@ export const createOrder = async (
       }
 
       const price = product.price ?? 0;
-      const itemSubtotal = price * quantity;
-      subtotal += itemSubtotal;
+      // Rounded here too: this is the figure printed on the invoice line.
+      const itemSubtotal = roundMoney(price * quantity);
 
       orderItems.push({
         product: product._id,
@@ -180,39 +395,88 @@ export const createOrder = async (
       });
     }
 
-    const finalShipping = Number(shippingCost) || 0;
-    const finalTax = Number(tax) || 0;
-    const totalAmount = subtotal + finalShipping + finalTax;
+    // ---------- Totals: computed here, never taken from the client ----------
+    const totals = computeTotals(orderItems);
+    const stockLines = toStockLines(orderItems);
 
-    const order = await Order.create({
-      user: req.user!._id,
-      items: orderItems,
-      shippingAddress: {
-        type: addressDoc.type ?? "Other",
-        street: addressDoc.street,
-        city: addressDoc.city,
-        state: addressDoc.state,
-        zipCode: addressDoc.zipCode,
-        phoneNumber: addressDoc.phoneNumber,
-      },
-      paymentMethod: paymentMethod ?? "cash",
-      paymentStatus: "pending",
-      orderStatus: "placed",
-      subtotal,
-      shippingCost: finalShipping,
-      tax: finalTax,
-      totalAmount,
-      notes,
-    });
+    // ---------- Commit: reserve stock and write the order together ----------
+    // Under a transaction both writes land or neither does. Without one
+    // (standalone MongoDB has no transactions) `placeOrder` compensates by
+    // putting back whatever it already deducted, so a failed checkout cannot
+    // silently eat stock.
+    const placeOrder = async (session?: ClientSession) => {
+      let deducted: StockLine[] = [];
 
-    for (const item of orderItems) {
-      await Product.updateOne(
-        { _id: item.product },
-        { $inc: { stock: -item.quantity } }
-      );
+      try {
+        deducted = await deductStock(stockLines, session);
+
+        const [created] = await Order.create(
+          [
+            {
+              user: req.user!._id,
+              items: orderItems,
+              shippingAddress: {
+                type: addressDoc.type ?? "Other",
+                street: addressDoc.street,
+                city: addressDoc.city,
+                state: addressDoc.state,
+                zipCode: addressDoc.zipCode,
+                phoneNumber: addressDoc.phoneNumber,
+              },
+              paymentMethod: paymentMethod ?? "cash",
+              paymentStatus: "pending",
+              orderStatus: "placed",
+              ...totals,
+              notes,
+              idempotencyKey: idempotencyKey ?? undefined,
+            },
+          ],
+          sessionOption(session)
+        );
+
+        return created;
+      } catch (error) {
+        // No session => nothing rolls the deductions back for us.
+        if (!session && deducted.length) {
+          await restoreStock(deducted).catch(() => undefined);
+        }
+        throw error;
+      }
+    };
+
+    let order: Awaited<ReturnType<typeof placeOrder>>;
+
+    try {
+      order = await withOptionalTransaction(placeOrder);
+    } catch (error) {
+      // Two retries raced with the same key: the unique index rejects the
+      // loser, which is exactly the outcome we want — hand back the winner.
+      if (idempotencyKey && isDuplicateKeyError(error)) {
+        const existing = await Order.findOne({
+          idempotencyKey,
+          user: req.user!._id,
+        });
+        if (existing) {
+          return res.status(200).json({
+            success: true,
+            message: "Order already placed",
+            data: existing,
+          });
+        }
+      }
+
+      if (error instanceof InsufficientStockError) {
+        return res
+          .status(400)
+          .json({ success: false, message: error.message });
+      }
+
+      throw error;
     }
 
-    // Clear user cart in DB after successful order placement
+    // Clear the stored cart now that the order is committed. Best-effort on
+    // purpose: failing to empty a cart must not hide a successful order, and
+    // the client invalidates its cart cache regardless.
     try {
       await Cart.findOneAndUpdate(
         { user: req.user!._id },
@@ -433,6 +697,45 @@ export const updateOrderStatus = async (
       });
     }
 
+    // ---------- Cancelling is not a plain field write ----------
+    // "cancelled" also has to return the units checkout reserved, so it goes down
+    // the same guarded path the customer's cancel uses instead of `order.save()`.
+    if (orderStatus === "cancelled") {
+      const didCancel = await cancelAndRestock(
+        order,
+        paymentStatus ? { paymentStatus } : {}
+      );
+
+      if (!didCancel) {
+        return res.status(400).json({
+          success: false,
+          message:
+            order.orderStatus === "cancelled"
+              ? "Order is already cancelled"
+              : "Cannot cancel an order that has been shipped or delivered",
+        });
+      }
+
+      const cancelled = await Order.findById(order._id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Order cancelled successfully",
+        data: cancelled ?? order,
+      });
+    }
+
+    // A cancelled order's units are already back on the shelf, so moving it back
+    // to an active status would leave it holding stock nobody reserved. Its
+    // status is final — but payment bookkeeping (marking a refund) is still fine.
+    if (order.orderStatus === "cancelled" && orderStatus) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cancelled orders cannot be reopened — place a new order instead. Send paymentStatus alone to record a refund.",
+      });
+    }
+
     if (orderStatus) order.orderStatus = orderStatus;
     if (paymentStatus) order.paymentStatus = paymentStatus;
 
@@ -488,34 +791,27 @@ export const cancelOrder = async (
       });
     }
 
-    if (["shipped", "delivered"].includes(order.orderStatus)) {
+    // ---------- Cancel + restock: the shared, guarded path ----------
+    const didCancel = await cancelAndRestock(order);
+
+    if (!didCancel) {
       return res.status(400).json({
         success: false,
-        message: "Cannot cancel an order that has been shipped or delivered",
+        message:
+          order.orderStatus === "cancelled"
+            ? "Order is already cancelled"
+            : "Cannot cancel an order that has been shipped or delivered",
       });
     }
 
-    if (order.orderStatus === "cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "Order is already cancelled",
-      });
-    }
-
-    order.orderStatus = "cancelled";
-    await order.save();
-
-    for (const item of order.items) {
-      await Product.updateOne(
-        { _id: item.product },
-        { $inc: { stock: item.quantity } }
-      );
-    }
+    // Read it back after the commit so the client sees what is stored, not the
+    // copy held before the flip.
+    const cancelled = await Order.findById(order._id);
 
     return res.status(200).json({
       success: true,
       message: "Order cancelled successfully",
-      data: order,
+      data: cancelled ?? order,
     });
   } catch (error) {
     return res.status(500).json({
@@ -544,13 +840,24 @@ export const deleteOrder = async (
       });
     }
 
-    const order = await Order.findByIdAndDelete(id);
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({
         success: false,
         message: "Order not found",
       });
     }
+
+    // ---------- Never delete an order that still holds stock ----------
+    // The `$inc` checkout performed has no other undo, so removing a
+    // placed/processing order outright would strand its units for good. Cancel
+    // first — which restocks through the shared path — then delete the record.
+    // A `false` here means somebody else already cancelled (and restocked) it.
+    if (holdsStock(order.orderStatus)) {
+      await cancelAndRestock(order);
+    }
+
+    await Order.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,

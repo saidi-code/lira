@@ -192,15 +192,15 @@ export default function AdminProducts() {
                   onPress={() =>
                     router.push(`/admin/products/edit/${product._id}`)
                   }
-                  className="p-2 bg-slate-50 rounded-full mr-2"
+                  className="p-2 bg-subtle rounded-full mr-2"
                 >
-                  <Ionicons name="create-outline" size={18} color="#333333" />
+                  <Ionicons name="create-outline" size={18} color={COLORS.body} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => deleteProduct(product._id)}
                   className="p-2 bg-subtle rounded-full"
                 >
-                  <Ionicons name="trash-outline" size={18} color="#333333" />
+                  <Ionicons name="trash-outline" size={18} color={COLORS.body} />
                 </TouchableOpacity>
               </View>
             </View>

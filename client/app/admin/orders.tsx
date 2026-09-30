@@ -263,7 +263,7 @@ export default function AdminOrders() {
       {/* STATUS MODAL */}
       <Modal visible={statusModalVisible} animationType="fade" transparent>
         <TouchableWithoutFeedback onPress={() => setStatusModalVisible(false)}>
-          <View className="flex-1 justify-end bg-black/50">
+          <View className="flex-1 justify-end bg-scrim/50">
             <View className="bg-card rounded-t-2xl p-4 max-h-[60%]">
               <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-subtle-border">
                 <Text className="text-lg font-bold text-primary">

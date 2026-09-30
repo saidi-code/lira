@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,18 +13,27 @@ import { useRouter } from "expo-router";
 import { useCart } from "@/hooks/useCart";
 import { useAddress } from "@/hooks/useAddress";
 import { useCreateOrder } from "@/hooks/useOrder";
+import { usePrice } from "@/hooks/usePrice";
 import { BackendAddress } from "@/config/addressApi";
-import { PaymentMethod } from "@/config/orderApi";
-import { replaceTo, useAppColors, type Colors } from "@/constants/utility";
+import { newIdempotencyKey, PaymentMethod } from "@/config/orderApi";
+import { usePricing } from "@/hooks/usePricing";
+import {
+  hapticSuccess,
+  replaceTo,
+  useAppColors,
+  type Colors,
+} from "@/constants/utility";
 import SkeletonAddressCard from "@/components/SkeletonAddressCard";
 import SkeletonCheckoutTotals from "@/components/SkeletonCheckoutTotals";
 
-const SHIPPING_COST = 7;
-const TAX_RATE = 0; // مثل 0.19 لـ 19%
+// الشحن والضريبة يُحسبان في الخادم (server/config/pricing.ts). هذه الشاشة تعرض
+// قيم GET /pricing كمعاينة فقط، ولا تُرسل أي منهما ضمن طلب إنشاء الطلب.
 
 const CheckoutScreen = () => {
   const router = useRouter();
   const { isSignedIn } = useAuth();
+  // Currency-aware formatter — the symbol must never be hardcoded (AGENT.md §3.6.2).
+  const price = usePrice();
 
   // ---------- المظهر ----------
   const colors = useAppColors();
@@ -32,6 +41,9 @@ const CheckoutScreen = () => {
 
   // ---------- السلة ----------
   const { cartItems, cartTotal, clearCart } = useCart();
+
+  // ---------- التسعير (معاينة للعرض فقط) ----------
+  const { pricing } = usePricing();
 
   // ---------- العناوين ----------
   const {
@@ -61,9 +73,17 @@ const CheckoutScreen = () => {
     null;
 
   // ---------- الحسابات ----------
+  // معاينة فقط — الخادم يعيد الحساب عند الإنشاء. الشحن قد يُعفى فوق حدّ مجاني.
   const subtotal = cartTotal ?? 0;
-  const tax = +(subtotal * TAX_RATE).toFixed(2);
-  const totalAmount = +(subtotal + SHIPPING_COST + tax).toFixed(2);
+  const freeShipping =
+    pricing.freeShippingThreshold != null &&
+    subtotal >= pricing.freeShippingThreshold;
+  const shippingCost = freeShipping ? 0 : pricing.shippingCost;
+  const tax = +(subtotal * pricing.taxRate).toFixed(2);
+  const totalAmount = +(subtotal + shippingCost + tax).toFixed(2);
+
+  // مفتاح واحد لكل محاولة إتمام طلب؛ الضغطة المزدوجة تُعيد استخدامه فلا يتكرّر الطلب.
+  const idempotencyKeyRef = useRef<string>(newIdempotencyKey());
 
   // ---------- الإجراءات ----------
   const handlePlaceOrder = async () => {
@@ -81,17 +101,19 @@ const CheckoutScreen = () => {
     }
 
     try {
+      // لا يُرسل الشحن ولا الضريبة: الخادم يحسبهما من أسعاره.
       const order = await createOrderMutation.mutateAsync({
-        items: cartItems.map((item) => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          size: item.size ?? null,
-          color: item.color ?? null,
-        })),
-        shippingAddressId: selectedAddress._id,
-        paymentMethod,
-        shippingCost: SHIPPING_COST,
-        tax,
+        payload: {
+          items: cartItems.map((item) => ({
+            product: item.product._id,
+            quantity: item.quantity,
+            size: item.size ?? null,
+            color: item.color ?? null,
+          })),
+          shippingAddressId: selectedAddress._id,
+          paymentMethod,
+        },
+        idempotencyKey: idempotencyKeyRef.current,
       });
 
       // بعض الـ hooks تُرجع { data: order } والبعض يُرجع order مباشرة
@@ -101,6 +123,12 @@ const CheckoutScreen = () => {
         Alert.alert("خطأ", "تم إنشاء الطلب لكن لم يتم استلام رقمه.");
         return;
       }
+
+      //نجحت هذه المحاولة، فلا يجوز إعادة استعمال مفتاحها لطلب لاحق.
+      idempotencyKeyRef.current = newIdempotencyKey();
+
+      // §3.5 / §3.6.4 — order placed is the flagship success haptic.
+      hapticSuccess();
 
       // بيانات شاشة النجاح تُلتقط قبل إفراغ السلة
       const orderItems = createdOrder.items ?? [];
@@ -257,7 +285,7 @@ const CheckoutScreen = () => {
                 {item.product.name} × {item.quantity}
               </Text>
               <Text style={styles.summaryText}>
-                {(unitPrice * item.quantity).toFixed(2)} د.ت
+                {price(unitPrice * item.quantity)}
               </Text>
             </View>
           );
@@ -267,24 +295,24 @@ const CheckoutScreen = () => {
 
         <View style={styles.summaryRow}>
           <Text style={styles.summaryText}>المجموع الفرعي</Text>
-          <Text style={styles.summaryText}>{subtotal.toFixed(2)} د.ت</Text>
+          <Text style={styles.summaryText}>{price(subtotal)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryText}>الشحن</Text>
           <Text style={styles.summaryText}>
-            {SHIPPING_COST.toFixed(2)} د.ت
+            {shippingCost === 0 ? "مجاني" : price(shippingCost)}
           </Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryText}>الضريبة</Text>
-          <Text style={styles.summaryText}>{tax.toFixed(2)} د.ت</Text>
+          <Text style={styles.summaryText}>{price(tax)}</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.summaryRow}>
           <Text style={styles.totalLabel}>الإجمالي</Text>
-          <Text style={styles.totalLabel}>{totalAmount.toFixed(2)} د.ت</Text>
+          <Text style={styles.totalLabel}>{price(totalAmount)}</Text>
         </View>
       </View>
 
@@ -305,7 +333,7 @@ const CheckoutScreen = () => {
     </View>
   ) : (
     <Text style={styles.primaryBtnText}>
-      {`تأكيد الطلب (${totalAmount.toFixed(2)} د.ت)`}
+      {`تأكيد الطلب (${price(totalAmount)})`}
     </Text>
   )}
 </TouchableOpacity>

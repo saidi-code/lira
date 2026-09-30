@@ -16,6 +16,18 @@ export const LIGHT_COLORS = {
   white: "#FFFFFF",
   skeleton: "#E5E7EB",
   card: "#FFFFFF",
+  /**
+   * Filled-button fill. Mirrors `--color-primary-solid` in global.css: the same
+   * deep bronze in BOTH themes so a `white` label on top keeps its contrast.
+   */
+  solid: "#785920",
+  /**
+   * Shadow tint. AGENT.md §3.3 asks for an "ambient luxury glow" built from
+   * transparent gold rather than muddy grey — and §3.6.3 forbids pure black in
+   * shadows. React Native multiplies this by `shadowOpacity` / Android's
+   * `elevation`, so the strength still comes from the call site.
+   */
+  shadow: "#B89354",
 } as const;
 
 /**
@@ -36,6 +48,10 @@ export const DARK_COLORS = {
   white: "#FFFFFF",
   skeleton: "#3A342E",
   card: "#2D2824", // keep in sync with --color-card in global.css
+  // Unchanged: white text sits on this fill (see LIGHT_COLORS.solid).
+  solid: "#785920",
+  // Gold glow reads as a soft halo on dark surfaces too (see LIGHT_COLORS).
+  shadow: "#B89354",
 } as const;
 
 /**
@@ -94,14 +110,18 @@ export const COLORS = {
   get card() {
     return getThemeIsDark() ? DARK_COLORS.card : LIGHT_COLORS.card;
   },
+  get solid() {
+    return getThemeIsDark() ? DARK_COLORS.solid : LIGHT_COLORS.solid;
+  },
+  get shadow() {
+    return getThemeIsDark() ? DARK_COLORS.shadow : LIGHT_COLORS.shadow;
+  },
 } as const;
 
 /** Snapshot of the active palette (handy for building stylesheets). */
 export function getColors(): Colors {
   return getThemeIsDark() ? { ...DARK_COLORS } : { ...LIGHT_COLORS };
 }
-
-export const CURRENCY = "د.ت";
 
 export const ICON_PATHS = {
   DIAMOND: "../../assets/images/icons/diamon.svg",

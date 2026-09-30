@@ -60,7 +60,7 @@ const UpdateProfile = () => {
                rounded-md overflow-hidden
             `}
             style={{
-              shadowColor: "#000",
+              shadowColor: COLORS.shadow,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
               shadowRadius: 8,
@@ -99,7 +99,7 @@ const UpdateProfile = () => {
                rounded-md overflow-hidden
             `}
             style={{
-              shadowColor: "#000",
+              shadowColor: COLORS.shadow,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
               shadowRadius: 8,
@@ -138,7 +138,7 @@ const UpdateProfile = () => {
                rounded-md overflow-hidden
             `}
             style={{
-              shadowColor: "#000",
+              shadowColor: COLORS.shadow,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
               shadowRadius: 8,

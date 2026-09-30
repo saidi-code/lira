@@ -20,13 +20,13 @@ function TabIconWrapper({
         borderRadius: 999,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: focused ? "#b89354" : "white",
+        backgroundColor: focused ? COLORS.primary : COLORS.white,
         borderWidth: 1,
-        borderColor: focused ?"#b89354" : "white",
+        borderColor: focused ? COLORS.primary : COLORS.white,
        
         marginTop:-32   ,  
         // transform: [{ scale:1}],
-        shadowColor: "#000",
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: focused ? 0.12 : 0.06,
         shadowRadius: 10,
@@ -54,7 +54,7 @@ export default function TabLayout() {
           tabBarLabelStyle: {
             fontSize: 7,
             fontWeight: "600",
-            color:"white",
+            color: COLORS.white,
             marginBottom: 2,
           },
         
@@ -63,7 +63,7 @@ export default function TabLayout() {
             borderWidth: 1,
             // borderColor: COLORS.active,
             borderTopColor: COLORS.canvas,
-          shadowColor: "#000",
+          shadowColor: COLORS.shadow,
           // shadowOffset: { width: 0, height: 6 },
             borderRadius:14,
             // elevation: 6,
@@ -72,7 +72,7 @@ export default function TabLayout() {
             // paddingBottom: 32,
             // marginBottom:50,
             // backgroundColor:COLORS.accent,
-            backgroundColor:"#b89354",
+            backgroundColor: COLORS.primary,
             height:62
           
           },
@@ -91,7 +91,7 @@ export default function TabLayout() {
                 <Ionicons
                   size={20}
                       name={focused ? "heart-sharp" : "heart-outline"} 
-                    color={focused ? "white" : "#b89354"}
+                    color={focused ? COLORS.white : COLORS.primary}
                 />
               </TabIconWrapper>
             ),
@@ -108,7 +108,7 @@ export default function TabLayout() {
                 <Ionicons
                   size={20}
                   name={focused ? "search-sharp" : "search-outline"} 
-                  color={focused ? "white" : COLORS.inactive}
+                  color={focused ? COLORS.white : COLORS.inactive}
                 />
               </TabIconWrapper>
             ),
@@ -128,11 +128,11 @@ export default function TabLayout() {
                   borderRadius: 999,
                   justifyContent: "center",
                   alignItems: "center",
-                  backgroundColor: focused ? "#b89354" :"white",
+                  backgroundColor: focused ? COLORS.primary : COLORS.white,
                   borderWidth: 1,
-                  borderColor: focused ? "#b89354" :"white",
+                  borderColor: focused ? COLORS.primary : COLORS.white,
                   transform: [{ scale: focused ? 1.08 : 1 }],
-                  shadowColor: "#000" ,
+                  shadowColor: COLORS.shadow ,
                   shadowOpacity: focused ? 0.12 : 0.06,
                   shadowRadius: 10,
                   shadowOffset: { width: 0, height: 6 },
@@ -142,7 +142,7 @@ export default function TabLayout() {
                 <Ionicons
                   size={32}
                   name={focused ? "rose-sharp" : "rose-outline"} 
-                  color={focused ? "white" : "#b89354"}
+                  color={focused ? COLORS.white : COLORS.primary}
                 />
                 </View>
             
@@ -163,7 +163,7 @@ export default function TabLayout() {
                 
                   name={focused ? "bag-sharp" : "bag-outline"} 
                   
-                  color={focused ? "white" : COLORS.inactive}
+                  color={focused ? COLORS.white : COLORS.inactive}
                 />
               </TabIconWrapper>
             ),
@@ -181,7 +181,7 @@ export default function TabLayout() {
                 <Ionicons
                   size={20}
                     name={focused ? "person-sharp" : "person-outline"} 
-                    color={focused ? "white" : COLORS.inactive}
+                    color={focused ? COLORS.white : COLORS.inactive}
                 />
               </TabIconWrapper>
             ),          

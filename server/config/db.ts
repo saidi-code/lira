@@ -19,7 +19,6 @@ const connectDB = async () => {
   let fullUri;
   const baseUri = process.env.MONGODB_URI_BASE || process.env.DB_URI;
   const dbName = process.env.DB_NAME;
-  const PORT = process.env.PORT || 27017;
 
   if (!baseUri || !dbName) {
     throw new Error(

@@ -59,7 +59,7 @@ const BannerSkeleton: React.FC<BannerSkeletonProps> = ({ count = 4 }) => {
           className="bg-skeleton rounded-lg"
         />
       </View>
-      <View className="absolute inset-0 bg-black/10" />
+      <View className="absolute inset-0 bg-scrim/10" />
     </View>
   );
 

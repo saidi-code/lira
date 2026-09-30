@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import Product from "../models/Products.js";
 import Category from "../models/Categories.js";
 import cloudinary from "../config/cloundinary.js";
-import cache from '../utils/cache.js';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {

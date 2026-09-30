@@ -2,6 +2,7 @@ import { TouchableOpacity } from 'react-native'
 import React from 'react'
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../../hooks/useCart';
+import { hapticLight, hapticSuccess } from '../../constants/utility';
 
 interface AddToCartBtnProps {
   product: any;
@@ -19,8 +20,11 @@ const AddToCartBtn = ({ product, handleOpenVariableModal }: AddToCartBtnProps) =
         if (product.type !== "variable") {
           // Simple product: add directly
           addToCart(product, null, null);
+          // §3.5 — add-to-bag celebrates with a success haptic.
+          hapticSuccess();
           return;
         }
+        hapticLight();
         handleOpenVariableModal();
       }}
       disabled={isOutOfStock}

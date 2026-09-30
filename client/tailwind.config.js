@@ -46,6 +46,9 @@ module.exports = {
           DEFAULT: "rgb(var(--color-subtle) / <alpha-value>)",
           border: "rgb(var(--color-subtle-border) / <alpha-value>)",
         },
+        // Modal / banner overlay — warm charcoal instead of pure black, so
+        // scrims never violate the "no #000000" guardrail.
+        scrim: "rgb(var(--color-scrim) / <alpha-value>)",
         // Status tones. `*-surface` is the tinted pill background, the plain
         // token is the text/icon colour on top of it.
         danger: {

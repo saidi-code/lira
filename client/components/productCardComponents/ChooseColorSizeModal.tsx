@@ -13,6 +13,7 @@ import {
 
 import { useCart } from "../../hooks/useCart";
 import { IProduct } from "../../constants/types";
+import { hapticLight, hapticSuccess } from "../../constants/utility";
 
 type Props = {
   show: boolean;
@@ -90,11 +91,11 @@ const ChooseColorSizeModal = ({
       animationType="fade"
       onRequestClose={() => setShow(false)}
     >
-      <View className="flex-1 bg-black/50 items-center justify-center px-6">
+      <View className="flex-1 bg-scrim/50 items-center justify-center px-6">
         <View
           className="w-full rounded-3xl bg-card p-5"
           style={{
-            shadowColor: "#000",
+            shadowColor: COLORS.shadow,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.15,
             shadowRadius: 20,
@@ -139,10 +140,14 @@ const ChooseColorSizeModal = ({
                     const isSelected = selectedColor === colorIdentifier || selectedColor === colorObj?.hex || selectedColor === colorObj?.name;
                     return (
                       <Pressable
-                        onPress={() => handleSelectColor(colorObj)}
+                        onPress={() => {
+                          // §3.5 — colour chips answer with a light impact.
+                          hapticLight();
+                          handleSelectColor(colorObj);
+                        }}
                         className="h-8 w-8 rounded-full"
                         style={{
-                          backgroundColor: colorObj?.hex ?? "#000",
+                          backgroundColor: colorObj?.hex ?? "#3C3633",
                           outlineWidth: 2,
                           outlineColor: isSelected ? "#B89354" : "rgba(184,147,84,0.4)",
                           shadowColor: "#fff",
@@ -173,7 +178,11 @@ const ChooseColorSizeModal = ({
                     const isSelected = selectedSize === String(size);
                     return (
                       <Pressable
-                        onPress={() => setSelectedSize(String(size))}
+                        onPress={() => {
+                          // §3.5 — size chips answer with a light impact.
+                          hapticLight();
+                          setSelectedSize(String(size));
+                        }}
                         className="flex items-center justify-center rounded-lg"
                         style={{
                           height: 36,
@@ -204,6 +213,8 @@ const ChooseColorSizeModal = ({
               onPress={async () => {
                 if (!product) return;
                 await addToCart(product, selectedSize, selectedColor);
+                // §3.5 — "add to bag" is the celebratory flow.
+                hapticSuccess();
                 setShow(false);
               }}
               activeOpacity={0.8}

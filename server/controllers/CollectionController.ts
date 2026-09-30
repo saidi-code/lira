@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Collection from '../models/Collections.js'; // adjust path
-import { ICollection } from '../types/index.js';
 
 // ----------------------------------------
 // CREATE a new collection

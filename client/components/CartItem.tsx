@@ -100,7 +100,7 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
                         backgroundColor:
                           (item as any)?.product?.colors?.find(
                             (c: any) => c?.name === item?.color || c?.hex === item?.color
-                          )?.hex ?? item?.color ?? "#000",
+                          )?.hex ?? item?.color ?? "#3C3633",
                         borderWidth: 1,
                         borderColor: "#B89354",
                         margin: 2,

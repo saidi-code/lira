@@ -42,7 +42,7 @@ const CollectionsSections = memo(({ collections, isLoading }: CollectionsSection
                 cachePolicy="memory-disk"
                 transition={200}
               />
-              <View className="absolute inset-0 p-8 bg-black/20 justify-end" />
+              <View className="absolute inset-0 p-8 bg-scrim/20 justify-end" />
             </View>
 
             <View style={styles.grid}>

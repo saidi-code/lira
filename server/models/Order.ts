@@ -78,6 +78,16 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
 
+    /**
+     * Replay guard for POST /orders. The client sends an `Idempotency-Key`
+     * header per checkout attempt; a retried submit (double tap, flaky network)
+     * then resolves to the *same* order instead of charging/deducting twice.
+     */
+    idempotencyKey: {
+      type: String,
+      default: undefined,
+    },
+
     items: {
       type: [orderItemSchema],
       required: true,
@@ -170,6 +180,18 @@ orderSchema.set("toObject", { virtuals: true });
 // ==========================================
 orderSchema.index({ user: 1, createdAt: -1 }); // user's orders sorted by date
 orderSchema.index({ orderStatus: 1 });
+// Only one order may claim a given idempotency key *per customer*. Scoping it to
+// `user` keeps the guard exactly as strong (the controller always looks the key up
+// by `user` + key too) while stopping one customer's key from colliding with, or
+// resolving to, another customer's order. `partialFilterExpression` keeps the
+// constraint off the (many) orders that have no key at all.
+orderSchema.index(
+  { user: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $type: "string" } },
+  }
+);
 
 // ==========================================
 // 8. Export

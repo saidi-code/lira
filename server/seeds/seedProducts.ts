@@ -1,7 +1,4 @@
 import "dotenv/config";
-import mongoose from "mongoose";
-
-import Product from "../models/Products.js";
 
 import { MongoClient } from "mongodb";
 

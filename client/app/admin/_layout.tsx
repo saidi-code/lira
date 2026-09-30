@@ -1,4 +1,5 @@
 import { COLORS } from "@/constants";
+import { useAppColors } from "@/constants/utility";
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
@@ -8,6 +9,10 @@ export default function AdminLayout() {
   const { user, isLoaded } = useUser();
 
   const router = useRouter();
+
+  // Header and tab colours come from the theme so the admin area follows
+  // light/dark like the shop does (AGENT.md §3.6.3: no hardcoded hex).
+  const colors = useAppColors();
 
   useEffect(() => {
     if (isLoaded && (!user || user.publicMetadata?.role !== "admin")) {
@@ -29,7 +34,7 @@ export default function AdminLayout() {
     <Tabs
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: colors.card,
         },
         headerTintColor: COLORS.primary,
         headerTitleStyle: {
@@ -37,7 +42,7 @@ export default function AdminLayout() {
         },
         headerShadowVisible: false,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: "gray",
+        tabBarInactiveTintColor: colors.inactive,
         headerRight: () => (
           <TouchableOpacity
             onPress={() => router.replace("/")}

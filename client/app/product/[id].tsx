@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
 import { COLORS } from "../../constants/index";
+import { hapticLight, hapticSuccess } from "../../constants/utility";
 import { usePrice } from "../../hooks/usePrice";
 import { IProduct } from "../../constants/types";
 import { useCart } from "../../hooks/useCart";
@@ -134,6 +135,9 @@ const SingleProduct = () => {
 
   const handleAddOrUpdate = () => {
     if (!product || !currentVariant) return;
+
+    // §3.5 — placing a variant in the bag is the celebratory flow.
+    hapticSuccess();
 
     // If already exists -> update quantity +1
     if (matchingCartItem?._id) {
@@ -304,15 +308,19 @@ const SingleProduct = () => {
                   }}
                   renderItem={({ item: color, index }) => (
                     <TouchableOpacity
-                      onPress={() => setPColor(index)}
+                      onPress={() => {
+                        // §3.5 — colour chips answer with a light impact.
+                        hapticLight();
+                        setPColor(index);
+                      }}
                       className="h-8 w-8 rounded-full"
                       style={{
-                        backgroundColor: color?.hex ?? "#000",
+                        backgroundColor: color?.hex ?? "#3C3633",
                         outlineWidth: 2,
                         outlineColor:
                           pColor === index
                             ? "#B89354"
-                            : "#rgba(184,147,84,0.4)",
+                            : "rgba(184,147,84,0.4)",
                         shadowColor: "#fff",
                         shadowOpacity: 0.2,
                         shadowRadius: 6,
@@ -344,7 +352,11 @@ const SingleProduct = () => {
                   renderItem={({ item: variant, index }) => (
                     <TouchableOpacity
                       activeOpacity={0.85}
-                      onPress={() => setPSize(index)}
+                      onPress={() => {
+                        // §3.5 — size chips answer with a light impact.
+                        hapticLight();
+                        setPSize(index);
+                      }}
                       className="flex items-center justify-center rounded-lg"
                       style={{
                         height: 32,
@@ -457,13 +469,13 @@ const SingleProduct = () => {
       <View className=" px-6 pt-4 pb-12 absolute left-0 bottom-0 bg-stone-50/90 shadow-md border-t border-amber-900/10 backdrop-blur-md flex-row justify-start items-center gap-4">
         <TouchableOpacity
           onPress={handleAddOrUpdate}
-          disabled={isOutOfStock || (product?.type === "variable" && (!routeColor || !routeSize))}
+          disabled={isOutOfStock || (product?.type === "variable" && (!currentVariant?.color || !currentVariant?.size))}
           className="flex-1 h-[59px] rounded-xl flex-row justify-center items-center gap-2"
           style={{
             backgroundColor:
               isOutOfStock
                 ? '#cfcfcf'
-                : product?.type === "variable" && (!routeColor || !routeSize)
+                : product?.type === "variable" && (!currentVariant?.color || !currentVariant?.size)
                 ? "#cfcfcf"
                 : "#785920",
           }}

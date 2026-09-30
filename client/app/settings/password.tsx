@@ -36,7 +36,7 @@ const PasswordField = ({
     <View
       className="my-2 flex-row items-center rounded-md overflow-hidden bg-card"
       style={{
-        shadowColor: "#000",
+        shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
