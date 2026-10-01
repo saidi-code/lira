@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   server:
-    name: server — typecheck + unit tests
+    name: server — typecheck + lint + unit tests
     runs-on: ubuntu-latest
     defaults:
       run:
