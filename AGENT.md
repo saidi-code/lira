@@ -839,9 +839,12 @@ client mints one key per checkout attempt (`newIdempotencyKey()`) and regenerate
 it only after a success.
 
 Keys live as long as the order does: they are 36 bytes, and expiring one would
-reopen the replay window it exists to close. `connectDB()` calls `syncIndexes()`
-on boot, so index changes here are applied by the next server start — including
-dropping the older key-only index — without a manual migration.
+reopen the replay window it exists to close. `connectDB()` calls `createIndexes()`
+on boot, so **new** indexes here are applied by the next server start without a
+manual migration. Because it no longer syncs, the older key-only index is *not*
+dropped automatically — it stays as a harmless redundant index and can be removed
+by hand whenever you like. See "Things I did not do" for why dropping is now
+deliberate.
 
 ### Transactions
 
@@ -1225,3 +1228,49 @@ a warning and only `Product.stock` moves.
    `Product.stock` restored.
 5. `npm run reconcile` → "No drift". If you skip the seed it will report every
    product, which is the expected signal that the ledger is not in use.
+
+## Deployment checklist
+
+One-time work on an existing database, in this order. **Every migration script is
+read-only unless given `--fix`**, and all three refuse to guess — so run each
+without the flag, read the report, and only then decide.
+
+1. `npm run backfill:deltas` — `StockMovement.delta` predates the field. Reports
+   what it would write; do not pass `--fix` while any order is mid-flight.
+2. `npm run repair:reservations` — finds `Inventory.reserved` left behind by
+   orders that died between reserving and writing. Bails out rather than repair
+   when the reference is ambiguous, because a wrong release oversells stock.
+3. `npm run reconcile` — compares `Σ(quantity − reserved)` to `Product.stock`.
+   Drift here is expected on a database that predates the ledger; the two above
+   must run first or the report is meaningless.
+4. Only after reviewing: repeat each with `--fix`, then re-run `reconcile` and
+   confirm "No drift".
+
+**Then, once, by hand:**
+
+- Drop the two stale text indexes on `Product`. They were created by schemas
+  embedded inside it; `Product.init()` could not build any index while they
+  existed, and `createIndexes()` will not remove them. Either drop them in
+  `mongosh` or run `Product.syncIndexes()` once — explicitly, for that model
+  only.
+- Verify `Product` indexes actually exist now. `db.ts` logs and continues on
+  failure, so a failed `init()` is otherwise silent:
+  `db.products.getIndexes()` should list the declared ones.
+
+**Required environment before real traffic:**
+
+- `CRON_SECRET` — until set, `POST /internal/orders/release-expired` returns 503
+  and unpaid orders are never released. An unset secret means disabled, never open.
+- `CLERK_WEBHOOK_SIGNING_SECRET` — **unverified against a live secret.** This is
+  the only line in the codebase standing between the server and a forged webhook
+  that can create a user with any role. Test one valid and one tampered payload
+  before trusting it.
+- Pricing/window variables — the server recomputes every amount, so client values
+  are display only. Wrong values here mean wrong invoices.
+- A real payment webhook. Until one is wired, `PUT /orders/:id/pay` is the only
+  path to `paid`, and it is admin-only by design.
+
+**Smoke tests** (see the manual-test sections above for the full lists): Clerk
+sync, checkout, payment expiry, cancel, shipping.
+
+
