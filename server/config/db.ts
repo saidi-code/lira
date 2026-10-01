@@ -16,7 +16,6 @@ const connectDB = async () => {
     console.log("Disconnected from MongoDB");
   });
 
-  let fullUri;
   const baseUri = process.env.MONGODB_URI_BASE || process.env.DB_URI;
   const dbName = process.env.DB_NAME;
 
@@ -27,12 +26,12 @@ const connectDB = async () => {
   }
 
   // Clean base URI (remove trailing / and ? params DB if any), append DB_NAME
-  const cleanBase = baseUri.replace(/\/[^\/]*$/, "").replace(/\/+$/, "");
-  fullUri = `${cleanBase}/${dbName}`;
+  const cleanBase = baseUri.replace(/[^/]*$/, "").replace(/\/+$/, "");
+  const fullUri = `${cleanBase}/${dbName}`;
 
   // Log masked
   const maskedUri = fullUri.replace(
-    /^(mongodb[^\/:\/]+:\/\/)[^@]+@/,
+    /^(mongodb[^/:]+:\/\/)[^@]+@/,
     `$1***:***@`
   );
   console.log("MongoDB URI:", maskedUri);

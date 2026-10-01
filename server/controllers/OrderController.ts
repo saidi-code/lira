@@ -174,6 +174,9 @@ type StockHeldStatus = (typeof STOCK_HELD_STATUSES)[number];
 const holdsStock = (orderStatus: string): orderStatus is StockHeldStatus =>
   (STOCK_HELD_STATUSES as readonly string[]).includes(orderStatus);
 
+/** Express generics: a route with no URL params, body or query of interest. */
+type EmptyParams = Record<string, never>;
+
 /** The parts of an order the cancel path touches. */
 export interface CancellableOrder {
   _id: mongoose.Types.ObjectId;
@@ -550,7 +553,7 @@ export const createOrder = async (
 // @route   GET /api/orders/my
 // @access  Private
 export const getMyOrders = async (
-  req: AuthRequest & Request<{}, {}, {}, OrderQuery>,
+  req: AuthRequest & Request<EmptyParams, unknown, unknown, OrderQuery>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -635,7 +638,7 @@ export const getOrderById = async (
 // @route   GET /api/orders
 // @access  Admin
 export const getAllOrders = async (
-  req: Request<{}, {}, {}, OrderQuery>,
+  req: Request<EmptyParams, unknown, unknown, OrderQuery>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -675,7 +678,7 @@ export const getAllOrders = async (
 // @route   PUT /api/orders/:id/status
 // @access  Admin
 export const updateOrderStatus = async (
-  req: AuthRequest & Request<OrderParams, {}, UpdateOrderStatusBody>,
+  req: AuthRequest & Request<OrderParams, unknown, UpdateOrderStatusBody>,
   res: Response
 ): Promise<Response> => {
   try {

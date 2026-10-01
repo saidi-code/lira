@@ -848,6 +848,7 @@ runs exactly them on every push to `production` and on every pull request.
 | Where | Command | Covers |
 |---|---|---|
 | `server/` | `npx tsc --noEmit --pretty false` | types — `noUnusedLocals` is on, so dead imports fail the build |
+| `server/` | `npm run lint` | ESLint — unreachable code, floating promises, useless assignment |
 | `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back) |
 | `client/` | `npx tsc --noEmit --pretty false` | types |
 | `client/` | `npx expo lint` | ESLint (flat config) |
@@ -864,6 +865,13 @@ Keeping CI trustworthy:
 - **`noUnusedParameters` stays off on purpose.** Express handlers must keep their
   `(req, res, next)` shape even when a parameter is unused; enabling it would mean
   renaming `req` to `_req` across every controller for no gain.
+- **The server ESLint config is not type-aware.** `tsc` already owns types, and
+  `no-unsafe-*` rules would bury real findings under hundreds of style errors in a
+  codebase that leans on `any` around mongoose. `no-explicit-any` is a warning, so
+  the debt stays visible without failing a build (48 warnings today).
+- **`types/express.d.ts` must stay a module.** Its `export {}` is what makes
+  `declare global` legal; removing it silently drops the `req.user` augmentation
+  and every controller stops compiling (TS2339).
 - Node 22 in CI matches the local toolchain.
 
 ### Still manual — needs a live MongoDB

@@ -318,7 +318,8 @@ const uploadImages = async (filesImage: unknown): Promise<string[]> => {
   }
 };
 const transformStringToArray = (data: any): any[] => {
-  let jsonData: any[] = [];
+  // Every branch below assigns, so an initial value would never be read.
+  let jsonData: any[];
 
   if (typeof data === "string") {
     try {
