@@ -94,7 +94,8 @@ export const applyTransferStatus = async (
         reference: transfer.reference,
         user: userId ?? null,
         note: `Transfer ${transfer.reference}`,
-      }))
+      })),
+      session
     );
 
     // Guarded on the status we read: a second completer finds nothing to update

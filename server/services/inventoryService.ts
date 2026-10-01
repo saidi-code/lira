@@ -146,6 +146,16 @@ export const applyMovement = async (
 
   const deltas = movementDeltasFor(type, input.quantity);
 
+  // Incoming stock creates the row it lands in; outgoing stock does not.
+  //
+  // A warehouse added after `npm run seed:warehouses` has no `Inventory` rows at
+  // all, because the seed only walks the default warehouse. Without this,
+  // receiving a purchase order into it — or transferring stock to it — failed its
+  // guard and threw `InsufficientStockError`, which reads as "not enough stock"
+  // when the truth is "no such row". Arriving units cannot overshoot, so their
+  // guard is empty and an upsert is unambiguous.
+  const arriving = type === "in" || type === "transfer_in";
+
   // Guard + increment in one server-side operation — this is what stops two
   // concurrent movements overselling the last unit (§9).
   const updated = await Inventory.findOneAndUpdate(
@@ -155,12 +165,20 @@ export const applyMovement = async (
       ...guardFilter(type, input.quantity),
     },
     { $inc: { quantity: deltas.quantity, reserved: deltas.reserved } },
-    { new: true, ...(session ? { session } : {}) }
+    {
+      new: true,
+      upsert: arriving,
+      // Only meaningful on insert; an existing row keeps whatever it was set to.
+      ...(arriving ? { setDefaultsOnInsert: true } : {}),
+      ...(session ? { session } : {}),
+    }
   );
 
   if (!updated) {
     throw new InsufficientStockError(
-      `Not enough stock for ${input.product} in warehouse ${input.warehouse}`
+      arriving
+        ? `Could not record incoming stock for ${input.product} in warehouse ${input.warehouse}`
+        : `Not enough stock for ${input.product} in warehouse ${input.warehouse}`
     );
   }
 
@@ -227,16 +245,25 @@ export const release = (items: MovementInput[], session?: ClientSession) =>
 export const commit = (items: MovementInput[], session?: ClientSession) =>
   applyMovementAll("commit", items, session);
 
-/** PO receive / restock. */
+/**
+ * PO receive / restock.
+ *
+ * `session` is a parameter, not hardcoded to `undefined`, and that matters: the
+ * caller runs this inside `withOptionalTransaction`, which *re-runs its work*
+ * when the deployment has no transaction support. A movement issued outside the
+ * session survives that first attempt, so the retry applied it a second time —
+ * receiving 6 units recorded 12. Stock that nobody ordered and nobody counted.
+ */
 export const receive = (
   items: Omit<MovementInput, "warehouse">[],
   warehouse: mongoose.Types.ObjectId | string,
-  reference?: string
+  reference?: string,
+  session?: ClientSession
 ) =>
   applyMovementAll(
     "in",
     items.map((item) => ({ ...item, warehouse, reference })),
-    undefined
+    session
   );
 
 /**
@@ -263,7 +290,8 @@ export const adjust = async (input: Omit<MovementInput, "quantity"> & {
 export const transfer = async (
   fromWarehouse: mongoose.Types.ObjectId | string,
   toWarehouse: mongoose.Types.ObjectId | string,
-  items: Omit<MovementInput, "warehouse">[]
+  items: Omit<MovementInput, "warehouse">[],
+  session?: ClientSession
 ) => {
   if (String(fromWarehouse) === String(toWarehouse)) {
     throw new Error("Source and destination warehouses must differ");
@@ -276,19 +304,32 @@ export const transfer = async (
       throw new Error("A transfer moves a positive whole number of units");
     }
 
+    // The session is threaded for the same reason `receive` threads it: the
+    // caller is inside `withOptionalTransaction`, which re-runs its work when
+    // the deployment has no transaction support. Without this, *both* legs
+    // landed on the first attempt and again on the retry — moving six units
+    // because three were asked for.
     moved.push(
-      await applyMovement("transfer_out", {
-        ...item,
-        warehouse: fromWarehouse,
-        quantity: units,
-      })
+      await applyMovement(
+        "transfer_out",
+        {
+          ...item,
+          warehouse: fromWarehouse,
+          quantity: units,
+        },
+        session
+      )
     );
     moved.push(
-      await applyMovement("transfer_in", {
-        ...item,
-        warehouse: toWarehouse,
-        quantity: units,
-      })
+      await applyMovement(
+        "transfer_in",
+        {
+          ...item,
+          warehouse: toWarehouse,
+          quantity: units,
+        },
+        session
+      )
     );
   }
   return moved;

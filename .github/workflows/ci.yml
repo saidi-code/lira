@@ -45,6 +45,13 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # Runs a real mongod in-process. This is where the ledger is actually
+      # verified: that a `$inc` lands, that a schema hook fires, that a receipt is
+      # applied once. It found two double-apply bugs that the unit tests — which
+      # only assert on pure functions — passed cleanly.
+      - name: Integration tests (mongodb-memory-server)
+        run: npm run test:integration
+
   client:
     name: client — typecheck + lint
     runs-on: ubuntu-latest

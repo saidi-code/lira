@@ -99,7 +99,7 @@ const stockMovementSchema = new mongoose.Schema(
     delta: { type: Number, required: true },
 
     /** Free-form pointer: an order number, a PO id, a transfer id. */
-    reference: { type: String, default: "", trim: true, index: true },
+    reference: { type: String, default: "", trim: true },
 
     /** Who caused it — a Clerk user id for manual adjustments. */
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

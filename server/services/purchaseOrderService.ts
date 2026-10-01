@@ -171,6 +171,9 @@ export const receivePurchaseOrder = async (
     moved = 0;
 
     // 1. The ledger. This is the source of truth for what arrived.
+    //    The session is threaded: `withOptionalTransaction` re-runs `apply` when
+    //    the deployment has no transaction support, and a movement issued outside
+    //    the session would survive the first attempt and land again on the retry.
     await receive(
       plan.map((entry) => ({
         product: entry.product,
@@ -179,7 +182,9 @@ export const receivePurchaseOrder = async (
         user: userId ?? null,
         note: `Purchase order ${po.orderNumber}`,
       })),
-      warehouseId
+      warehouseId,
+      undefined,
+      session
     );
 
     // 2. The counters, each guarded so a concurrent clerk cannot double-receive.

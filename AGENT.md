@@ -942,6 +942,36 @@ compile error. That is not decoration: the routes were written with
 `manager`/`warehouse_staff` while `User.role` accepted only `user`/`admin`, so
 they compiled fine, matched nothing, and 403'd everyone.
 
+### Testing
+
+| Command | What it covers |
+|---|---|
+| `npm test` | Pure rules and fakes — pricing, cancellation, lifecycle, ledger arithmetic, purchasing, Clerk mapping, `authorize`. No database. |
+| `npm run test:integration` | The same ledger against a **real mongod** (`mongodb-memory-server`). |
+
+The split is deliberate. Unit tests assert on pure functions, which proves the
+*rules* but says nothing about Mongoose — not that a `$inc` lands, not that a
+`pre("validate")` hook fires, not that a write happens once. Those are exactly
+where the real bugs were, and two of them were invisible to the unit suite:
+
+- **`receive()` and `transfer()` hardcoded `session = undefined`.** Both run
+  inside `withOptionalTransaction`, which *re-runs its work* when the deployment
+  has no transaction support (any standalone `mongod`, which is what most local
+  setups and some deployments use). A movement issued outside the session
+  survives the first attempt and lands again on the retry: **receiving 6 units
+  recorded 12, and transferring 3 moved 6.** Phantom stock that nothing ordered.
+  Both now thread the session, and a test pins each.
+- **`applyMovement` did not upsert.** `npm run seed:warehouses` only walks the
+  *default* warehouse, so any other warehouse had no `Inventory` rows — and
+  receiving a purchase order into one, or transferring stock to one, threw
+  `InsufficientStockError`. That message says "not enough stock" when the truth
+  is "no such row". Arriving movements (`in`, `transfer_in`) now create the row
+  they land in; outgoing ones still refuse, and a test proves a missing row
+  stays missing.
+
+`npm run test:integration` is kept out of `npm test` because it needs a mongod
+binary; the unit suite must stay runnable anywhere. CI runs both.
+
 ### Client Layer
 
 `client/config/*Api.ts` + `client/hooks/*` follow the `orderApi` / `useOrder`
