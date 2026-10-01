@@ -39,20 +39,29 @@ const connectDB = async () => {
   try {
     await mongoose.connect(fullUri);
 
-    // Build/refresh indexes for all registered models.
+    // Create any missing indexes; never drop an existing one.
     //
-    // NB: there is no `name_text_description_text` index, and no `$text` query
-    // in the codebase — `searchProducts` matches with a case-insensitive regex.
-    // See the note in models/Products.ts before adding one: an index declared on
-    // an *embedded* schema lands on every parent collection, which is how Product
-    // ended up with two conflicting text indexes.
+    // `syncIndexes()` was used here, which is *destructive*: it drops every index
+    // the schema does not declare. A single incomplete or partially-loaded
+    // schema would therefore delete production indexes on startup — and a dropped
+    // unique constraint is far worse than a missing one, because duplicates can
+    // then be written. The failure modes are not symmetric:
+    //
+    //   createIndexes() missing a schema   -> queries get slower (visible, safe)
+    //   syncIndexes()  with a bad schema   -> constraints vanish (silent, not safe)
+    //
+    // Failing safe is worth more here than converging automatically. Stale
+    // indexes are a real cost of that choice, so removing one is a deliberate
+    // manual act.
+    //
+    // One-time cleanup for an existing deployment: the two conflicting text
+    // indexes that used to sit on `Product` (see models/Colors.ts) are still on
+    // the collection, because this call will not remove them. Drop them once by
+    // hand, or run `Model.syncIndexes()` for that model explicitly.
     await Promise.all(
       Object.values(mongoose.models).map((model) =>
-        model.syncIndexes().catch((err) => {
-          // Swallowed, so a schema problem here is invisible in production.
-          // The integration suite asserts `Product.init()` resolves, so a
-          // regression fails CI rather than failing quietly on every boot.
-          console.error(`Failed to sync indexes for ${model.modelName}:`, err);
+        model.createIndexes().catch((err) => {
+          console.error(`Failed to create indexes for ${model.modelName}:`, err);
         })
       )
     );

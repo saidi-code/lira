@@ -147,6 +147,35 @@ describe("schema indexes actually build", () => {
   });
 });
 
+describe("indexes fail safe", () => {
+  it("createIndexes never drops an index the schema does not declare", async () => {
+    // `db.ts` used `syncIndexes()`, which deletes any index not in the schema —
+    // so one incomplete schema could remove a unique constraint on boot, after
+    // which duplicates get written. The failure modes are not symmetric:
+    // a missing index makes queries slow; a dropped one can corrupt data.
+    await Product.init();
+
+    // An index nobody declared, as a hand-tuned or legacy one would be.
+    await Product.collection.createIndex({ legacyField: 1 }, { name: "legacy_1" });
+    assert.ok(
+      (await Product.collection.indexes()).some((i) => i.name === "legacy_1")
+    );
+
+    // This is what `connectDB` now does.
+    await Product.createIndexes();
+
+    const after = await Product.collection.indexes();
+    assert.ok(
+      after.some((i) => i.name === "legacy_1"),
+      "an undeclared index must survive a boot"
+    );
+    assert.ok(
+      after.some((i) => (i.name ?? "").includes("isActive_1_createdAt")),
+      "while the declared ones are still created"
+    );
+  });
+});
+
 describe("npm run reconcile", () => {
   it("reports nothing when the catalogue matches the ledger", async () => {
     await fixture(10);

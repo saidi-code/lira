@@ -1016,11 +1016,19 @@ Two follow-ups, both product decisions rather than bugs:
 
 - **Regex search still scans.** Converting `searchProducts` to `$text` would use
   an index, but `$text` matches whole words, so partial matches like `oudw` for
-  `Oud Wood` would stop working. That is a search-behaviour change.
-- **`syncIndexes()` drops any index not in the schema**, on every boot. Safe
-  while the schema is the source of truth; it would delete a hand-tuned index.
-  `createIndexes()` only adds what is missing, at the cost of never removing
-  stale ones.
+  `Oud Wood` would stop working. That is a search-behaviour change, and a scan is
+  survivable at this catalogue size.
+- **`connectDB` uses `createIndexes()`, not `syncIndexes()`.** `syncIndexes`
+  drops every index the schema does not declare, on every boot, so one
+  incomplete schema could remove a production unique constraint — after which
+  duplicates get written. The failure modes are not symmetric: a missing index
+  makes queries slow and is visible; a dropped one corrupts data silently.
+  Removing an index is now a deliberate manual act.
+
+  **One-time cleanup needed on an existing deployment:** the two conflicting text
+  indexes that used to sit on `Product` are still on the collection, because
+  `createIndexes()` will not remove them. Drop them by hand, or run
+  `Product.syncIndexes()` once.
 
 ### Client Layer
 
