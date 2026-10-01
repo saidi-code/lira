@@ -22,11 +22,23 @@ import StockMovement from "../models/StockMovement.js";
 import { applyMovement } from "../services/inventoryService.js";
 import { strandedReservations } from "../services/reconcileService.js";
 
-const main = async () => {
-  const fix = process.argv.includes("--fix");
+export interface RepairResult {
+  fulfilled: number;
+  /** Fulfilled orders with no warehouse stamp — cannot be resolved. */
+  unstamped: number;
+  stranded: number;
+  cleared: number;
+}
 
-  await connectDB();
+export interface RepairOptions {
+  fix?: boolean;
+  log?: (message: string) => void;
+}
 
+export const repairStrandedReservations = async ({
+  fix = false,
+  log = console.log,
+}: RepairOptions = {}): Promise<RepairResult> => {
   // Orders whose units have left the building. `warehouse` is the allocation
   // stamped at checkout; without it we cannot know which row held the units, so
   // those are reported and skipped rather than guessed at.
@@ -36,25 +48,30 @@ const main = async () => {
     .select("orderNumber orderStatus warehouse items")
     .lean();
 
+  const none: RepairResult = {
+    fulfilled: 0,
+    unstamped: 0,
+    stranded: 0,
+    cleared: 0,
+  };
+
   if (orders.length === 0) {
-    console.log("No fulfilled orders — nothing to repair.");
-    await Inventory.db.close();
-    process.exit(0);
+    log("No fulfilled orders — nothing to repair.");
+    return none;
   }
 
-  const unrepairable = orders.filter((order) => !order.warehouse);
-  if (unrepairable.length) {
-    console.log(
-      `${unrepairable.length} fulfilled order(s) have no recorded warehouse and ` +
+  const unstampedOrders = orders.filter((order) => !order.warehouse);
+  if (unstampedOrders.length) {
+    log(
+      `${unstampedOrders.length} fulfilled order(s) have no recorded warehouse and ` +
         "cannot be repaired automatically (they predate the allocation stamp):"
     );
-    for (const order of unrepairable) {
-      console.log(`  ${order.orderNumber ?? order._id} — no warehouse stamp`);
+    for (const order of unstampedOrders) {
+      log(`  ${order.orderNumber ?? order._id} — no warehouse stamp`);
     }
-    console.log("");
+    log("");
   }
 
-  // The holds these orders should have released, per warehouse row.
   const candidates = [];
 
   for (const order of orders) {
@@ -86,7 +103,7 @@ const main = async () => {
       orderId: String(order._id),
       orderNumber: order.orderNumber,
       warehouse: String(order.warehouse),
-      status: order.orderStatus,
+      status: order.orderStatus ?? "",
       lines,
       hasCommitMovement,
     });
@@ -95,26 +112,34 @@ const main = async () => {
   const stranded = strandedReservations(candidates);
 
   if (stranded.length === 0) {
-    console.log("No stranded reservations found — the ledger is consistent.");
-    await Inventory.db.close();
-    process.exit(0);
+    log("No stranded reservations found — the ledger is consistent.");
+    return {
+      fulfilled: orders.length,
+      unstamped: unstampedOrders.length,
+      stranded: 0,
+      cleared: 0,
+    };
   }
 
-  console.log(`\n${stranded.length} order(s) with stranded reservations:\n`);
+  log(`\n${stranded.length} order(s) with stranded reservations:\n`);
   for (const order of stranded) {
     const detail = order.lines
       .map((line) => `${line.quantity} × ${line.name}`)
       .join(", ");
-    console.log(`  ${order.orderNumber}: ${detail}`);
+    log(`  ${order.orderNumber}: ${detail}`);
   }
 
   if (!fix) {
-    console.log("\nRe-run with --fix to clear these holds.");
-    await Inventory.db.close();
-    process.exit(2);
+    log("\nRe-run with --fix to clear these holds.");
+    return {
+      fulfilled: orders.length,
+      unstamped: unstampedOrders.length,
+      stranded: stranded.length,
+      cleared: 0,
+    };
   }
 
-  console.log("\nClearing stranded holds…");
+  log("\nClearing stranded holds…");
   let cleared = 0;
 
   for (const order of stranded) {
@@ -132,13 +157,35 @@ const main = async () => {
     }
   }
 
-  console.log(`Cleared ${cleared} stranded hold(s) across ${stranded.length} order(s).`);
-  await Inventory.db.close();
-  process.exit(0);
+  log(
+    `Cleared ${cleared} stranded hold(s) across ${stranded.length} order(s).`
+  );
+  return {
+    fulfilled: orders.length,
+    unstamped: unstampedOrders.length,
+    stranded: stranded.length,
+    cleared,
+  };
 };
 
-main().catch(async (error) => {
-  console.error("repair:reservations failed:", error);
-  await Inventory.db.close().catch(() => undefined);
-  process.exit(1);
-});
+const main = async () => {
+  const fix = process.argv.includes("--fix");
+  await connectDB();
+
+  try {
+    const result = await repairStrandedReservations({ fix });
+    process.exit(result.stranded > 0 && !fix ? 2 : 0);
+  } finally {
+    await Inventory.db.close();
+  }
+};
+
+// Only run when executed directly, so importing this for a test is inert.
+if (process.argv[1]?.includes("repairStrandedReservations")) {
+  main().catch(async (error) => {
+    console.error("repair:reservations failed:", error);
+    await Inventory.db.close().catch(() => undefined);
+    process.exit(1);
+  });
+}
+

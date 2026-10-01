@@ -21,67 +21,76 @@ import Inventory from "../models/Inventory.js";
 import StockMovement from "../models/StockMovement.js";
 import { recoverableDelta } from "../services/reconcileService.js";
 
-const main = async () => {
-  const fix = process.argv.includes("--fix");
+export interface BackfillResult {
+  legacy: number;
+  written: number;
+  /** Rows whose direction was never stored, and so cannot be derived. */
+  unrecoverable: string[];
+}
 
-  await connectDB();
+export interface BackfillOptions {
+  fix?: boolean;
+  log?: (message: string) => void;
+}
 
+export const backfillMovementDeltas = async ({
+  fix = false,
+  log = console.log,
+}: BackfillOptions = {}): Promise<BackfillResult> => {
   const legacy = await StockMovement.find({
     $or: [{ delta: { $exists: false } }, { delta: null }],
   })
-    .select("_id type quantity reference product warehouse")
+    .select("_id type quantity reference")
     .lean();
 
   if (legacy.length === 0) {
-    console.log("Every movement already records a delta — nothing to do.");
-    await Inventory.db.close();
-    process.exit(0);
+    log("Every movement already records a delta — nothing to do.");
+    return { legacy: 0, written: 0, unrecoverable: [] };
   }
 
-  console.log(`Found ${legacy.length} movement(s) without a delta.\n`);
+  log(`Found ${legacy.length} movement(s) without a delta.\n`);
 
-  const unrecoverable: typeof legacy = [];
+  const unrecoverable: string[] = [];
   const recoverable: Array<(typeof legacy)[number] & { delta: number }> = [];
 
   for (const row of legacy) {
     const delta = recoverableDelta(row.type, row.quantity);
     if (delta === null) {
-      unrecoverable.push(row);
+      unrecoverable.push(String(row._id));
     } else {
       recoverable.push({ ...row, delta });
     }
   }
 
   for (const row of recoverable.slice(0, 20)) {
-    console.log(
+    log(
       `  ${row.type} ${row.quantity} → delta ${row.delta}` +
         (row.reference ? ` (${row.reference})` : "")
     );
   }
   if (recoverable.length > 20) {
-    console.log(`  … and ${recoverable.length - 20} more`);
+    log(`  … and ${recoverable.length - 20} more`);
   }
 
   if (unrecoverable.length) {
-    console.log(
+    log(
       `\n${unrecoverable.length} row(s) are NOT recoverable — these were written ` +
         "under the old `transfer` type, whose direction was never stored:"
     );
-    for (const row of unrecoverable) {
-      console.log(`  ${row._id} (${row.reference || "no reference"})`);
+    for (const id of unrecoverable) {
+      log(`  ${id}`);
     }
-    console.log(
+    log(
       "  Reconstruct these by hand from the pair of rows sharing a reference."
     );
   }
 
   if (!fix) {
-    console.log(`\nRe-run with --fix to write ${recoverable.length} delta(s).`);
-    await Inventory.db.close();
-    process.exit(2);
+    log(`\nRe-run with --fix to write ${recoverable.length} delta(s).`);
+    return { legacy: legacy.length, written: 0, unrecoverable };
   }
 
-  console.log("\nWriting…");
+  log("\nWriting…");
   for (const row of recoverable) {
     await StockMovement.updateOne(
       { _id: row._id },
@@ -89,19 +98,35 @@ const main = async () => {
     );
   }
 
-  console.log(`Backfilled ${recoverable.length} delta(s).`);
+  log(`Backfilled ${recoverable.length} delta(s).`);
   if (unrecoverable.length) {
-    console.log(
-      `${unrecoverable.length} row(s) left untouched — see the list above.`
-    );
+    log(`${unrecoverable.length} row(s) left untouched — see the list above.`);
   }
 
-  await Inventory.db.close();
-  process.exit(0);
+  return {
+    legacy: legacy.length,
+    written: recoverable.length,
+    unrecoverable,
+  };
 };
 
-main().catch(async (error) => {
-  console.error("backfill:deltas failed:", error);
-  await Inventory.db.close().catch(() => undefined);
-  process.exit(1);
-});
+const main = async () => {
+  const fix = process.argv.includes("--fix");
+  await connectDB();
+
+  try {
+    const result = await backfillMovementDeltas({ fix });
+    process.exit(result.legacy > 0 && !fix ? 2 : 0);
+  } finally {
+    await Inventory.db.close();
+  }
+};
+
+// Only run when executed directly, so importing this for a test is inert.
+if (process.argv[1]?.includes("backfillMovementDeltas")) {
+  main().catch(async (error) => {
+    console.error("backfill:deltas failed:", error);
+    await Inventory.db.close().catch(() => undefined);
+    process.exit(1);
+  });
+}

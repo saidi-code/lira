@@ -947,7 +947,7 @@ they compiled fine, matched nothing, and 403'd everyone.
 | Command | What it covers |
 |---|---|
 | `npm test` | Pure rules and fakes — pricing, cancellation, lifecycle, ledger arithmetic, purchasing, Clerk mapping, `authorize`. No database. |
-| `npm run test:integration` | The same ledger against a **real mongod** (`mongodb-memory-server`). |
+| `npm test:integration` | The same ledger, the Clerk sync, and the checkout bridge against a **real mongod** (`mongodb-memory-server`). |
 
 The split is deliberate. Unit tests assert on pure functions, which proves the
 *rules* but says nothing about Mongoose — not that a `$inc` lands, not that a
@@ -971,6 +971,26 @@ where the real bugs were, and two of them were invisible to the unit suite:
 
 `npm run test:integration` is kept out of `npm test` because it needs a mongod
 binary; the unit suite must stay runnable anywhere. CI runs both.
+
+### What the integration suite is actually for
+
+It exists because **reading the code was not enough**. Three bugs got through
+review and past 122 passing unit tests, every one of them invisible to a test
+that asserts on a table rather than a document:
+
+- `commit` leaving `reserved` stranded after a shipment.
+- `receive()` and `transfer()` dropping the transaction session, so the
+  standalone-MongoDB fallback applied every movement **twice**.
+- The Clerk upsert skipping validation, so a typo'd role was stored.
+
+Two habits that cost real time, worth keeping:
+
+- **Await `Model.init()`** in an integration test. Index builds are asynchronous,
+  so a test that races one finds no unique constraint and its assertion quietly
+  passes without testing anything.
+- **A schema hook refusing your fixture is information, not an obstacle.** The
+  "second warehouse" test could not create two defaults — the hook was right, and
+  the fix was to demote the incumbent first, as the real API does.
 
 ### Client Layer
 
@@ -1039,8 +1059,21 @@ status so a double-submit cannot move the goods twice. `in_transit` is bookkeepi
 |---|---|---|
 | POST | `/api/v1/clerk` | **must** be registered before `express.json()` — it needs the raw body for signature verification |
 
-`user.created` / `user.updated` upsert the local `User`; `user.deleted` removes
-it. Everything else gets a 200 so Clerk stops retrying it.
+`user.created` / `user.updated` upsert the local `User`; `user.deleted` removes it.
+Everything else gets a 200 so Clerk stops retrying it. The write goes through
+`applyUserPlan` behind a `UserWriter`, so it is exercised against a real database
+by `npm run test:integration` — `verifyWebhook` needs a live Clerk secret, but
+everything after it does not.
+
+Two things that suite found, neither visible to a unit test:
+
+- **`findOneAndUpdate` does not validate by default.** The upsert ran without
+  `runValidators`, so a typo in Clerk's `publicMetadata.role` ("manage",
+  "adminn") was stored happily — and `authorize` checks against `USER_ROLES`, so
+  that user would be refused by every staff route with no explanation anywhere.
+- **A test can silently not test anything if it races the index build.** The
+  "one document per email" assertion passed against no unique constraint at all
+  until the test awaited `User.init()`.
 
 Two things the handler must never do, both of which it used to:
 

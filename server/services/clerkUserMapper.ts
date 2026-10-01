@@ -43,6 +43,56 @@ export interface LocalUserData {
   role?: string;
 }
 
+/**
+ * The write, separated from the signature verification.
+ *
+ * `verifyWebhook` needs a real Clerk secret, so a test cannot call the handler
+ * and reach the database. Everything that actually matters — the upsert, the
+ * sparse-unique email, the delete — happens here instead, and that is what the
+ * integration suite exercises.
+ */
+export interface UserWriter {
+  upsert(data: LocalUserData): Promise<unknown>;
+  remove(clerkId: string): Promise<unknown>;
+}
+
+/**
+ * Applies a plan to the user store.
+ *
+ * One upsert, never find-then-create. Clerk retries on any non-2xx, and a retry
+ * landing between a read and a write would create a second document — which
+ * trips the unique index, 400s, and gets retried again, forever.
+ */
+export const applyUserPlan = async (
+  plan: SyncAction,
+  writer: UserWriter
+): Promise<void> => {
+  switch (plan.kind) {
+    case "upsert": {
+      const { role, ...profile } = plan.data;
+
+      // A role synced from Clerk is authoritative and must overwrite a stale
+      // local value — but an *absent* role must NOT reset someone who was
+      // promoted directly in the database, so it is simply left out.
+      await writer.upsert(
+        role ? { ...profile, role } : { ...profile }
+      );
+      return;
+    }
+
+    case "delete":
+      // The Clerk account is gone, so the local cache is meaningless. A soft
+      // delete would leave `protect` matching a user who can no longer sign in.
+      await writer.remove(plan.clerkId);
+      return;
+
+    case "ignore":
+      // Not an error: Clerk sends many event types we have no use for, and
+      // answering 200 is what stops them being retried forever.
+      return;
+  }
+};
+
 /** Roles accepted from Clerk metadata — mirrors `USER_ROLES` in models/User.ts. */
 export const SYNCABLE_ROLES = [
   "user",
