@@ -4,8 +4,13 @@
 # reached `production` silently. This runs exactly the commands an agent runs
 # by hand (see AGENT.md §13) on every push and PR.
 #
-# Both jobs are DB-free on purpose — the unit tests use fakes, so CI needs no
-# MongoDB, Redis or Clerk secrets and cannot flake on them.
+# The *unit* job is DB-free on purpose — those tests use fakes, so a developer can
+# run them without MongoDB, Redis or Clerk secrets and they cannot flake on them.
+#
+# The integration step is not: it starts a real mongod via `mongodb-memory-server`.
+# That package downloads a MongoDB binary on first use, so the binary is cached
+# below — without it, every push re-downloads it and a slow or blocked network
+# fails the build for reasons that have nothing to do with the code.
 # ==========================================
 name: CI
 
@@ -49,7 +54,18 @@ jobs:
       # verified: that a `$inc` lands, that a schema hook fires, that a receipt is
       # applied once. It found two double-apply bugs that the unit tests — which
       # only assert on pure functions — passed cleanly.
+      # `mongodb-memory-server` downloads a mongod binary at runtime. Cached on the
+      # library version, so it survives between runs but is re-fetched when the
+      # package is upgraded.
+      - name: Cache the MongoDB binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binary-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
+
       - name: Integration tests (mongodb-memory-server)
+        # Downloads the mongod binary on a cold cache (~100 MB). The step above
+        # keeps every subsequent run off the network.
         run: npm run test:integration
 
   client:
