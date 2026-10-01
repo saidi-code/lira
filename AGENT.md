@@ -1030,6 +1030,30 @@ Two follow-ups, both product decisions rather than bugs:
   `createIndexes()` will not remove them. Drop them by hand, or run
   `Product.syncIndexes()` once.
 
+## `escapeRegex` — mandatory for any user input in a query
+
+`getProducts` and `searchProducts` are **public**: `productsRoutes.ts` registers
+them with no `protect`. Every query parameter reaching a `$regex` there is
+attacker-controlled, so it must go through `utils/escapeRegex.ts`.
+
+Interpolating raw is not merely sloppy matching — it hands the caller their own
+pattern:
+
+- `?brand=a|b` becomes `^a|b$`. `|` binds looser than the anchors, so that
+  matches any string starting with `a` **or** ending with `b`. The filter
+  silently stops filtering and returns the wrong catalogue.
+- `?size=(a+)+` is catastrophic backtracking — a remote CPU burn on an open
+  endpoint.
+
+The bug was inconsistency, not absence: `q` and `color` escaped correctly while
+`brand`, `size` and the three category-title lookups did not. That is why the
+helper exists as a single shared import rather than a sixth inline copy. When
+adding a new filter, import it — do not paste a `.replace()` again.
+
+Still regex rather than `$text`, deliberately: `$text` matches whole words, so
+partial matches like `oudw` for `Oud Wood` would stop working. A scan is
+survivable at this catalogue size; revisit with real numbers if search is slow.
+
 ### Client Layer
 
 `client/config/*Api.ts` + `client/hooks/*` follow the `orderApi` / `useOrder`

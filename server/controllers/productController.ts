@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Product from "../models/Products.js";
 import Category from "../models/Categories.js";
 import cloudinary from "../config/cloundinary.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -83,7 +84,7 @@ export const searchProducts = async (req: Request, res: Response) => {
    
   // Text search — matches q anywhere in name, subtitle, or description
     if (q && typeof q === "string" && q.trim()) {
-      const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const escaped = escapeRegex(q.trim());
       const regex = new RegExp(escaped, "i"); // "i" = case-insensitive
       filter.$or = [
         { name: { $regex: regex } },
@@ -100,7 +101,7 @@ export const searchProducts = async (req: Request, res: Response) => {
         filter.category = trimmedCategory;
       } else {
         const categoryDoc = await Category.findOne({
-          title: { $regex: new RegExp(`^${trimmedCategory}$`, 'i') },
+          title: { $regex: new RegExp(`^${escapeRegex(trimmedCategory)}$`, 'i') },
         }).select('_id').lean();
 
         if (categoryDoc) {
@@ -116,16 +117,16 @@ export const searchProducts = async (req: Request, res: Response) => {
     }
 //brand filter
     if (brand && typeof brand === 'string' && brand.trim() && brand !== 'الكل') {
-      filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
+      filter.brand = { $regex: new RegExp(`^${escapeRegex(brand.trim())}$`, 'i') };
     }
 //color filter
 if (color && typeof color === 'string' && color.trim()) {
-  const escaped = color.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = escapeRegex(color.trim());
   filter['colors.hex'] = { $regex: `^${escaped}$`, $options: 'i' };
 }
     //size filter
     if (size && typeof size === 'string' && size.trim()) {
-      filter.sizes = { $regex: new RegExp(`^${size.trim()}$`, 'i') };
+      filter.sizes = { $regex: new RegExp(`^${escapeRegex(size.trim())}$`, 'i') };
     } 
     // Price filter
     if (minPrice || maxPrice) {
@@ -220,7 +221,7 @@ export const createProduct = async (req: Request, res: Response) => {
     let categoryId = req.body.category;
     if (categoryId && !mongoose.Types.ObjectId.isValid(categoryId)) {
       const categoryDoc = await Category.findOne({
-        title: { $regex: new RegExp(`^${categoryId}$`, "i") },
+        title: { $regex: new RegExp(`^${escapeRegex(categoryId)}$`, "i") },
       })
         .select("_id")
         .lean();
@@ -379,7 +380,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         product.category = category as any;
       } else {
         const categoryDoc = await Category.findOne({
-          title: { $regex: new RegExp(`^${category}$`, "i") },
+          title: { $regex: new RegExp(`^${escapeRegex(category)}$`, "i") },
         })
           .select("_id")
           .lean();

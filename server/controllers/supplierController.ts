@@ -5,6 +5,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Supplier from "../models/Supplier.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
 
 const isValidId = (id: unknown): id is string =>
@@ -27,7 +28,7 @@ export const listSuppliers = async (
     if (typeof req.query.search === "string" && req.query.search.trim()) {
       // Regex rather than $text: the index is not built, and a supplier list is
       // small enough that a scan costs nothing.
-      const safe = req.query.search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const safe = escapeRegex(req.query.search.trim());
       filter.name = { $regex: safe, $options: "i" };
     }
 
