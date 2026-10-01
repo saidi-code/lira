@@ -33,8 +33,10 @@ const warehouseSchema = new mongoose.Schema(
 warehouseSchema.index({ code: 1 }, { unique: true });
 warehouseSchema.index({ isActive: 1, isDefault: -1 });
 
-warehouseSchema.pre("validate", async function (next) {
-  if (!this.isDefault || !this.isActive) return next();
+// Promise-style hook: mongoose 9 does not accept an `async` hook that also takes
+// `next`, and a rejection here surfaces as a normal validation error.
+warehouseSchema.pre("validate", async function () {
+  if (!this.isDefault || !this.isActive) return;
 
   const others = await mongoose.model("Warehouse").find({
     _id: { $ne: this._id },
@@ -43,14 +45,10 @@ warehouseSchema.pre("validate", async function (next) {
   });
 
   if (others.length > 0) {
-    return next(
-      new Error(
-        "A default warehouse already exists — demote it first (POST /warehouses/:id/default)"
-      )
+    throw new Error(
+      "A default warehouse already exists — demote it first (POST /warehouses/:id/default)"
     );
   }
-
-  return next();
 });
 
 export const Warehouse = mongoose.model("Warehouse", warehouseSchema);

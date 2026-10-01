@@ -1,0 +1,135 @@
+// tests/inventory.test.ts
+// ==========================================
+// The inventory rules that money and stock depend on, tested without MongoDB.
+//
+// The dangerous bugs in a ledger are all "two numbers disagreed": stock sold
+// twice, a hold that outgrew the shelf, a correction that went negative. Each
+// one below is a two-line function that must be right on its own.
+// ==========================================
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+
+import {
+  assertInvariants,
+  available,
+  guardFilter,
+  InsufficientStockError,
+  movementDeltas,
+} from "../services/inventoryService.js";
+import { findDrift } from "../services/reconcileService.js";
+
+describe("available (§9)", () => {
+  it("is quantity minus the hold", () => {
+    assert.equal(available({ quantity: 10, reserved: 3 }), 7);
+    assert.equal(available({ quantity: 10, reserved: 10 }), 0);
+    assert.equal(available({ quantity: 0, reserved: 0 }), 0);
+  });
+});
+
+describe("movementDeltas (§9's movement table)", () => {
+  it("reserve holds units without moving them", () => {
+    assert.deepEqual(movementDeltas("reserve", 4), { quantity: 0, reserved: 4 });
+  });
+
+  it("release gives the hold back without touching the shelf", () => {
+    assert.deepEqual(movementDeltas("release", 4), { quantity: 0, reserved: -4 });
+  });
+
+  it("in and out move the shelf", () => {
+    assert.deepEqual(movementDeltas("in", 5), { quantity: 5, reserved: 0 });
+    assert.deepEqual(movementDeltas("out", 5), { quantity: -5, reserved: 0 });
+  });
+
+  it("transfer takes the signed delta as given", () => {
+    // The caller encodes direction in the sign; the source leg is negative.
+    assert.deepEqual(movementDeltas("transfer", -3), { quantity: -3, reserved: 0 });
+    assert.deepEqual(movementDeltas("transfer", 3), { quantity: 3, reserved: 0 });
+  });
+
+  it("adjust passes its signed delta through", () => {
+    assert.deepEqual(movementDeltas("adjust", -2), { quantity: -2, reserved: 0 });
+    assert.deepEqual(movementDeltas("adjust", 7), { quantity: 7, reserved: 0 });
+  });
+});
+
+describe("guardFilter — the concurrency guard", () => {
+  it("removing units requires that many on the shelf", () => {
+    assert.deepEqual(guardFilter("out", 3), { quantity: { $gte: 3 } });
+  });
+
+  it("releasing a hold requires the hold to exist", () => {
+    assert.deepEqual(guardFilter("release", 3), { reserved: { $gte: 3 } });
+  });
+
+  it("holding units requires available headroom, checked atomically", () => {
+    // reserved <= quantity - 3. Written as $expr so the check happens inside the
+    // update rather than as a separate read that could go stale.
+    assert.deepEqual(guardFilter("reserve", 3), {
+      $expr: { $lte: ["$reserved", { $subtract: ["$quantity", 3] }] },
+    });
+  });
+
+  it("arriving stock needs no floor", () => {
+    assert.deepEqual(guardFilter("in", 100), {});
+    assert.deepEqual(guardFilter("transfer", 100), {});
+  });
+
+  it("only a downward adjustment needs a floor", () => {
+    assert.deepEqual(guardFilter("adjust", -2), { quantity: { $gte: 2 } });
+    assert.deepEqual(guardFilter("adjust", 5), {});
+  });
+});
+
+describe("assertInvariants (§11.4)", () => {
+  it("accepts a consistent row", () => {
+    assert.doesNotThrow(() => assertInvariants({ quantity: 10, reserved: 10 }));
+  });
+
+  it("rejects holding more than exists", () => {
+    assert.throws(
+      () => assertInvariants({ quantity: 2, reserved: 3 }),
+      (error: unknown) =>
+        error instanceof InsufficientStockError && /cannot exceed/.test(error.message)
+    );
+  });
+
+  it("rejects negative figures", () => {
+    assert.throws(
+      () => assertInvariants({ quantity: -1, reserved: 0 }),
+      InsufficientStockError
+    );
+    assert.throws(
+      () => assertInvariants({ quantity: 5, reserved: -1 }),
+      InsufficientStockError
+    );
+  });
+});
+
+describe("findDrift (reconciliation, §9)", () => {
+  const row = (id: string, stock: number, ledger: number) => ({
+    product: { _id: id, name: `Product ${id}`, stock },
+    ledger,
+  });
+
+  it("reports nothing when the catalogue matches the ledger", () => {
+    assert.deepEqual(findDrift([row("a", 5, 5), row("b", 0, 0)]), []);
+  });
+
+  it("reports a product whose rows vanished", () => {
+    const drift = findDrift([row("a", 5, 0)]);
+    assert.equal(drift.length, 1);
+    assert.equal(drift[0].delta, -5);
+  });
+
+  it("points in the direction of the discrepancy", () => {
+    // ledger > catalogue means stock was added without the catalogue being told.
+    const [rowUp] = findDrift([row("a", 2, 8)]);
+    assert.equal(rowUp.delta, 6);
+    assert.equal(rowUp.catalogue, 2);
+    assert.equal(rowUp.ledger, 8);
+  });
+
+  it("ignores float noise", () => {
+    assert.deepEqual(findDrift([row("a", 5, 5 + 1e-12)]), []);
+  });
+});

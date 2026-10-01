@@ -10,6 +10,8 @@ import reviewsRoutes from "./reviewsRoutes.js";
 import adminRouter from "./adminRoutes.js";
 import pricingRouter from "./pricingRoutes.js";
 import internalRouter from "./internalRoutes.js";
+import inventoryRouter from "./inventoryRoutes.js";
+import warehouseRouter from "./warehouseRoutes.js";
 const router = express.Router();
 router.use('/products', productsRouter); 
 router.use('/addresses',addressesRoutes)
@@ -23,4 +25,7 @@ router.use('/admin', adminRouter)
 router.use('/pricing', pricingRouter)
 // Scheduler-only endpoints (shared secret, no user session).
 router.use('/internal', internalRouter)
+// Inventory ledger (§9) — roles per §10.
+router.use('/inventory', inventoryRouter)
+router.use('/warehouses', warehouseRouter)
 export default router;

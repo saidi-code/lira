@@ -39,16 +39,15 @@ const inventorySchema = new mongoose.Schema(
 inventorySchema.index({ product: 1, warehouse: 1 }, { unique: true });
 inventorySchema.index({ warehouse: 1, quantity: 1 });
 
-// Invariant §11.4: reserved can never exceed what is on the shelf.
-inventorySchema.pre("validate", function (next) {
+// Promise-style hook: mongoose 9 does not accept an `async` hook that also takes
+// `next`, and a rejection here surfaces as a normal validation error.
+inventorySchema.pre("validate", function () {
+  // Invariant §11.4: reserved can never exceed what is on the shelf.
   if (this.reserved > this.quantity) {
-    return next(
-      new Error(
-        `Reserved (${this.reserved}) cannot exceed quantity (${this.quantity})`
-      )
+    throw new Error(
+      `Reserved (${this.reserved}) cannot exceed quantity (${this.quantity})`
     );
   }
-  return next();
 });
 
 export const Inventory = mongoose.model("Inventory", inventorySchema);
