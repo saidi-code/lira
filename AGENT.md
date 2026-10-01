@@ -835,7 +835,7 @@ See §10 for routes and roles.
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/clerk
+| POST | `/clerk` | Signature-verified raw body |
 
 ---
 

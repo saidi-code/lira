@@ -1,7 +1,7 @@
 # .github/workflows/ci.yml
 # ==========================================
 # Nothing in this repo enforced anything before: `tsc` errors and failing tests
-# reached `production` silently. This runs exactly the two commands an agent runs
+# reached `production` silently. This runs exactly the commands an agent runs
 # by hand (see AGENT.md §13) on every push and PR.
 #
 # Both jobs are DB-free on purpose — the unit tests use fakes, so CI needs no

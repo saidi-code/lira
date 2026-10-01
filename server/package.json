@@ -10,6 +10,7 @@
     "build": "tsc",
     "seed": "npx tsx seeds/seedProducts.ts",
     "test": "node --import tsx --test tests/pricing.test.ts tests/cancel.test.ts",
+    "lint": "eslint .",
     "preview:invoice": "tsx scripts/previewInvoice.ts"
   },
   "keywords": [],
@@ -28,13 +29,16 @@
     "nodemailer": "^10.0.10"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.6.0",
+    "eslint": "^10.11.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0"
   }
 }
