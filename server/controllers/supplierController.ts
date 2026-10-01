@@ -67,7 +67,15 @@ export const getSupplier = async (
   }
 };
 
-type SupplierBody = Record<string, unknown>;
+type SupplierBody = {
+  name?: unknown;
+  contact?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  address?: unknown;
+  products?: unknown;
+  isActive?: unknown;
+};
 
 /** POST /suppliers */
 export const createSupplier = async (
@@ -80,19 +88,25 @@ export const createSupplier = async (
     if (typeof name !== "string" || !name.trim()) {
       return res.status(400).json(fail("name is required"));
     }
-    if (Array.isArray(products)) {
+
+    // Body values stay `unknown` until validated, so the create payload is built
+    // explicitly rather than spread — a stray `isAdmin` must not reach the model.
+    const payload: Record<string, unknown> = { name: name.trim() };
+    if (contact !== undefined) payload.contact = contact;
+    if (email !== undefined) payload.email = email;
+    if (phone !== undefined) payload.phone = phone;
+    if (address !== undefined) payload.address = address;
+
+    if (products !== undefined) {
+      if (!Array.isArray(products)) {
+        return res.status(400).json(fail("products must be an array of ids"));
+      }
       const bad = products.find((p) => !isValidId(p));
       if (bad) return res.status(400).json(fail(`Invalid product id: ${bad}`));
+      payload.products = products;
     }
 
-    const supplier = await Supplier.create({
-      name: name.trim(),
-      contact,
-      email,
-      phone,
-      address,
-      products,
-    });
+    const supplier = await Supplier.create(payload);
 
     return res
       .status(201)
@@ -116,7 +130,15 @@ export const updateSupplier = async (
     const { id } = req.params;
     if (!isValidId(id)) return res.status(400).json(fail("Invalid supplier id"));
 
-    const allowed = ["name", "contact", "email", "phone", "address", "products", "isActive"];
+    const allowed: (keyof SupplierBody)[] = [
+      "name",
+      "contact",
+      "email",
+      "phone",
+      "address",
+      "products",
+      "isActive",
+    ];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (req.body?.[key] !== undefined) updates[key] = req.body[key];

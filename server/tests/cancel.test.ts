@@ -20,6 +20,7 @@ import {
   type CancellableOrder,
   type CancellationStore,
 } from "../controllers/OrderController.js";
+import type { OrderWarehouse } from "../services/orderStockService.js";
 
 type StockLine = {
   product: mongoose.Types.ObjectId;
@@ -50,7 +51,11 @@ const fakeStore = (overrides: Partial<CancellationStore> = {}) => {
       extraSet: Record<string, string>;
       session?: ClientSession;
     }[],
-    restored: [] as { lines: StockLine[]; session?: ClientSession }[],
+    restored: [] as {
+      lines: StockLine[];
+      warehouse: OrderWarehouse;
+      session?: ClientSession;
+    }[],
     reverted: [] as { orderId: string; previousStatus: string }[],
   };
 
@@ -59,8 +64,8 @@ const fakeStore = (overrides: Partial<CancellationStore> = {}) => {
       calls.claimed.push({ orderId: String(order._id), extraSet, session: atSession });
       return { orderStatus: order.orderStatus };
     },
-    restoreStock: async (lines, atSession) => {
-      calls.restored.push({ lines, session: atSession });
+    restoreStock: async (lines, warehouse, atSession) => {
+      calls.restored.push({ lines, warehouse, session: atSession });
     },
     revertCancellation: async (id, previousStatus) => {
       calls.reverted.push({ orderId: String(id), previousStatus });
@@ -72,6 +77,32 @@ const fakeStore = (overrides: Partial<CancellationStore> = {}) => {
 };
 
 describe("runCancellation", () => {
+  it("restores stock to the order's own warehouse", async () => {
+    // Not to whatever is the default today: for an order placed before the
+    // default changed, crediting the new warehouse would strand the hold in the
+    // row it was actually taken from.
+    const warehouse = new mongoose.Types.ObjectId();
+    const { store, calls } = fakeStore();
+    const order = placedOrder({ warehouse });
+
+    await runCancellation(order, store, {}, session);
+
+    assert.equal(calls.restored[0]?.warehouse, warehouse);
+  });
+
+  it("still releases when the order predates the warehouse stamp", async () => {
+    // No allocation recorded (a legacy order). The availability mirror must
+    // still be credited, or the units vanish from the catalogue while the hold
+    // sits in the real warehouse. Absent the stamp there is nothing to release
+    // against, so only the mirror is touched.
+    const { store, calls } = fakeStore();
+
+    await runCancellation(placedOrder(), store, {}, session);
+
+    assert.equal(calls.restored.length, 1);
+    assert.ok(!calls.restored[0]?.warehouse, "no warehouse to release against");
+  });
+
   it("restores every line of the order, exactly once", async () => {
     const order = placedOrder();
     const { store, calls } = fakeStore();

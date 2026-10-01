@@ -8,14 +8,13 @@
 //   npm run reconcile -- --fix   correct Product.stock to the ledger
 //
 // Read-only by default: silently rewriting a figure nobody asked to change is
-// how a real discrepancy gets hidden. `--fix` writes an `adjust` row so the
-// correction is itself auditable.
+// how a real discrepancy gets hidden. `--fix` corrects the *catalogue* to the
+// ledger and deliberately writes no movement — see the note in the loop.
 // ==========================================
 import "dotenv/config";
 import connectDB from "../config/db.js";
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Products.js";
-import StockMovement from "../models/StockMovement.js";
 import { findDrift } from "../services/reconcileService.js";
 
 const main = async () => {
@@ -85,18 +84,17 @@ const main = async () => {
   for (const row of drift) {
     await Product.updateOne({ _id: row.productId }, { $set: { stock: row.ledger } });
 
-    // The correction is itself a movement, so the ledger stays explainable.
-    const warehouse = await Inventory.findOne({ product: row.productId });
-    if (warehouse) {
-      await StockMovement.create({
-        product: row.productId,
-        warehouse: warehouse._id,
-        type: "adjust",
-        quantity: Math.abs(row.delta),
-        reference: "reconcile",
-        note: `Catalogue corrected to ledger (${row.catalogue} → ${row.ledger})`,
-      });
-    }
+    // Deliberately NO StockMovement here.
+    //
+    // This pass only rewrites the denormalised catalogue figure; the
+    // `Inventory` rows were already right, and the ledger is the source of
+    // truth. Writing an `adjust` row would put a movement into the audit trail
+    // for a change that never happened to the ledger — and the next reconcile
+    // would then "correct" the catalogue back, because the phantom movement
+    // would imply the product really did change.
+    console.log(
+      `  ${row.name || row.productId}: stock ${row.catalogue} → ${row.ledger} (catalogue only; no movement written)`
+    );
   }
 
   console.log(`Corrected ${drift.length} product(s).`);

@@ -16,6 +16,7 @@ import {
   releaseForOrder,
   reserveForOrder,
   transitionFor,
+  type OrderWarehouse,
 } from "../services/orderStockService.js";
 import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
@@ -166,6 +167,12 @@ export interface CancellableOrder {
    */
   orderNumber?: string | null;
   items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[];
+  /**
+   * The warehouse the hold was taken in, stamped at checkout. Releasing to the
+   * *current* default instead would credit a warehouse that never held the units
+   * and strand the reservation.
+   */
+  warehouse?: OrderWarehouse;
 }
 
 /**
@@ -185,9 +192,10 @@ export interface CancellationStore {
     session?: ClientSession
   ): Promise<{ orderStatus: string } | null>;
 
-  /** Put the given lines back on the shelf. */
+  /** Put the given lines back in the warehouse they were held from. */
   restoreStock(
     lines: StockLine[],
+    warehouse: OrderWarehouse,
     session?: ClientSession,
     reference?: string
   ): Promise<void>;
@@ -213,8 +221,8 @@ const orderStore: CancellationStore = {
     return claimed ? { orderStatus: claimed.orderStatus } : null;
   },
 
-  restoreStock: (lines, session, reference) =>
-    releaseForOrder(lines, reference ?? "cancel", session),
+  restoreStock: (lines, warehouse, session, reference) =>
+    releaseForOrder(lines, reference ?? "cancel", warehouse, session),
 
   revertCancellation: async (orderId, previousStatus) => {
     await Order.updateOne(
@@ -247,6 +255,7 @@ export const runCancellation = async (
   try {
     await store.restoreStock(
       toStockLines(order.items),
+      order.warehouse,
       session,
       order.orderNumber ?? String(order._id)
     );
@@ -433,11 +442,18 @@ export const createOrder = async (
       );
 
       try {
-        await reserveForOrder(
+        const held = await reserveForOrder(
           stockLines,
           created.orderNumber ?? String(created._id),
           session
         );
+
+        // Stamp the allocation so a later cancellation or shipment returns the
+        // hold to the warehouse it was actually taken from.
+        if (held.warehouse && !created.warehouse) {
+          created.warehouse = held.warehouse;
+          await created.save({ session });
+        }
       } catch (error) {
         // `reserveForOrder` unwinds its own holds; only the order row is left.
         if (!session) {
@@ -758,7 +774,8 @@ export const updateOrderStatus = async (
       try {
         await commitOrderStock(
           toStockLines(order.items),
-          order.orderNumber ?? String(order._id)
+          order.orderNumber ?? String(order._id),
+          order.warehouse
         );
       } catch (error) {
         // The order moved but the ledger did not. Report it rather than pretend:

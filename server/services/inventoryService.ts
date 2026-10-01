@@ -7,7 +7,7 @@
 //
 //   reserve  order placed        holds units, quantity untouched
 //   release  cancel / expired    gives the hold back
-//   commit   order fulfilled     units leave the building
+//   commit   order fulfilled     held units leave the shelf *and* the hold
 //   in       PO receive, restock units arrive
 //   out      direct removal      units leave for another reason
 //   adjust   manual correction   signed delta, always explained
@@ -21,9 +21,14 @@ import mongoose, { ClientSession } from "mongoose";
 import Inventory from "../models/Inventory.js";
 import StockMovement, {
   MOVEMENT_TYPES,
+  movementDeltasFor,
   type MovementType,
+  type StockDelta,
 } from "../models/StockMovement.js";
 import Warehouse from "../models/Warehouse.js";
+
+export { movementDeltasFor as movementDeltas };
+export type { StockDelta };
 
 /** Raised when a movement would drive stock below zero. */
 export class InsufficientStockError extends Error {
@@ -32,36 +37,6 @@ export class InsufficientStockError extends Error {
     this.name = "InsufficientStockError";
   }
 }
-
-export interface StockDelta {
-  quantity: number;
-  reserved: number;
-}
-
-/**
- * Signed effect of a movement on `Inventory.quantity` / `.reserved`.
- *
- * `adjust` takes a signed delta; every other type takes a positive quantity and
- * derives its direction from the type (§9's table).
- */
-export const movementDeltas = (
-  type: MovementType,
-  quantity: number
-): StockDelta => {
-  switch (type) {
-    case "in":
-    case "transfer":
-      return { quantity, reserved: 0 };
-    case "out":
-      return { quantity: -quantity, reserved: 0 };
-    case "reserve":
-      return { quantity: 0, reserved: quantity };
-    case "release":
-      return { quantity: 0, reserved: -quantity };
-    case "adjust":
-      return { quantity, reserved: 0 };
-  }
-};
 
 /** Units a customer can still buy at this inventory row (§9). */
 export const available = (row: { quantity: number; reserved: number }): number =>
@@ -81,12 +56,21 @@ export const guardFilter = (
 ): Record<string, unknown> => {
   switch (type) {
     case "in":
-    case "transfer":
+    case "transfer_in":
       // Arriving stock cannot overshoot.
       return {};
 
     case "out":
+    case "transfer_out":
       return { quantity: { $gte: quantity } };
+
+    case "commit":
+      // Both halves must be available: the units are on the shelf (`quantity`)
+      // and genuinely held for this order (`reserved`).
+      return {
+        quantity: { $gte: quantity },
+        reserved: { $gte: quantity },
+      };
 
     case "release":
       return { reserved: { $gte: quantity } };
@@ -160,7 +144,7 @@ export const applyMovement = async (
     );
   }
 
-  const deltas = movementDeltas(type, input.quantity);
+  const deltas = movementDeltasFor(type, input.quantity);
 
   // Guard + increment in one server-side operation — this is what stops two
   // concurrent movements overselling the last unit (§9).
@@ -191,6 +175,9 @@ export const applyMovement = async (
         warehouse: input.warehouse,
         type,
         quantity: Math.abs(input.quantity),
+        // Stored so the row states its own direction instead of making a reader
+        // hold the movement table in their head to interpret it.
+        delta: deltas.quantity,
         reference: input.reference ?? "",
         user: input.user ?? null,
         note: input.note ?? "",
@@ -238,7 +225,7 @@ export const release = (items: MovementInput[], session?: ClientSession) =>
  * `MOVEMENT_TYPES` for why there is no separate `commit` movement.
  */
 export const commit = (items: MovementInput[], session?: ClientSession) =>
-  applyMovementAll("out", items, session);
+  applyMovementAll("commit", items, session);
 
 /** PO receive / restock. */
 export const receive = (
@@ -269,9 +256,9 @@ export const adjust = async (input: Omit<MovementInput, "quantity"> & {
 /**
  * Inter-warehouse move: leaves one ledger and arrives in the other.
  *
- * Both legs log their own movement (§9 logs one row per side), and the negative
- * quantity is what encodes direction — `movementDeltas` reads it as a signed delta
- * because the guard for `transfer` is the source-side floor.
+ * Two movement types rather than one signed quantity, because the audit row
+ * stores a magnitude. The source leg is guarded on its floor, the destination
+ * leg cannot overshoot, and each row says which side it is.
  */
 export const transfer = async (
   fromWarehouse: mongoose.Types.ObjectId | string,
@@ -285,15 +272,19 @@ export const transfer = async (
   const moved = [];
   for (const item of items) {
     const units = Math.abs(item.quantity);
+    if (!Number.isInteger(units) || units <= 0) {
+      throw new Error("A transfer moves a positive whole number of units");
+    }
+
     moved.push(
-      await applyMovement("transfer", {
+      await applyMovement("transfer_out", {
         ...item,
         warehouse: fromWarehouse,
-        quantity: -units,
+        quantity: units,
       })
     );
     moved.push(
-      await applyMovement("transfer", {
+      await applyMovement("transfer_in", {
         ...item,
         warehouse: toWarehouse,
         quantity: units,

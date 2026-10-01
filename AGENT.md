@@ -521,11 +521,28 @@ src/
 | Type | Trigger | `quantity` | `reserved` |
 |---|---|---|---|
 | `in` | PO receive, restock | `+qty` | – |
-| `out` | Order fulfilled | `-qty` | `-qty` |
 | `reserve` | Order placed (unpaid) | – | `+qty` |
 | `release` | Cancel / reservation expired | – | `-qty` |
-| `transfer` | Inter-warehouse | `-qty` from, `+qty` to | – |
+| `commit` | **Order fulfilled** | `-qty` | `-qty` |
+| `out` | Direct removal, nothing was held | `-qty` | – |
+| `transfer_out` | Inter-warehouse, source side | `-qty` | – |
+| `transfer_in` | Inter-warehouse, destination side | `+qty` | – |
 | `adjust` | Manual correction | `+/-qty` | – |
+
+Two distinctions the table used to get wrong, both of which caused real bugs:
+
+- **`commit` is not `out`.** An `out` removes stock that was never held, so it
+  leaves `reserved` alone. A `commit` settles a *hold*, so it must clear both.
+  Folding them together meant every shipped order left a phantom reservation
+  that permanently blocked those units from being sold again.
+- **Transfers are two types, not one signed quantity.** `StockMovement.quantity`
+  is a magnitude (`min: 0`), so a single `transfer` type could only express
+  direction as a negative quantity — which the schema rejected outright.
+
+Every row also stores a derived `delta` (the signed effect on `quantity`), and a
+`pre("validate")` hook refuses to save a row whose `delta` contradicts its
+`type`. A row that misstates its own effect is worse than no row: this table is
+the fallback when `Inventory` is in doubt.
 
 ### Available Stock
 
@@ -584,14 +601,22 @@ Multi-item orders wrap in one session/transaction.
 ### Reconciliation
 
 Nightly 03:00 (`jobs/reconcileStock`):
-1. Sum `Inventory.quantity` per product
+1. Sum `Inventory.quantity − Inventory.reserved` per product
 2. Compare to `Product.stock`
 3. Log drift → correct → alert `ADMIN_ALERT_EMAIL`
 
+`--fix` rewrites **only** `Product.stock`. It deliberately writes no
+`StockMovement`: the `Inventory` rows were already correct, so an `adjust` row
+would record a ledger change that never happened — and the next reconcile would
+then "correct" the catalogue straight back, because the phantom movement implies
+the product really did change.
+
 ### Adding a Movement Type
 
-1. Add to enum in `packages/shared/src/constants/movementTypes.ts`
-2. Handle in `inventoryService.applyMovement()`
+1. Add to `MOVEMENT_TYPES` and `MOVEMENT_DELTAS` in `models/StockMovement.ts`
+   (they live together — the schema's `delta` check is derived from that table)
+2. Handle in `inventoryService.guardFilter()` — every type needs an explicit
+   floor, or a concurrent movement can take the last unit
 3. Add to admin filters
 4. Add tests
 
@@ -702,6 +727,10 @@ Nightly 03:00 (`jobs/reconcileStock`):
 3. `Product.stock` = Σ (`Inventory.quantity` − `Inventory.reserved`) — **availability**, not on-shelf units. The storefront reads this field directly, so units held for open orders must not look sellable. Verified by `npm run reconcile`.
 4. `Inventory.reserved ≤ Inventory.quantity`
 5. `PurchaseOrderItem.receivedQty ≤ PurchaseOrderItem.quantity`
+6. `Order.warehouse` is stamped at checkout and is the *only* warehouse a later
+   release or commit may touch. Resolving the current default instead would, for
+   any order placed before a default changed, credit a warehouse that never held
+   the units and strand the reservation.
 
 ### Order Number
 
@@ -883,6 +912,43 @@ body (see §11 Order Pricing).
 ### Warehouses / Suppliers / Purchase Orders / Transfers / Reports
 
 See §10 for routes and roles.
+
+#### Suppliers
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/suppliers` | `admin,manager` | `active`, `search`, paginated |
+| GET | `/suppliers/:id` | `admin,manager` | with its products |
+| POST | `/suppliers` | `admin,manager` | 400 on an invalid email |
+| PUT | `/suppliers/:id` | `admin,manager` | allow-listed fields only |
+
+#### Purchase Orders
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/purchase-orders` | `admin,manager` | `supplier`, `status`, paginated |
+| GET | `/purchase-orders/:id` | `admin,manager` | with the supplier |
+| POST | `/purchase-orders` | `admin,manager` | `{ supplierId, items:[{ productId, quantity, unitCost }] }`; product names are snapshotted server-side |
+| POST | `/purchase-orders/:id/receive` | `admin,manager` | `{ warehouseId, items:[{ productId, quantity }] }` — **partial receipts allowed**; 409 when it would exceed what was ordered |
+| PUT | `/purchase-orders/:id/cancel` | `admin,manager` | 409 once any line has stock in |
+
+Status runs `draft → ordered → partially_received → received`, plus `cancelled`. Receiving
+is the only thing that creates stock, and it is partial-friendly: a supplier splitting a
+shipment is normal, not an error. Each line's `receivedQty` is incremented under a
+conditional update (`receivedQty <= quantity - n` travels *into* the query), so two clerks
+receiving the same units cannot both succeed.
+
+#### Transfers
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/transfers` | `admin,manager,warehouse_staff` | `status`, `warehouse` (matches either side), paginated |
+| GET | `/transfers/:id` | same | |
+| POST | `/transfers` | same | `{ fromWarehouseId, toWarehouseId, items:[...] }` |
+| PUT | `/transfers/:id/status` | same | `{ status }` — `completed` is the only value that moves stock |
+
+Only the move to `completed` writes to the ledger, and it is guarded on the *current*
+status so a double-submit cannot move the goods twice. `in_transit` is bookkeeping only.
 
 ### Webhooks
 

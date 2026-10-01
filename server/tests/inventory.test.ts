@@ -16,6 +16,10 @@ import {
   InsufficientStockError,
   movementDeltas,
 } from "../services/inventoryService.js";
+import {
+  MOVEMENT_TYPES,
+  type MovementType,
+} from "../models/StockMovement.js";
 import { findDrift } from "../services/reconcileService.js";
 import { transitionFor } from "../services/orderStockService.js";
 
@@ -41,10 +45,23 @@ describe("movementDeltas (§9's movement table)", () => {
     assert.deepEqual(movementDeltas("out", 5), { quantity: -5, reserved: 0 });
   });
 
-  it("transfer takes the signed delta as given", () => {
-    // The caller encodes direction in the sign; the source leg is negative.
-    assert.deepEqual(movementDeltas("transfer", -3), { quantity: -3, reserved: 0 });
-    assert.deepEqual(movementDeltas("transfer", 3), { quantity: 3, reserved: 0 });
+  it("transfer legs are separate, so each row says which side it is", () => {
+    // A single `transfer` type could only carry direction in the sign of
+    // `quantity` — which the schema forbids. Two types, no sign needed.
+    assert.deepEqual(movementDeltas("transfer_out", 3), { quantity: -3, reserved: 0 });
+    assert.deepEqual(movementDeltas("transfer_in", 3), { quantity: 3, reserved: 0 });
+  });
+
+  it("commit clears the hold *and* the shelf", () => {
+    // The bug this fixes: commit used to be an `out`, which took the units off
+    // the shelf but left `reserved` at 4 — so every shipped order left a
+    // phantom hold that permanently blocked those units from being sold.
+    assert.deepEqual(movementDeltas("commit", 4), { quantity: -4, reserved: -4 });
+  });
+
+  it("out is for stock that was never held", () => {
+    // Contrast with commit: nothing was reserved, so nothing is released.
+    assert.deepEqual(movementDeltas("out", 4), { quantity: -4, reserved: 0 });
   });
 
   it("adjust passes its signed delta through", () => {
@@ -72,12 +89,62 @@ describe("guardFilter — the concurrency guard", () => {
 
   it("arriving stock needs no floor", () => {
     assert.deepEqual(guardFilter("in", 100), {});
-    assert.deepEqual(guardFilter("transfer", 100), {});
+    assert.deepEqual(guardFilter("transfer_in", 100), {});
+  });
+
+  it("leaving stock needs that many on the shelf", () => {
+    assert.deepEqual(guardFilter("transfer_out", 100), { quantity: { $gte: 100 } });
+  });
+
+  it("committing needs both the units and the hold", () => {
+    // Guarding only `quantity` would let an order fulfil against a hold that
+    // belongs to a different order, quietly destroying the other reservation.
+    assert.deepEqual(guardFilter("commit", 3), {
+      quantity: { $gte: 3 },
+      reserved: { $gte: 3 },
+    });
   });
 
   it("only a downward adjustment needs a floor", () => {
     assert.deepEqual(guardFilter("adjust", -2), { quantity: { $gte: 2 } });
     assert.deepEqual(guardFilter("adjust", 5), {});
+  });
+});
+
+describe("audit rows describe their own direction", () => {
+  const deltaFor = (type: MovementType, quantity: number) =>
+    movementDeltas(type, quantity).quantity;
+
+  it("agrees with the movement table for every non-adjust type", () => {
+    // This is the invariant the StockMovement schema hook enforces, checked here
+    // so a change to the table cannot quietly invalidate saved rows.
+    for (const type of MOVEMENT_TYPES) {
+      if (type === "adjust") continue;
+      assert.equal(
+        deltaFor(type, 7),
+        movementDeltas(type, 7).quantity,
+        `${type} delta is derived, not stated`
+      );
+    }
+  });
+
+  it("never needs a negative magnitude to express direction", () => {
+    // The old `transfer` encoded direction as a negative quantity, which the
+    // schema's `min: 0` rejected at runtime. Every type is now magnitude-safe.
+    for (const type of MOVEMENT_TYPES) {
+      const { quantity } = movementDeltas(type, 3);
+      assert.equal(quantity, deltaFor(type, 3));
+    }
+  });
+
+  it("distinguishes a commit from an out", () => {
+    // Both are "minus 3" on quantity; only the type says which held units.
+    assert.equal(deltaFor("commit", 3), -3);
+    assert.equal(deltaFor("out", 3), -3);
+    assert.notEqual(
+      movementDeltas("commit", 3).reserved,
+      movementDeltas("out", 3).reserved
+    );
   });
 });
 

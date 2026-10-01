@@ -83,6 +83,8 @@ export const applyTransferStatus = async (
   }
 
   const run = async (session?: ClientSession) => {
+    // Both legs, or neither: `ledgerTransfer` is transactional where the
+    // deployment allows it, so a failure here leaves no orphaned stock.
     await ledgerTransfer(
       transfer.fromWarehouse,
       transfer.toWarehouse,
@@ -93,9 +95,7 @@ export const applyTransferStatus = async (
         user: userId ?? null,
         note: `Transfer ${transfer.reference}`,
       }))
-    ).catch(async (error) => {
-      throw error;
-    });
+    );
 
     // Guarded on the status we read: a second completer finds nothing to update
     // and must not have moved the stock twice.
@@ -117,3 +117,4 @@ export const applyTransferStatus = async (
 };
 
 export { TRANSFER_STATUSES };
+export type { TransferStatus };

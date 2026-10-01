@@ -4,7 +4,9 @@
 // ==========================================
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import PurchaseOrder from "../models/PurchaseOrder.js";
+import PurchaseOrder, {
+  type PurchaseOrderStatus,
+} from "../models/PurchaseOrder.js";
 import Product from "../models/Products.js";
 import Warehouse from "../models/Warehouse.js";
 import {
@@ -236,7 +238,7 @@ export const cancelPurchaseOrder = async (
     if (!order) return res.status(404).json(fail("Purchase order not found"));
 
     const lines = order.items as unknown as ReceivableLine[];
-    if (!canCancelPurchaseOrder(order.status as never, lines)) {
+    if (!canCancelPurchaseOrder(order.status as PurchaseOrderStatus, lines)) {
       return res.status(409).json(
         fail(
           "Cannot cancel a purchase order that is received, cancelled, or already has stock in"

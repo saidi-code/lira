@@ -117,6 +117,20 @@ const orderSchema = new mongoose.Schema(
 
     paymentIntentId: { type: String },
 
+    /**
+     * The warehouse this order's units were reserved from, stamped at checkout.
+     *
+     * Cancellation and fulfilment must release the hold from the same row it was
+     * taken in. Re-resolving "whatever is the default warehouse today" would send
+     * a year-old order's units back to a warehouse that never held them — the
+     * phantom reservation would then sit in the wrong row forever.
+     */
+    warehouse: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Warehouse",
+      default: null,
+    },
+
     orderStatus: {
       type: String,
       enum: ["placed", "processing", "shipped", "delivered", "cancelled"],

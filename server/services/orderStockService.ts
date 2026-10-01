@@ -35,6 +35,47 @@ export interface OrderStockLine {
 }
 
 /**
+ * The warehouse an order draws from — taken from the order document itself.
+ *
+ * Release and commit must undo a hold in the row it was taken in. Falling back to
+ * "the current default" would, for any order placed before a default changed,
+ * credit a different warehouse and leave the original reservation stranded.
+ */
+export type OrderWarehouse =
+  | mongoose.Types.ObjectId
+  | string
+  | null
+  | undefined;
+
+let warnedAboutLegacyOrder = false;
+
+/**
+ * The warehouse a release or commit may touch.
+ *
+ * An order that carries its own allocation uses that, always. An order that
+ * predates the stamp falls back to the current default: there is no way to know
+ * where its hold actually is, and leaving the units stranded is strictly worse
+ * than a best guess. It is warned about once, because it is a migration artefact
+ * and should disappear as orders are placed normally.
+ */
+const resolveOrderWarehouse = async (
+  stamped: OrderWarehouse
+): Promise<mongoose.Types.ObjectId | string | null> => {
+  if (stamped) return stamped;
+
+  const fallback = await resolveDefaultWarehouse();
+  if (fallback && !warnedAboutLegacyOrder) {
+    warnedAboutLegacyOrder = true;
+    console.warn(
+      "[stock] An order has no recorded warehouse — releasing against the " +
+        "current default. Orders placed before the allocation stamp was added " +
+        "cannot be resolved exactly."
+    );
+  }
+  return fallback;
+};
+
+/**
  * Which ledger movement an order-status change implies.
  *
  * `commit` must happen exactly once, when an order leaves the "holding" states
@@ -118,7 +159,10 @@ export const reserveForOrder = async (
   lines: OrderStockLine[],
   reference: string,
   session?: ClientSession
-): Promise<OrderStockLine[]> => {
+): Promise<{
+  reserved: OrderStockLine[];
+  warehouse: mongoose.Types.ObjectId | null;
+}> => {
   const warehouse = await requireWarehouse();
   const reserved: OrderStockLine[] = [];
 
@@ -154,12 +198,16 @@ export const reserveForOrder = async (
     // A later line failed: the holds this call already took must not survive it,
     // or the order fails while phantom reservations block other customers.
     if (reserved.length) {
-      await releaseForOrder(reserved, reference, session).catch(() => undefined);
+      await releaseForOrder(reserved, reference, warehouse, session).catch(
+        () => undefined
+      );
     }
     throw error;
   }
 
-  return reserved;
+  // The caller stamps this onto the order, so release and commit later have a
+  // row to work from.
+  return { reserved, warehouse };
 };
 
 /**
@@ -171,15 +219,16 @@ export const reserveForOrder = async (
 export const releaseForOrder = async (
   lines: OrderStockLine[],
   reference: string,
+  warehouse?: OrderWarehouse,
   session?: ClientSession
 ): Promise<void> => {
-  const warehouse = await resolveDefaultWarehouse();
+  const target = await resolveOrderWarehouse(warehouse);
 
   for (const line of lines) {
     await giveBackToAvailability(line, session);
-    if (warehouse) {
+    if (target) {
       await ledgerRelease(
-        [{ product: line.product, warehouse, quantity: line.quantity, reference }],
+        [{ product: line.product, warehouse: target, quantity: line.quantity, reference }],
         session
       );
     }
@@ -195,14 +244,15 @@ export const releaseForOrder = async (
 export const commitOrderStock = async (
   lines: OrderStockLine[],
   reference: string,
+  warehouse?: OrderWarehouse,
   session?: ClientSession
 ): Promise<void> => {
-  const warehouse = await resolveDefaultWarehouse();
-  if (!warehouse) return;
+  const target = await resolveOrderWarehouse(warehouse);
+  if (!target) return;
 
   for (const line of lines) {
     await ledgerCommit(
-      [{ product: line.product, warehouse, quantity: line.quantity, reference }],
+      [{ product: line.product, warehouse: target, quantity: line.quantity, reference }],
       session
     );
   }
