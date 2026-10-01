@@ -15,10 +15,13 @@ const variantSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-variantSchema.index({sku:'text'})
+// No index here on purpose — see the note in Colors.ts. `variantSchema` is
+// embedded in `colorSchema`, which is itself embedded in `Product`, so an index
+// declared here landed on the Product collection too, and conflicted with the
+// other one. Declare it on the standalone `Variant` model if it is ever needed.
 
-// Keep the model for standalone usage, but export the schema too so other schemas can embed it.
-const Variant = mongoose.model("Variant",variantSchema)
+// Kept for standalone use, and exported so other schemas can embed it.
+const Variant = mongoose.model("Variant", variantSchema);
 
 variantSchema.methods.generateSKU = function (productName: string, colorName: string) {
   const namePart = productName.replace(/\s+/g, '').toUpperCase().slice(0, 3);

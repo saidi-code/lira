@@ -40,11 +40,18 @@ const connectDB = async () => {
     await mongoose.connect(fullUri);
 
     // Build/refresh indexes for all registered models.
-    // This is what creates the `name_text_description_text` index
-    // required by $text queries.
+    //
+    // NB: there is no `name_text_description_text` index, and no `$text` query
+    // in the codebase — `searchProducts` matches with a case-insensitive regex.
+    // See the note in models/Products.ts before adding one: an index declared on
+    // an *embedded* schema lands on every parent collection, which is how Product
+    // ended up with two conflicting text indexes.
     await Promise.all(
       Object.values(mongoose.models).map((model) =>
         model.syncIndexes().catch((err) => {
+          // Swallowed, so a schema problem here is invisible in production.
+          // The integration suite asserts `Product.init()` resolves, so a
+          // regression fails CI rather than failing quietly on every boot.
           console.error(`Failed to sync indexes for ${model.modelName}:`, err);
         })
       )

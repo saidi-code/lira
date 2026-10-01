@@ -947,7 +947,7 @@ they compiled fine, matched nothing, and 403'd everyone.
 | Command | What it covers |
 |---|---|
 | `npm test` | Pure rules and fakes — pricing, cancellation, lifecycle, ledger arithmetic, purchasing, Clerk mapping, `authorize`. No database. |
-| `npm test:integration` | The same ledger, the Clerk sync, and the checkout bridge against a **real mongod** (`mongodb-memory-server`). |
+| `npm test:integration` | The ledger, the Clerk sync, the checkout bridge, the operator scripts, and the payment lifecycle against a **real mongod** (`mongodb-memory-server`). |
 
 The split is deliberate. Unit tests assert on pure functions, which proves the
 *rules* but says nothing about Mongoose — not that a `$inc` lands, not that a
@@ -982,6 +982,13 @@ that asserts on a table rather than a document:
 - `receive()` and `transfer()` dropping the transaction session, so the
   standalone-MongoDB fallback applied every movement **twice**.
 - The Clerk upsert skipping validation, so a typo'd role was stored.
+- `Product` failing to build *any* index, because two text indexes were declared
+  on schemas that are embedded inside it and `db.ts` swallowed the error.
+
+The lifecycle suite covers the one place money and stock meet: cancelling
+restocks exactly once, the expiry sweep never touches COD or a paid order, it is
+safe to run twice, and an order whose stock was released can no longer be paid —
+taking money for units that are already back on a shelf.
 
 Two habits that cost real time, worth keeping:
 
@@ -991,6 +998,29 @@ Two habits that cost real time, worth keeping:
 - **A schema hook refusing your fixture is information, not an obstacle.** The
   "second warehouse" test could not create two defaults — the hook was right, and
   the fix was to demote the incumbent first, as the real API does.
+
+### Known: search does not use an index
+
+`Product` search (`searchProducts`) matches with a **case-insensitive regex**,
+not `$text` — so a text index would not be used even if one existed. There is
+none, deliberately: `colorSchema` and `variantSchema` each declared one, and both
+are *embedded* in `Product`, so two text indexes landed on one collection. MongoDB
+allows one per collection, `Product.init()` threw, and `db.ts` swallowed the
+error — so **no Product index was ever built** and the catalogue was scanned.
+
+Those indexes are removed and the false `name_text_description_text` comment in
+`config/db.ts` is corrected. The integration suite now asserts `Product.init()`
+resolves, so a regression fails CI instead of failing quietly on every boot.
+
+Two follow-ups, both product decisions rather than bugs:
+
+- **Regex search still scans.** Converting `searchProducts` to `$text` would use
+  an index, but `$text` matches whole words, so partial matches like `oudw` for
+  `Oud Wood` would stop working. That is a search-behaviour change.
+- **`syncIndexes()` drops any index not in the schema**, on every boot. Safe
+  while the schema is the source of truth; it would delete a hand-tuned index.
+  `createIndexes()` only adds what is missing, at the cost of never removing
+  stale ones.
 
 ### Client Layer
 
