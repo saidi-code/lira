@@ -61,7 +61,7 @@ interface UpdateOrderStatusBody {
   paymentStatus?: PaymentStatus;
 }
 
-interface OrderParams {
+export interface OrderParams {
   id: string;
 }
 
@@ -161,8 +161,11 @@ const toStockLines = (
  * Statuses whose order still holds its units. Stock is deducted when the order is
  * placed, so anything not shipped yet has to give it back; `shipped`/`delivered`
  * sold the units and `cancelled` already returned them.
+ *
+ * Exported so the payment-expiry sweep asks the same question the cancel path
+ * does, instead of repeating the list (services/orderLifecycleService.ts).
  */
-const STOCK_HELD_STATUSES = ["placed", "processing"];
+export const STOCK_HELD_STATUSES = ["placed", "processing"];
 
 type StockHeldStatus = (typeof STOCK_HELD_STATUSES)[number];
 
@@ -173,6 +176,8 @@ type StockHeldStatus = (typeof STOCK_HELD_STATUSES)[number];
  */
 const holdsStock = (orderStatus: string): orderStatus is StockHeldStatus =>
   (STOCK_HELD_STATUSES as readonly string[]).includes(orderStatus);
+
+export { holdsStock };
 
 /** Express generics: a route with no URL params, body or query of interest. */
 type EmptyParams = Record<string, never>;
@@ -275,10 +280,14 @@ export const runCancellation = async (
  * Marks an order cancelled and puts its units back, or does nothing.
  *
  * Every entry point that can end an order — the customer's cancel, the admin
- * status change, the admin delete — goes through here, because `order.orderStatus
- * = "cancelled"; order.save()` silently loses the stock that checkout reserved.
+ * status change, the admin delete, the payment-expiry sweep — goes through here,
+ * because `order.orderStatus = "cancelled"; order.save()` silently loses the
+ * stock that checkout reserved.
+ *
+ * Exported for `services/orderLifecycleService.ts`. It moves to `inventoryService`
+ * when that lands (AGENT.md §9).
  */
-const cancelAndRestock = async (
+export const cancelAndRestock = async (
   order: CancellableOrder,
   extraSet: Record<string, string> = {}
 ): Promise<boolean> =>

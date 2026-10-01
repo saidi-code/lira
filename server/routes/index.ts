@@ -9,6 +9,7 @@ import ordersRoutes from "./OrderRoutes.js"
 import reviewsRoutes from "./reviewsRoutes.js";
 import adminRouter from "./adminRoutes.js";
 import pricingRouter from "./pricingRoutes.js";
+import internalRouter from "./internalRoutes.js";
 const router = express.Router();
 router.use('/products', productsRouter); 
 router.use('/addresses',addressesRoutes)
@@ -20,4 +21,6 @@ router.use('/orders',ordersRoutes)
 router.use('/reviews', reviewsRoutes)
 router.use('/admin', adminRouter)
 router.use('/pricing', pricingRouter)
+// Scheduler-only endpoints (shared secret, no user session).
+router.use('/internal', internalRouter)
 export default router;
