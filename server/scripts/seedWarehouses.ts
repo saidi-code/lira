@@ -11,11 +11,12 @@
 // Existing quantities are never overwritten — that is an `adjust` with a reason.
 // ==========================================
 import "dotenv/config";
+import mongoose from "mongoose";
 import connectDB from "../config/db.js";
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Products.js";
-import StockMovement from "../models/StockMovement.js";
 import Warehouse from "../models/Warehouse.js";
+import { applyMovement } from "../services/inventoryService.js";
 
 const DEFAULT_WAREHOUSE = {
   name: "Main Warehouse",
@@ -69,22 +70,29 @@ const main = async () => {
     // both agree until a real movement moves them apart (reconcileStock).
     const quantity = Number(product.stock) || 0;
 
+    // Created empty on purpose: the stock is then *moved in* through the service
+    // below, so the opening balance is a real `in` movement with a derived
+    // `delta`. Creating it pre-filled and then applying the movement would
+    // double the opening quantity.
     await Inventory.create({
       product: product._id,
       warehouse: warehouse._id,
-      quantity,
+      quantity: 0,
       reserved: 0,
       reorderLevel: DEFAULT_REORDER_LEVEL,
     });
 
-    await StockMovement.create({
-      product: product._id,
-      warehouse: warehouse._id,
-      type: "in",
-      quantity,
-      reference: "seed",
-      note: "Initial import from Product.stock",
-    });
+    // A zero-quantity import is skipped — `applyMovement` rejects non-positive
+    // movements, and "zero units arrived" is not a fact worth recording.
+    if (quantity > 0) {
+      await applyMovement("in", {
+        product: product._id as mongoose.Types.ObjectId,
+        warehouse: warehouse._id as mongoose.Types.ObjectId,
+        quantity,
+        reference: "seed",
+        note: "Initial import from Product.stock",
+      });
+    }
 
     created++;
   }

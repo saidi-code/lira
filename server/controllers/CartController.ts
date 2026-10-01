@@ -6,10 +6,10 @@ import Product from "../models/Products.js";
 export const getCart = async (req: Request, res: Response) => {
   try {
     let cart = await Cart.findOne({
-      user: req.user._id,
+      user: req.user!._id,
     }).populate("items.product", "name images subtitle price stock colors type");
     if (!cart) {
-      cart = await Cart.create({ user: req.user._id, items: [] });
+      cart = await Cart.create({ user: req.user!._id, items: [] });
     }
     res.json({ success: true, data: cart });
   } catch (error: any) {
@@ -53,9 +53,9 @@ if(product.type==="simple"){
         .json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
     }
 }
-    let cart = await Cart.findOne({ user: req.user._id });
+    let cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
-      cart = new Cart({ user: req.user._id, items: [] });
+      cart = new Cart({ user: req.user!._id, items: [] });
     }
     if (product.type === "variable") {
       if (!color || !size) {
@@ -157,7 +157,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "quantity is required" });
     }
 
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
       return res.status(404).json({ success: false, message: "Cart not found" });
     }
@@ -241,7 +241,7 @@ export const deleteCartItem = async (req: Request, res: Response) => {
   try {
     const size = req.query.size as string | undefined;
     const color = req.query.color as string | undefined;
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
       return res
         .status(404)
@@ -281,7 +281,7 @@ export const deleteCartItem = async (req: Request, res: Response) => {
 // DELETE api/v1/cart
 export const clearCart = async (req: Request, res: Response) => {
   try {
-    const cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
       return res
         .status(404)

@@ -1,9 +1,18 @@
 import { Document, Types } from "mongoose";
 export interface IUser {
   clerkId?: string;
-  _id: string;
+  /**
+   * An `ObjectId`, not a `string`.
+   *
+   * This was declared `string`, which is only ever accidentally correct: `.id`
+   * gives a string, `_id` does not. Code that read `_id` as a string got away
+   * with it until it was passed into a Mongoose filter, where the mismatch
+   * surfaces as an overload error rather than a wrong query.
+   */
+  _id: Types.ObjectId;
   name: string;
-  email: string;
+  /** Optional: Clerk permits phone-only accounts, so this may be absent. */
+  email?: string;
   role: "user" | "admin" | "manager" | "cashier" | "warehouse_staff";
   phone?: string;
   address?: {

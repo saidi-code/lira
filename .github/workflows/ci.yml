@@ -66,5 +66,8 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit --pretty false
 
+      # `npx eslint .`, not `npx expo lint`: the latter only scans `app/` and
+      # `components/`, so `hooks/` and `config/` — where every API client and
+      # query hook lives — were never linted at all, in CI or by hand.
       - name: Lint
-        run: npx expo lint
+        run: npx eslint .

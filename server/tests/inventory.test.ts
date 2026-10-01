@@ -20,7 +20,11 @@ import {
   MOVEMENT_TYPES,
   type MovementType,
 } from "../models/StockMovement.js";
-import { findDrift } from "../services/reconcileService.js";
+import {
+  findDrift,
+  recoverableDelta,
+  strandedReservations,
+} from "../services/reconcileService.js";
 import { transitionFor } from "../services/orderStockService.js";
 
 describe("available (§9)", () => {
@@ -145,6 +149,98 @@ describe("audit rows describe their own direction", () => {
       movementDeltas("commit", 3).reserved,
       movementDeltas("out", 3).reserved
     );
+  });
+});
+
+describe("strandedReservations — the pre-fix shipment repair", () => {
+  const shipped = (over: Record<string, unknown> = {}) => ({
+    orderId: "o1",
+    orderNumber: "ORD-20260101-ABC123",
+    warehouse: "w1",
+    status: "shipped",
+    hasCommitMovement: false,
+    lines: [{ product: "p1", name: "Oud Wood 50ml", quantity: 2, reservedAtWarehouse: 2 }],
+    ...over,
+  });
+
+  it("finds a shipped order whose hold was never settled", () => {
+    const found = strandedReservations([shipped()]);
+    assert.equal(found.length, 1);
+    assert.equal(found[0]?.lines[0]?.quantity, 2);
+  });
+
+  it("ignores orders that were never fulfilled", () => {
+    assert.deepEqual(strandedReservations([shipped({ status: "placed" })]), []);
+    assert.deepEqual(strandedReservations([shipped({ status: "cancelled" })]), []);
+    assert.deepEqual(strandedReservations([shipped({ status: "processing" })]), []);
+  });
+
+  it("ignores an order that already has a commit movement", () => {
+    // The `commit` movement is the proof the hold was settled properly, so this
+    // order is healthy and re-releasing it would take the hold negative.
+    assert.deepEqual(strandedReservations([shipped({ hasCommitMovement: true })]), []);
+  });
+
+  it("never releases more than is actually held", () => {
+    // The dangerous case: the order says 5 but only 2 are still reserved.
+    // Releasing 5 would drive `reserved` to -3 and corrupt a healthy row.
+    const found = strandedReservations([
+      shipped({
+        lines: [{ product: "p1", name: "Oud", quantity: 5, reservedAtWarehouse: 2 }],
+      }),
+    ]);
+    assert.equal(found[0]?.lines[0]?.quantity, 2);
+  });
+
+  it("drops lines whose hold is already clear", () => {
+    const found = strandedReservations([
+      shipped({
+        lines: [{ product: "p1", name: "Oud", quantity: 2, reservedAtWarehouse: 0 }],
+      }),
+    ]);
+    assert.deepEqual(found, []);
+  });
+
+  it("catches delivered orders too", () => {
+    assert.equal(strandedReservations([shipped({ status: "delivered" })]).length, 1);
+  });
+
+  it("falls back to the id when an order has no number", () => {
+    const found = strandedReservations([shipped({ orderNumber: null })]);
+    assert.equal(found[0]?.orderNumber, "o1");
+  });
+});
+
+describe("recoverableDelta — backfilling historical rows", () => {
+  it("derives the delta from the type", () => {
+    assert.equal(recoverableDelta("in", 5), 5);
+    assert.equal(recoverableDelta("out", 5), -5);
+    assert.equal(recoverableDelta("commit", 5), -5);
+    assert.equal(recoverableDelta("transfer_out", 5), -5);
+    assert.equal(recoverableDelta("transfer_in", 5), 5);
+  });
+
+  it("gives hold-only movements a zero delta", () => {
+    // `reserve` and `release` never move the shelf, so their effect on
+    // `quantity` is zero — only `reserved` changes.
+    assert.equal(recoverableDelta("reserve", 4), 0);
+    assert.equal(recoverableDelta("release", 4), 0);
+  });
+
+  it("refuses to guess at old transfer rows", () => {
+    // Their direction lived only in a sign the schema rejected, so nothing on
+    // the row can say which side it was. A guess would corrupt the audit trail
+    // silently, so it reports unrecoverable instead.
+    assert.equal(recoverableDelta("transfer", 3), null);
+  });
+
+  it("refuses unknown types rather than assuming", () => {
+    assert.equal(recoverableDelta("nonsense", 3), null);
+  });
+
+  it("normalises a legacy negative quantity to a magnitude", () => {
+    // Some rows may hold a negative from before `min: 0` was enforced.
+    assert.equal(recoverableDelta("in", -5), 5);
   });
 });
 

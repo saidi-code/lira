@@ -21,6 +21,18 @@ const productSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false },
   images:[{type:String}],
   isActive: { type: Boolean, default: true },
+  /**
+   * AGENT.md §11. Optional on purpose: plenty of stock arrives from a supplier
+   * nobody has entered yet, and requiring it would block those products from
+   * being created at all. `Supplier.products` is the advisory reverse link —
+   * neither side is enforced, since suppliers routinely ship things they were
+   * never listed for.
+   */
+  supplier: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Supplier",
+    default: null,
+  },
   colors: [{ type: Color.schema, required: false }],
 
 },{timestamps:true}) 

@@ -11,7 +11,9 @@
     "seed": "npx tsx seeds/seedProducts.ts",
     "seed:warehouses": "npx tsx scripts/seedWarehouses.ts",
     "reconcile": "npx tsx scripts/reconcileStock.ts",
-    "test": "node --import tsx --test tests/pricing.test.ts tests/cancel.test.ts tests/orderLifecycle.test.ts tests/inventory.test.ts tests/purchasing.test.ts",
+    "repair:reservations": "npx tsx scripts/repairStrandedReservations.ts",
+    "backfill:deltas": "npx tsx scripts/backfillMovementDeltas.ts",
+    "test": "node --import tsx --test tests/pricing.test.ts tests/cancel.test.ts tests/orderLifecycle.test.ts tests/inventory.test.ts tests/purchasing.test.ts tests/clerkWebhook.test.ts tests/auth.test.ts",
     "lint": "eslint .",
     "preview:invoice": "tsx scripts/previewInvoice.ts"
   },

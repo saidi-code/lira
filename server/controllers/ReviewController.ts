@@ -4,14 +4,10 @@ import mongoose from "mongoose";
 import Review from "../models/Review.js";
 
 // ==================== TYPES ====================
-interface AuthUser {
-  _id: mongoose.Types.ObjectId;
-  role?: string;
-}
-
-interface AuthRequest extends Request {
-  user?: AuthUser;
-}
+// The `req.user` shape now comes from the Express global augmentation in
+// types/express.d.ts. This per-controller copy declared `role?: string`, which
+// is not assignable to `UserRole` — so it silently disagreed with the schema
+// that `authorize()` actually checks against.
 
 interface ProductParams {
   id: string;
@@ -71,7 +67,7 @@ export const getProductReviews = async (
 // @route   POST /api/reviews/product/:id
 // @access  Private
 export const upsertReview = async (
-  req: AuthRequest & Request<ProductParams>,
+  req: Request & Request<ProductParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -114,7 +110,7 @@ export const upsertReview = async (
 // @route   GET /api/reviews/my
 // @access  Private
 export const getMyReviews = async (
-  req: AuthRequest,
+  req: Request,
   res: Response
 ): Promise<Response> => {
   try {
@@ -142,7 +138,7 @@ export const getMyReviews = async (
 // @route   DELETE /api/reviews/:id
 // @access  Private
 export const deleteReview = async (
-  req: AuthRequest & Request<ReviewParams>,
+  req: Request & Request<ReviewParams>,
   res: Response
 ): Promise<Response> => {
   try {

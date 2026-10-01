@@ -4,12 +4,12 @@ import Product from "../models/Products.js";
 
 export const getWishList = async (req: Request, res: Response) => {
   try {
-    let wishList = await WishList.findOne({ user: req.user._id })
+    let wishList = await WishList.findOne({ user: req.user!._id })
       .populate("items.product", "name images subtitle price category stock colors type")
       .lean();
 
     if (!wishList) {
-      wishList = await WishList.create({ user: req.user._id, items: [] });
+      wishList = await WishList.create({ user: req.user!._id, items: [] });
     }
 
     return res.json({ success: true, data: wishList });
@@ -32,7 +32,7 @@ export const addToWishList = async (req: Request, res: Response) => {
 
     // Check if already in wishlist
     const existing = await WishList.findOne({
-      user: req.user._id,
+      user: req.user!._id,
       "items.product": productId,
     }).lean();
 
@@ -41,7 +41,7 @@ export const addToWishList = async (req: Request, res: Response) => {
     }
 
     const wishList = await WishList.findOneAndUpdate(
-      { user: req.user._id },
+      { user: req.user!._id },
       { $push: { items: { product: productId } } },
       { new: true, upsert: true }
     ).populate("items.product", "name images subtitle price category stock colors type");
@@ -60,7 +60,7 @@ export const removeFromWishList = async (req: Request, res: Response) => {
     }
 
     const wishList = await WishList.findOneAndUpdate(
-      { user: req.user._id },
+      { user: req.user!._id },
       { $pull: { items: { product: productId } } },
       { new: true }
     ).populate("items.product", "name images subtitle price category stock colors type");

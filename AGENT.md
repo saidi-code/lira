@@ -611,6 +611,21 @@ would record a ledger change that never happened — and the next reconcile woul
 then "correct" the catalogue straight back, because the phantom movement implies
 the product really did change.
 
+### One-off migrations
+
+Both are read-only by default; neither needs to run on a fresh database.
+
+| Command | Purpose |
+|---|---|
+| `npm run repair:reservations` | Orders shipped *before* the `commit` fix still hold their units. Reconcile cannot see them (both sides of its comparison are wrong by the same amount), so this finds them by looking for fulfilled orders whose hold was never settled. `-- --fix` clears them via a real `release` movement. |
+| `npm run backfill:deltas` | Historical `StockMovement` rows predate the `delta` column. `-- --fix` derives each one from its `type`. |
+
+Both refuse to guess. `repair:reservations` skips orders with no warehouse
+stamp and never releases more than is actually held, so it cannot drive
+`reserved` negative. `backfill:deltas` reports old `transfer` rows as
+unrecoverable rather than inventing a direction for them — their only record of
+direction was a sign the schema used to reject.
+
 ### Adding a Movement Type
 
 1. Add to `MOVEMENT_TYPES` and `MOVEMENT_DELTAS` in `models/StockMovement.ts`
@@ -909,6 +924,44 @@ body (see §11 Order Pricing).
 | GET | `/warehouses/:id` | `admin,manager` | with a stock summary |
 | POST | `/warehouses/:id/default` | `admin,manager` | demotes the incumbent in the same pass |
 
+#### Admin
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/admin/stats` | `admin` | dashboard figures |
+| GET | `/admin/users` | `admin` | paginated, for picking who to promote |
+| PUT | `/admin/users/:id/role` | `admin` | `{ role }`; 400 on an unknown role, 409 if an admin tries to demote themselves |
+
+Role changes are admin-only by design — §10 gives `manager` "everything except
+user role changes", and this endpoint is the whole of that exclusion. A role is
+also synced from Clerk's `publicMetadata.role`; an *absent* one is left alone, so
+promoting someone in the database is not undone by their next sign-in.
+
+`authorize(...roles)` is typed against `USER_ROLES`, so a typo in a route is a
+compile error. That is not decoration: the routes were written with
+`manager`/`warehouse_staff` while `User.role` accepted only `user`/`admin`, so
+they compiled fine, matched nothing, and 403'd everyone.
+
+### Client Layer
+
+`client/config/*Api.ts` + `client/hooks/*` follow the `orderApi` / `useOrder`
+pattern: one typed module per domain, one hook per query or mutation.
+
+| Domain | API module | Hooks |
+|---|---|---|
+| Stock & warehouses | `config/inventoryApi.ts` | `useInventoryQuery`, `useLowStockQuery`, `useMovementsQuery`, `useWarehousesQuery`, `useAdjustStock` |
+| Purchasing | `config/purchasingApi.ts` | `useSuppliersQuery`, `useCreateSupplier`, `usePurchaseOrdersQuery`, `usePurchaseOrderQuery`, `useCreatePurchaseOrder`, `useReceivePurchaseOrder`, `useTransfersQuery`, `useCreateTransfer`, `useSetTransferStatus` |
+| Admin | `config/adminApi.ts` | `useAdminStats`, `useAdminUsers`, `useSetUserRole` |
+
+Every hook is `enabled: Boolean(isSignedIn)`, so a screen can mount before Clerk
+resolves without firing a request that will 401. Mutations invalidate what the
+change actually affects — a receipt invalidates both the purchase order *and* the
+inventory levels, because it changes what was ordered and what is on the shelf.
+
+The movement types are mirrored in `inventoryApi.ts` and must match
+`MOVEMENT_TYPES` on the server. They are not interchangeable: a `commit` settles
+a hold, an `out` is stock that was never held.
+
 ### Warehouses / Suppliers / Purchase Orders / Transfers / Reports
 
 See §10 for routes and roles.
@@ -954,6 +1007,25 @@ status so a double-submit cannot move the goods twice. `in_transit` is bookkeepi
 
 | Method | Path | Notes |
 |---|---|---|
+| POST | `/api/v1/clerk` | **must** be registered before `express.json()` — it needs the raw body for signature verification |
+
+`user.created` / `user.updated` upsert the local `User`; `user.deleted` removes
+it. Everything else gets a 200 so Clerk stops retrying it.
+
+Two things the handler must never do, both of which it used to:
+
+- **Assume an email address exists.** Clerk permits phone-only accounts, and the
+  storefront's own sign-up asks for a phone number, so `email_addresses[0].email_address`
+  was reachable. A throw here returns 400, which makes Clerk retry the *same*
+  event indefinitely, and the customer can never be created — so `protect` 401s
+  them forever. `email` is therefore optional and sparsely unique.
+- **Read-then-write.** A retry landing between the read and the write created a
+  second document, which tripped the unique index, returned 400, and was retried
+  again. It is a single upsert now.
+
+`role` is synced from Clerk's `publicMetadata.role` (must be one of §10's
+roles). A role that is *absent* from metadata is left alone, so promoting
+someone directly in the database is not undone by their next sign-in.
 | POST | `/clerk` | Signature-verified raw body |
 
 ---

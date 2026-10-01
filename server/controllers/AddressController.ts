@@ -4,14 +4,10 @@ import mongoose from "mongoose";
 import Address from "../models/Address.js";
 
 // ==================== TYPES ====================
-interface AuthUser {
-  _id: mongoose.Types.ObjectId;
-  role?: string;
-}
-
-interface AuthRequest extends Request {
-  user?: AuthUser;
-}
+// The `req.user` shape now comes from the Express global augmentation in
+// types/express.d.ts. This per-controller copy declared `role?: string`, which
+// is not assignable to `UserRole` — so it silently disagreed with the schema
+// that `authorize()` actually checks against.
 
 interface CreateAddressBody {
   type?: string;
@@ -42,7 +38,7 @@ interface AddressParams {
 // @route   POST /api/addresses
 // @access  Private
 export const createAddress = async (
-  req: AuthRequest,
+  req: Request,
   res: Response
 ): Promise<Response> => {
   try {
@@ -133,7 +129,7 @@ export const getAllAddresses = async (
 // @route   GET /api/addresses/user
 // @access  Private
 export const getAddressByUser = async (
-  req: AuthRequest,
+  req: Request,
   res: Response
 ): Promise<Response> => {
   try {
@@ -162,7 +158,7 @@ export const getAddressByUser = async (
 // @route   GET /api/addresses/:id
 // @access  Private
 export const getAddressById = async (
-  req: AuthRequest & Request<AddressParams>,
+  req: Request & Request<AddressParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -214,7 +210,7 @@ export const getAddressById = async (
 // @route   PUT /api/addresses/:id
 // @access  Private
 export const updateAddress = async (
-  req: AuthRequest & Request<AddressParams>,
+  req: Request & Request<AddressParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -289,7 +285,7 @@ export const updateAddress = async (
 // @route   DELETE /api/addresses/:id
 // @access  Private
 export const deleteAddress = async (
-  req: AuthRequest & Request<AddressParams>,
+  req: Request & Request<AddressParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -342,7 +338,7 @@ export const deleteAddress = async (
 // @route   PATCH /api/addresses/:id/default
 // @access  Private
 export const setDefaultAddress = async (
-  req: AuthRequest & Request<AddressParams>,
+  req: Request & Request<AddressParams>,
   res: Response
 ): Promise<Response> => {
   try {

@@ -22,17 +22,10 @@ import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
 
 // ==================== TYPES ====================
-interface AuthUser {
-  _id: mongoose.Types.ObjectId;
-  clerkId?: string;
-  name?: string;
-  email?: string;
-  role?: string;
-}
-
-interface AuthRequest extends Request {
-  user?: AuthUser;
-}
+// The `req.user` shape now comes from the Express global augmentation in
+// types/express.d.ts. This per-controller copy declared `role?: string`, which
+// is not assignable to `UserRole` — so it silently disagreed with the schema
+// that `authorize()` actually checks against.
 
 interface OrderItemInput {
   product: mongoose.Types.ObjectId | string;
@@ -297,7 +290,7 @@ export const cancelAndRestock = async (
 // @route   POST /api/orders
 // @access  Private
 export const createOrder = async (
-  req: AuthRequest,
+  req: Request,
   res: Response
 ): Promise<Response> => {
   try {
@@ -571,7 +564,7 @@ export const createOrder = async (
 // @route   GET /api/orders/my
 // @access  Private
 export const getMyOrders = async (
-  req: AuthRequest & Request<EmptyParams, unknown, unknown, OrderQuery>,
+  req: Request & Request<EmptyParams, unknown, unknown, OrderQuery>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -606,7 +599,7 @@ export const getMyOrders = async (
 // @route   GET /api/orders/:id
 // @access  Private
 export const getOrderById = async (
-  req: AuthRequest & Request<OrderParams>,
+  req: Request & Request<OrderParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -696,7 +689,7 @@ export const getAllOrders = async (
 // @route   PUT /api/orders/:id/status
 // @access  Admin
 export const updateOrderStatus = async (
-  req: AuthRequest & Request<OrderParams, unknown, UpdateOrderStatusBody>,
+  req: Request & Request<OrderParams, unknown, UpdateOrderStatusBody>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -811,7 +804,7 @@ export const updateOrderStatus = async (
 // @route   PUT /api/orders/:id/cancel
 // @access  Private
 export const cancelOrder = async (
-  req: AuthRequest & Request<OrderParams>,
+  req: Request & Request<OrderParams>,
   res: Response
 ): Promise<Response> => {
   try {
@@ -878,7 +871,7 @@ export const cancelOrder = async (
 // @route   DELETE /api/orders/:id
 // @access  Admin
 export const deleteOrder = async (
-  req: AuthRequest & Request<OrderParams>,
+  req: Request & Request<OrderParams>,
   res: Response
 ): Promise<Response> => {
   try {
