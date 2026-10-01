@@ -23,6 +23,9 @@ Thumbs.db
 tmp/
 temp/
 
+# scratch output (typecheck / lint / test dumps pasted from a shell)
+/*.txt
+
 # IDEs
 .vscode/
 .idea/

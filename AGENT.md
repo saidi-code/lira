@@ -606,6 +606,7 @@ Nightly 03:00 (`jobs/reconcileStock`):
 | `/addresses` | Addresses | `protect` |
 | `/orders` | Orders | `protect` (own) / `authorize('admin')` |
 | `/pricing` | Shipping fee + tax rate (display only) | public |
+| `/internal` | Scheduled jobs (`release-expired`) | shared secret, no user session |
 | `/reviews` | Reviews | public read, `protect` write |
 | `/inventory` | Stock levels | `authorize('admin','manager','warehouse_staff')` |
 | `/warehouses` | Warehouses | `authorize('admin','manager')` |
@@ -741,6 +742,34 @@ That claim → restock pair is unit-tested with a faked store in
 `server/tests/cancel.test.ts` (§13): double cancels, a restore that fails
 halfway, and the no-transaction rollback are all covered without a database.
 
+### Payment Lifecycle
+
+An order is created `pending` and holding stock. Two things can settle it, and
+both are single guarded writes in `services/orderLifecycleService.ts`:
+
+| Transition | Trigger | Effect |
+|---|---|---|
+| `pending` → `paid` | `PUT /orders/:id/pay` (admin), or a gateway webhook when one is wired in | money confirmed; stock stays deducted |
+| `pending` → released | `POST /internal/orders/release-expired` (scheduler) | order cancelled via `cancelAndRestock()`, stock back on the shelf |
+
+Rules:
+
+- **Only online orders expire.** `AWAITING_ONLINE_PAYMENT_METHODS` (today:
+  `stripe`) must be paid up front. `cash` is COD — settled on delivery — so it is
+  a real order holding stock, never an abandoned checkout.
+- **`PAYMENT_WINDOW_MINUTES`** (default `60`, `0` disables) bounds how long stock
+  may be held unpaid. This is AGENT.md §9's `release` movement: "cancel /
+  reservation expired".
+- **Both directions are race-safe.** `markOrderPaid` filters on
+  `paymentStatus: "pending"` and refuses a cancelled order; the sweep re-checks
+  each row before cancelling it, so a payment that lands mid-sweep wins and the
+  order is not released. A duplicate webhook reports `not_payable` (409) instead
+  of re-running fulfilment.
+- **A released order cannot be paid.** Its units are back on the shelf, so the
+  money has to be refunded rather than booked against a live order.
+
+Config is server-side only; covered by `server/tests/orderLifecycle.test.ts`.
+
 ### Replay Protection
 
 `POST /orders` honours an `Idempotency-Key` header. The key is stored on the order
@@ -818,6 +847,13 @@ body (see §11 Order Pricing).
 |---|---|---|---|
 | GET | `/pricing` | public | `shippingCost`, `taxRate`, `freeShippingThreshold` — for display; the server always recomputes the charged amounts |
 
+### Payments & Scheduled Jobs
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| PUT | `/orders/:id/pay` | `admin` | mark an order paid (settled COD delivery, or a gateway callback); 409 when it is no longer awaiting payment |
+| POST | `/internal/orders/release-expired` | `x-cron-secret` | cancel unpaid online orders past their window and restock them; `?limit=` 1–500 (default 100); 503 while `CRON_SECRET` is unset |
+
 ### Inventory
 
 | Method | Path | Auth | Notes |
@@ -849,7 +885,7 @@ runs exactly them on every push to `production` and on every pull request.
 |---|---|---|
 | `server/` | `npx tsc --noEmit --pretty false` | types — `noUnusedLocals` is on, so dead imports fail the build |
 | `server/` | `npm run lint` | ESLint — unreachable code, floating promises, useless assignment |
-| `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back) |
+| `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back), `tests/orderLifecycle.test.ts` (payment expiry) |
 | `client/` | `npx tsc --noEmit --pretty false` | types |
 | `client/` | `npx expo lint` | ESLint (flat config) |
 
@@ -885,3 +921,9 @@ order-flow change:
 3. Buy past a product's stock → `409`, and `Product.stock` is untouched.
 4. Admin cancels a `placed` order → `Product.stock` comes back by the ordered qty.
 5. Admin deletes a `placed` order → it is restocked first, then removed.
+6. Seed a `stripe` order with `paymentStatus: "pending"` and a `createdAt` older
+   than the window → call `POST /api/v1/internal/orders/release-expired` with the
+   right `x-cron-secret`: it reports `released: 1`, the order is `cancelled`, and
+   stock returns. Call it again → `released: 0`.
+7. `PUT /api/v1/orders/:id/pay` twice → first is 200, second is 409, and a
+   `cash` order that is unpaid is never touched by the sweep.
