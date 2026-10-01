@@ -58,8 +58,6 @@ export const movementDeltas = (
       return { quantity: 0, reserved: quantity };
     case "release":
       return { quantity: 0, reserved: -quantity };
-    case "commit":
-      return { quantity: -quantity, reserved: -quantity };
     case "adjust":
       return { quantity, reserved: 0 };
   }
@@ -88,7 +86,6 @@ export const guardFilter = (
       return {};
 
     case "out":
-    case "commit":
       return { quantity: { $gte: quantity } };
 
     case "release":
@@ -126,4 +123,227 @@ export const assertInvariants = (
       `Reserved (${next.reserved}) cannot exceed quantity (${next.quantity})`
     );
   }
+};
+
+export interface MovementInput {
+  product: mongoose.Types.ObjectId | string;
+  warehouse: mongoose.Types.ObjectId | string;
+  /** Positive for every type except `adjust`, which takes a signed delta. */
+  quantity: number;
+  reference?: string;
+  user?: mongoose.Types.ObjectId | string | null;
+  note?: string;
+}
+
+/**
+ * The single write path: guard, apply, record — in that order, in one session
+ * when one is supplied.
+ *
+ * Returns what is left afterwards so callers can report the real figure rather
+ * than assuming the movement succeeded.
+ */
+export const applyMovement = async (
+  type: MovementType,
+  input: MovementInput,
+  session?: ClientSession
+): Promise<{ quantity: number; reserved: number; available: number }> => {
+  if (!MOVEMENT_TYPES.includes(type)) {
+    throw new Error(`Unknown movement type: ${type}`);
+  }
+
+  const isAdjust = type === "adjust";
+  if (isAdjust ? !Number.isFinite(input.quantity) : input.quantity <= 0) {
+    throw new Error(
+      isAdjust
+        ? "adjust requires a signed quantity"
+        : "Movement quantity must be greater than zero"
+    );
+  }
+
+  const deltas = movementDeltas(type, input.quantity);
+
+  // Guard + increment in one server-side operation — this is what stops two
+  // concurrent movements overselling the last unit (§9).
+  const updated = await Inventory.findOneAndUpdate(
+    {
+      product: input.product,
+      warehouse: input.warehouse,
+      ...guardFilter(type, input.quantity),
+    },
+    { $inc: { quantity: deltas.quantity, reserved: deltas.reserved } },
+    { new: true, ...(session ? { session } : {}) }
+  );
+
+  if (!updated) {
+    throw new InsufficientStockError(
+      `Not enough stock for ${input.product} in warehouse ${input.warehouse}`
+    );
+  }
+
+  assertInvariants(updated);
+
+  // The audit row (§9's golden rule). Written in the same session so a movement
+  // can never exist without its ledger entry.
+  await StockMovement.create(
+    [
+      {
+        product: input.product,
+        warehouse: input.warehouse,
+        type,
+        quantity: Math.abs(input.quantity),
+        reference: input.reference ?? "",
+        user: input.user ?? null,
+        note: input.note ?? "",
+      },
+    ],
+    session ? { session } : undefined
+  );
+
+  return {
+    quantity: updated.quantity,
+    reserved: updated.reserved,
+    available: available(updated),
+  };
+};
+
+/**
+ * Applies one movement across many lines.
+ *
+ * Multi-item orders must be all-or-nothing: holding three of four products and
+ * failing on the fourth would reserve stock for an order that cannot be placed.
+ * `withOptionalTransaction` supplies the session and the compensating fallback.
+ */
+const applyMovementAll = async (
+  type: MovementType,
+  items: MovementInput[],
+  session?: ClientSession
+) => {
+  const results = [];
+  for (const item of items) {
+    results.push(await applyMovement(type, item, session));
+  }
+  return results;
+};
+
+/** Order placed: hold the units without moving them. */
+export const reserve = (items: MovementInput[], session?: ClientSession) =>
+  applyMovementAll("reserve", items, session);
+
+/** Cancel / reservation expired: give the hold back. */
+export const release = (items: MovementInput[], session?: ClientSession) =>
+  applyMovementAll("release", items, session);
+
+/**
+ * Order fulfilled: units leave the building. Recorded as `out` — see
+ * `MOVEMENT_TYPES` for why there is no separate `commit` movement.
+ */
+export const commit = (items: MovementInput[], session?: ClientSession) =>
+  applyMovementAll("out", items, session);
+
+/** PO receive / restock. */
+export const receive = (
+  items: Omit<MovementInput, "warehouse">[],
+  warehouse: mongoose.Types.ObjectId | string,
+  reference?: string
+) =>
+  applyMovementAll(
+    "in",
+    items.map((item) => ({ ...item, warehouse, reference })),
+    undefined
+  );
+
+/**
+ * Manual correction. `delta` is signed and must be explained by `reason` — an
+ * unexplained adjustment is indistinguishable from a bug.
+ */
+export const adjust = async (input: Omit<MovementInput, "quantity"> & {
+  quantity: number;
+  reason: string;
+}) => {
+  if (!input.reason?.trim()) {
+    throw new Error("An adjustment needs a reason");
+  }
+  return applyMovement("adjust", { ...input, note: input.reason });
+};
+
+/**
+ * Inter-warehouse move: leaves one ledger and arrives in the other.
+ *
+ * Both legs log their own movement (§9 logs one row per side), and the negative
+ * quantity is what encodes direction — `movementDeltas` reads it as a signed delta
+ * because the guard for `transfer` is the source-side floor.
+ */
+export const transfer = async (
+  fromWarehouse: mongoose.Types.ObjectId | string,
+  toWarehouse: mongoose.Types.ObjectId | string,
+  items: Omit<MovementInput, "warehouse">[]
+) => {
+  if (String(fromWarehouse) === String(toWarehouse)) {
+    throw new Error("Source and destination warehouses must differ");
+  }
+
+  const moved = [];
+  for (const item of items) {
+    const units = Math.abs(item.quantity);
+    moved.push(
+      await applyMovement("transfer", {
+        ...item,
+        warehouse: fromWarehouse,
+        quantity: -units,
+      })
+    );
+    moved.push(
+      await applyMovement("transfer", {
+        ...item,
+        warehouse: toWarehouse,
+        quantity: units,
+      })
+    );
+  }
+  return moved;
+};
+
+/** What a customer can still buy for this product, across one or all warehouses. */
+export const getAvailable = async (
+  productId: mongoose.Types.ObjectId | string,
+  warehouseId?: mongoose.Types.ObjectId | string
+): Promise<number> => {
+  const filter: Record<string, unknown> = { product: productId };
+  if (warehouseId) filter.warehouse = warehouseId;
+
+  const rows = await Inventory.find(filter)
+    .select("quantity reserved")
+    .lean();
+
+  return rows.reduce(
+    (sum, row) =>
+      sum + available(row as unknown as { quantity: number; reserved: number }),
+    0
+  );
+};
+
+/** Products at or below their reorder level (§9's low-stock alert). */
+export const getLowStock = async (
+  warehouseId?: mongoose.Types.ObjectId | string
+) => {
+  const filter: Record<string, unknown> = {};
+  if (warehouseId) filter.warehouse = warehouseId;
+
+  return Inventory.aggregate([
+    { $match: filter },
+    { $addFields: { available: { $subtract: ["$quantity", "$reserved"] } } },
+    { $match: { $expr: { $lte: ["$available", "$reorderLevel"] } } },
+    { $sort: { available: 1 } },
+  ]);
+};
+
+/** The warehouse a new product belongs in when no other is named. */
+export const getDefaultWarehouse = async () => {
+  const found = await Warehouse.findOne({ isDefault: true, isActive: true }).lean();
+  if (!found) {
+    throw new Error(
+      "No default warehouse — run `npm run seed:warehouses` before using inventory"
+    );
+  }
+  return found;
 };

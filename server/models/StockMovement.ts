@@ -17,6 +17,12 @@ export const MOVEMENT_TYPES = [
   "adjust", // manual correction, signed delta
 ] as const;
 
+/**
+ * `commit` is deliberately absent: fulfilment is an `out` movement. AGENT.md §9
+ * lists `commit()` as a *service* call, not a movement — a hold is released by
+ * taking the units out, and both facts belong in one ledger row.
+ */
+
 export type MovementType = (typeof MOVEMENT_TYPES)[number];
 
 const stockMovementSchema = new mongoose.Schema(
