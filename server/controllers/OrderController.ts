@@ -11,6 +11,12 @@ import {
   sessionOption,
   withOptionalTransaction,
 } from "../utils/transaction.js";
+import {
+  commitOrderStock,
+  releaseForOrder,
+  reserveForOrder,
+  transitionFor,
+} from "../services/orderStockService.js";
 import { sendOrderInvoiceEmail } from "../services/invoiceEmailService.js";
 import { resolveInvoiceRecipient } from "../services/resolveInvoiceRecipient.js";
 
@@ -97,6 +103,11 @@ interface StockLine {
   quantity: number;
 }
 
+// Stock is no longer moved here: `services/orderStockService.ts` owns the
+// ledger writes and keeps `Product.stock` (availability) in step. The helpers
+// below only exist to describe *what* must be moved and *when*, so the cancel and
+// checkout paths read the same way as before.
+
 const isDuplicateKeyError = (error: unknown): boolean =>
   (error as { code?: number })?.code === 11000;
 
@@ -108,44 +119,6 @@ const readIdempotencyKey = (req: Request): string | null => {
   const raw = req.get("Idempotency-Key");
   const key = typeof raw === "string" ? raw.trim() : "";
   return key ? key.slice(0, 120) : null;
-};
-
-/**
- * Atomically reserves stock for every line.
- *
- * The `stock: { $gte: quantity }` predicate makes the check-and-decrement a
- * single server-side operation, so two concurrent checkouts can never both pass
- * a stale read and oversell (AGENT.md §9, "concurrency: atomic deduction").
- */
-const deductStock = async (
-  lines: StockLine[],
-  session?: ClientSession
-): Promise<StockLine[]> => {
-  const deducted: StockLine[] = [];
-
-  for (const line of lines) {
-    const updated = await Product.findOneAndUpdate(
-      { _id: line.product, stock: { $gte: line.quantity } },
-      { $inc: { stock: -line.quantity } },
-      { new: true, ...sessionOption(session) }
-    );
-
-    if (!updated) throw new InsufficientStockError(line.name);
-    deducted.push(line);
-  }
-
-  return deducted;
-};
-
-/** Puts quantities back (failed checkout, cancellation, admin deletion). */
-const restoreStock = async (lines: StockLine[], session?: ClientSession) => {
-  for (const line of lines) {
-    await Product.updateOne(
-      { _id: line.product },
-      { $inc: { stock: line.quantity } },
-      sessionOption(session)
-    );
-  }
 };
 
 const toStockLines = (
@@ -186,6 +159,12 @@ type EmptyParams = Record<string, never>;
 export interface CancellableOrder {
   _id: mongoose.Types.ObjectId;
   orderStatus: string;
+  /**
+   * Used as the ledger `reference` so a movement can be traced to its order.
+   * Nullable because that is how the schema types it — `null` falls back to the
+   * id in `runCancellation`.
+   */
+  orderNumber?: string | null;
   items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[];
 }
 
@@ -207,7 +186,11 @@ export interface CancellationStore {
   ): Promise<{ orderStatus: string } | null>;
 
   /** Put the given lines back on the shelf. */
-  restoreStock(lines: StockLine[], session?: ClientSession): Promise<void>;
+  restoreStock(
+    lines: StockLine[],
+    session?: ClientSession,
+    reference?: string
+  ): Promise<void>;
 
   /** Undo a claim when there is no transaction to roll it back for us. */
   revertCancellation(
@@ -230,7 +213,8 @@ const orderStore: CancellationStore = {
     return claimed ? { orderStatus: claimed.orderStatus } : null;
   },
 
-  restoreStock: (lines, session) => restoreStock(lines, session),
+  restoreStock: (lines, session, reference) =>
+    releaseForOrder(lines, reference ?? "cancel", session),
 
   revertCancellation: async (orderId, previousStatus) => {
     await Order.updateOne(
@@ -261,7 +245,11 @@ export const runCancellation = async (
   if (!claimed) return false;
 
   try {
-    await store.restoreStock(toStockLines(order.items), session);
+    await store.restoreStock(
+      toStockLines(order.items),
+      session,
+      order.orderNumber ?? String(order._id)
+    );
   } catch (error) {
     // No session => no rollback, so undo our own status flip. With a session the
     // transaction aborts and takes the claim with it.
@@ -411,49 +399,54 @@ export const createOrder = async (
     const totals = computeTotals(orderItems);
     const stockLines = toStockLines(orderItems);
 
-    // ---------- Commit: reserve stock and write the order together ----------
-    // Under a transaction both writes land or neither does. Without one
-    // (standalone MongoDB has no transactions) `placeOrder` compensates by
-    // putting back whatever it already deducted, so a failed checkout cannot
-    // silently eat stock.
+    // ---------- Commit: write the order and reserve stock together ----------
+    // Under a transaction both land or neither does. Without one (standalone
+    // MongoDB has no transactions) the catch below removes the half-written order.
+    //
+    // The order is written *before* the hold so the ledger row can reference its
+    // real order number — an audit trail that points at a placeholder is worse
+    // than no trail. The availability guard still runs inside `reserveForOrder`,
+    // so nothing about the oversell protection moved.
     const placeOrder = async (session?: ClientSession) => {
-      let deducted: StockLine[] = [];
+      const [created] = await Order.create(
+        [
+          {
+            user: req.user!._id,
+            items: orderItems,
+            shippingAddress: {
+              type: addressDoc.type ?? "Other",
+              street: addressDoc.street,
+              city: addressDoc.city,
+              state: addressDoc.state,
+              zipCode: addressDoc.zipCode,
+              phoneNumber: addressDoc.phoneNumber,
+            },
+            paymentMethod: paymentMethod ?? "cash",
+            paymentStatus: "pending",
+            orderStatus: "placed",
+            ...totals,
+            notes,
+            idempotencyKey: idempotencyKey ?? undefined,
+          },
+        ],
+        sessionOption(session)
+      );
 
       try {
-        deducted = await deductStock(stockLines, session);
-
-        const [created] = await Order.create(
-          [
-            {
-              user: req.user!._id,
-              items: orderItems,
-              shippingAddress: {
-                type: addressDoc.type ?? "Other",
-                street: addressDoc.street,
-                city: addressDoc.city,
-                state: addressDoc.state,
-                zipCode: addressDoc.zipCode,
-                phoneNumber: addressDoc.phoneNumber,
-              },
-              paymentMethod: paymentMethod ?? "cash",
-              paymentStatus: "pending",
-              orderStatus: "placed",
-              ...totals,
-              notes,
-              idempotencyKey: idempotencyKey ?? undefined,
-            },
-          ],
-          sessionOption(session)
+        await reserveForOrder(
+          stockLines,
+          created.orderNumber ?? String(created._id),
+          session
         );
-
-        return created;
       } catch (error) {
-        // No session => nothing rolls the deductions back for us.
-        if (!session && deducted.length) {
-          await restoreStock(deducted).catch(() => undefined);
+        // `reserveForOrder` unwinds its own holds; only the order row is left.
+        if (!session) {
+          await Order.deleteOne({ _id: created._id }).catch(() => undefined);
         }
         throw error;
       }
+
+      return created;
     };
 
     let order: Awaited<ReturnType<typeof placeOrder>>;
@@ -748,10 +741,39 @@ export const updateOrderStatus = async (
       });
     }
 
+    // ---------- Fulfilment closes the ledger ----------
+    // `placed → shipped` is where the units actually leave the shelf: the hold is
+    // settled and `Inventory.quantity` finally drops. Without this the ledger
+    // would only ever grow and reconcile would report drift forever.
+    // `shipped → delivered` commits nothing (transitionFor says so), and a
+    // cancelled order was already released, so this cannot double-count.
+    const stockMove = transitionFor(order.orderStatus, orderStatus);
+
     if (orderStatus) order.orderStatus = orderStatus;
     if (paymentStatus) order.paymentStatus = paymentStatus;
 
     await order.save();
+
+    if (stockMove === "commit") {
+      try {
+        await commitOrderStock(
+          toStockLines(order.items),
+          order.orderNumber ?? String(order._id)
+        );
+      } catch (error) {
+        // The order moved but the ledger did not. Report it rather than pretend:
+        // `npm run reconcile` will show the difference until it is corrected.
+        console.error(
+          `Ledger commit failed for order ${order.orderNumber}:`,
+          error
+        );
+        return res.status(500).json({
+          success: false,
+          message:
+            "Order status updated, but stock could not be committed to the ledger — run `npm run reconcile`",
+        });
+      }
+    }
 
     return res.status(200).json({
       success: true,

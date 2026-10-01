@@ -17,6 +17,7 @@ import {
   movementDeltas,
 } from "../services/inventoryService.js";
 import { findDrift } from "../services/reconcileService.js";
+import { transitionFor } from "../services/orderStockService.js";
 
 describe("available (§9)", () => {
   it("is quantity minus the hold", () => {
@@ -115,6 +116,13 @@ describe("findDrift (reconciliation, §9)", () => {
     assert.deepEqual(findDrift([row("a", 5, 5), row("b", 0, 0)]), []);
   });
 
+  it("treats held units as agreement, not drift", () => {
+    // 10 on the shelf, 4 held for a pending order: availability is 6, and that is
+    // what Product.stock should say. Comparing on-shelf quantity would flag this
+    // as drift on every open order.
+    assert.deepEqual(findDrift([row("a", 6, 10 - 4)]), []);
+  });
+
   it("reports a product whose rows vanished", () => {
     const drift = findDrift([row("a", 5, 0)]);
     assert.equal(drift.length, 1);
@@ -131,5 +139,34 @@ describe("findDrift (reconciliation, §9)", () => {
 
   it("ignores float noise", () => {
     assert.deepEqual(findDrift([row("a", 5, 5 + 1e-12)]), []);
+  });
+});
+
+describe("transitionFor — when fulfilment closes the ledger", () => {
+  it("commits when an order leaves a holding state for the first time", () => {
+    assert.equal(transitionFor("placed", "shipped"), "commit");
+    assert.equal(transitionFor("processing", "shipped"), "commit");
+    assert.equal(transitionFor("placed", "delivered"), "commit");
+  });
+
+  it("never commits twice for the same order", () => {
+    // shipped → delivered must not deduct a second time.
+    assert.equal(transitionFor("shipped", "delivered"), "none");
+    assert.equal(transitionFor("delivered", "delivered"), "none");
+  });
+
+  it("never commits a cancelled order", () => {
+    // Cancel already released the hold; the units are back on the shelf.
+    assert.equal(transitionFor("cancelled", "shipped"), "none");
+  });
+
+  it("does nothing when the status is unchanged or absent", () => {
+    assert.equal(transitionFor("placed", "placed"), "none");
+    assert.equal(transitionFor("placed", undefined), "none");
+  });
+
+  it("does not commit an ordinary in-house move", () => {
+    assert.equal(transitionFor("placed", "processing"), "none");
+    assert.equal(transitionFor("processing", "placed"), "none");
   });
 });

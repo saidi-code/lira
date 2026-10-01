@@ -20,7 +20,7 @@ export const listWarehouses = async (
       .sort({ isDefault: -1, name: 1 })
       .lean();
     return res.status(200).json({ success: true, data: warehouses });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       success: false,
       message: "Error fetching warehouses",
@@ -65,7 +65,7 @@ export const getWarehouse = async (
         inventory: rows,
       },
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       success: false,
       message: "Error fetching warehouse",

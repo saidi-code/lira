@@ -561,13 +561,25 @@ if (!updated) throw new ConflictError('Insufficient stock');
 
 Multi-item orders wrap in one session/transaction.
 
-> **Status:** the `Inventory` / `StockMovement` model described above does not
-> exist yet, so checkout today applies this exact pattern straight to
-> `Product.stock` — `deductStock()` / `restoreStock()` in
-> `server/controllers/OrderController.ts`, wrapped by
-> `server/utils/transaction.ts` (`withOptionalTransaction` runs a real
-> transaction on a replica set and falls back to compensating writes on a
-> standalone dev `mongod`). Migrate to `inventoryService` when it lands.
+> **Status:** implemented end-to-end. Checkout goes through
+> `services/orderStockService.ts`, which is the only place that writes stock:
+>
+> | Order event | Ledger | `Product.stock` |
+> |---|---|---|
+> | placed | `reserve` (hold) | `− n` |
+> | cancelled / expired | `release` | `+ n` |
+> | shipped | `commit` (units leave) | unchanged |
+>
+> Two things to know before touching it:
+>
+> - **Order is written before the hold**, so the movement can reference the real
+>   order number. Without a transaction the half-written order is deleted again.
+> - **`npm run seed:warehouses` is required** for the ledger to be live. Without a
+>   default warehouse the bridge falls back to the pre-ledger behaviour and logs
+>   one warning; that fallback is a migration aid, not a permanent design.
+>
+> `npm run reconcile` compares `Σ(quantity − reserved)` against `Product.stock`
+> and only rewrites it with `--fix`.
 
 ### Reconciliation
 
@@ -610,6 +622,7 @@ Nightly 03:00 (`jobs/reconcileStock`):
 | `/reviews` | Reviews | public read, `protect` write |
 | `/inventory` | Stock levels | `authorize('admin','manager','warehouse_staff')` |
 | `/warehouses` | Warehouses | `authorize('admin','manager')` |
+| `/internal` | Scheduled jobs (payment-expiry sweep) | shared secret, no user session |
 | `/suppliers` | Suppliers | `authorize('admin','manager')` |
 | `/purchase-orders` | PO workflow | `authorize('admin','manager')` |
 | `/transfers` | Transfers | `authorize('admin','manager','warehouse_staff')` |
@@ -686,7 +699,7 @@ Nightly 03:00 (`jobs/reconcileStock`):
 
 1. `Inventory` unique on `(product, warehouse)`
 2. Every quantity change → `StockMovement`
-3. `Product.stock` = Σ `Inventory.quantity` (reconciled nightly)
+3. `Product.stock` = Σ (`Inventory.quantity` − `Inventory.reserved`) — **availability**, not on-shelf units. The storefront reads this field directly, so units held for open orders must not look sellable. Verified by `npm run reconcile`.
 4. `Inventory.reserved ≤ Inventory.quantity`
 5. `PurchaseOrderItem.receivedQty ≤ PurchaseOrderItem.quantity`
 
@@ -858,10 +871,14 @@ body (see §11 Order Pricing).
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| GET | `/inventory` | `admin,manager,warehouse_staff` | `warehouse`, `product`, `lowStock=true` |
-| GET | `/inventory/:productId` | same | Per-warehouse |
-| POST | `/inventory/adjust` | `admin,manager` | `{ productId, warehouseId, quantity, reason }` |
-| GET | `/inventory/movements` | `admin,manager` | Paginated |
+| GET | `/inventory` | `admin,manager,warehouse_staff` | `warehouse`, `page`, `limit` |
+| GET | `/inventory/low-stock` | same | at or below reorder level |
+| GET | `/inventory/:productId` | same | available units across warehouses |
+| POST | `/inventory/adjust` | `admin,manager` | `{ productId, warehouseId, quantity /* signed */, reason }` — 409 if it would go negative |
+| GET | `/inventory/movements` | `admin,manager,warehouse_staff` | `product`, `warehouse`, `type`, paginated |
+| GET | `/warehouses` | `admin,manager` | |
+| GET | `/warehouses/:id` | `admin,manager` | with a stock summary |
+| POST | `/warehouses/:id/default` | `admin,manager` | demotes the incumbent in the same pass |
 
 ### Warehouses / Suppliers / Purchase Orders / Transfers / Reports
 
@@ -927,3 +944,21 @@ order-flow change:
    stock returns. Call it again → `released: 0`.
 7. `PUT /api/v1/orders/:id/pay` twice → first is 200, second is 409, and a
    `cash` order that is unpaid is never touched by the sweep.
+
+### After the ledger migration — needs a live MongoDB
+
+Run `npm run seed:warehouses` first; without a default warehouse the bridge logs
+a warning and only `Product.stock` moves.
+
+1. Place an order → `Inventory.reserved` rises by the ordered quantity,
+   `Inventory.quantity` does **not** change, and `Product.stock` falls by the
+   same amount.
+2. `GET /inventory/movements?reference=<ORD-…>` → a `reserve` row exists for that
+   order number.
+3. Move the order to `shipped` → an `out` movement, `reserved` drops to 0 and
+   `quantity` finally falls. Move it again to `delivered` → **no** second
+   movement.
+4. Cancel a `placed` order → a `release` row, `reserved` back to 0,
+   `Product.stock` restored.
+5. `npm run reconcile` → "No drift". If you skip the seed it will report every
+   product, which is the expected signal that the ledger is not in use.

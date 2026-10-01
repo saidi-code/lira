@@ -23,12 +23,19 @@ const main = async () => {
 
   await connectDB();
 
-  // One row per product: sum across every warehouse (§9 step 1).
+  // One row per product: availability across every warehouse (§9 step 1).
+  // Σ(quantity − reserved), because that is what `Product.stock` now means —
+  // comparing against on-shelf quantity would flag every pending order as drift.
   const summed = await Inventory.aggregate<{
     _id: unknown;
     ledger: number;
   }>([
-    { $group: { _id: "$product", ledger: { $sum: "$quantity" } } },
+    {
+      $group: {
+        _id: "$product",
+        ledger: { $sum: { $subtract: ["$quantity", "$reserved"] } },
+      },
+    },
   ]);
 
   const ledgerByProduct = new Map(

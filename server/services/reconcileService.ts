@@ -6,6 +6,10 @@
 // `Inventory` + `StockMovement` is the truth. Drift between them means a write
 // bypassed `inventoryService` — usually a hand-edited document.
 //
+// Both sides are compared as *availability* (§9): `Σ(quantity − reserved)` versus
+// `Product.stock`. On-shelf quantity is deliberately not compared — pending orders
+// make the two differ legitimately, and flagging that would drown real problems.
+//
 // The rule lives here, not in the script, so it can be unit-tested: importing
 // scripts/reconcileStock.ts would run its `main()` and open a database
 // connection.
@@ -14,9 +18,9 @@
 export interface DriftRow {
   productId: string;
   name: string;
-  /** Summed `Inventory.quantity` across every warehouse. */
+  /** Σ(quantity − reserved) across every warehouse — what is sellable. */
   ledger: number;
-  /** What the catalogue currently claims. */
+  /** What `Product.stock` currently claims. */
   catalogue: number;
   delta: number;
 }
