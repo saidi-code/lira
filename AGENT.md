@@ -1188,8 +1188,31 @@ reachable only by hand; `useCancelPurchaseOrder` now wraps it. Its 409 is worth
 reading — the server refuses to cancel once any line has stock in, because
 cancelling then would orphan goods sitting on a shelf.
 
-Still unreachable from any UI, though finished and tested on the server:
-transfers, warehouses, and user/role management.
+Every backend admin endpoint now has a screen. Transfers, warehouses and
+user/role management were the last three, and they followed the same pattern
+twice more: an API method with no hook over it —
+`purchasingApi.cancelPurchaseOrder` and `inventoryApi.setDefaultWarehouse` both
+existed and were reachable only by hand until a screen needed them.
+
+**Transfers** are built around the fact that only `completed` moves stock.
+Creating one records an intention, so the form says so; `draft` and `in_transit`
+are shown as having moved nothing. The advance is confirmed before it is sent,
+because the server guards the status change and a 409 after the fact still
+leaves one person looking at stale numbers.
+
+**Warehouses** are read-only apart from "make default", which demotes the
+incumbent in the same server pass so there is never a moment with two defaults.
+Creation stays on `npm run seed:warehouses` and the empty state says so, rather
+than offering a form that would have to be undone.
+
+**Staff** carries the warning that a role set here is overwritten on the next
+sign-in, because the Clerk webhook re-syncs from `publicMetadata`. That is a
+real footgun: the change appears to work and silently reverts. `cashier` is
+listed and labelled "grants no access today" rather than hidden, so the gap
+between what is assignable and what is useful stays visible.
+
+That completes the admin surface. The one remaining piece of documented
+architecture that was never built is Redis + BullMQ + `server/jobs/`.
 
 The signature check is covered as well. `webhookSignature.integration.test.ts`
 drives the real handler over a real socket, signing payloads with

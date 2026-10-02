@@ -99,6 +99,26 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
+        name="transfers"
+        options={{
+          title: "Move",
+          href: can("transfers") ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="swap-horizontal-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="staff"
+        options={{
+          title: "Staff",
+          href: can("users") ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="orders"
         options={{
           title: "Orders",
