@@ -114,6 +114,20 @@ jobs:
 
       - run: npm ci
 
+      # expo-router only writes .expo/types/router.d.ts from the dev server, and
+      # `.expo/` is gitignored — so without this step the typecheck below ran with
+      # no route types at all, and `router.push("/admin/typo")` compiled clean in
+      # CI while failing on any machine that had run `expo start` once. It did
+      # exactly that twice while the backoffice was being built.
+      #
+      # This calls expo-router's own generator with a require.context we build
+      # from the app directory, so it produces the same file the dev server writes
+      # — verified byte-for-byte against it — in ~0.1s instead of starting Metro.
+      # `npx expo export --platform web` was tried first: 113s, and it does not
+      # write the types either.
+      - name: Generate route types
+        run: npm run types:routes
+
       - name: Typecheck
         run: npx tsc --noEmit --pretty false
 

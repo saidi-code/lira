@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "tunnel": "expo start --tunnel",
     "inst": "npx expo install --check",
-    "test": "node --import tsx --test tests/permissions.test.ts"
+    "test": "node --import tsx --test tests/permissions.test.ts",
+    "types:routes": "node scripts/generateRouteTypes.cjs"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
