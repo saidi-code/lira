@@ -18,6 +18,7 @@ import connectDB from "../config/db.js";
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Products.js";
 import { findDrift, type DriftRow } from "../services/reconcileService.js";
+import { isDirectRun } from "../utils/isDirectRun.js";
 
 export interface ReconcileResult {
   products: number;
@@ -138,7 +139,7 @@ const main = async () => {
 };
 
 // Only run when executed directly, so importing this for a test is inert.
-if (process.argv[1]?.includes("reconcileStock")) {
+if (isDirectRun("reconcileStock")) {
   main().catch(async (error) => {
     console.error("reconcile failed:", error);
     await Inventory.db.close().catch(() => undefined);

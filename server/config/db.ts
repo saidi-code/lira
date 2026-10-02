@@ -3,6 +3,38 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+/**
+ * Build the connection string from the environment.
+ *
+ * Exported and pure so a maintenance script can reuse it without importing the
+ * side effects of `connectDB()` — which creates indexes on every connect, and so
+ * would make a "read-only" report not read-only.
+ *
+ * Takes `env` as a parameter rather than reading `process.env` directly so the
+ * behaviour is testable without mutating the real environment.
+ *
+ * Note: this strips everything after the final `/`. A URI with no database path
+ * therefore collapses to `mongodb+srv:/dbname` — losing host and credentials —
+ * so `.env.example` always shows a path. That fails loudly at connect time rather
+ * than connecting somewhere unintended, and the behaviour is pinned by a test.
+ */
+export const resolveDbUri = (
+  env: NodeJS.ProcessEnv = process.env
+): string => {
+  const baseUri = env.MONGODB_URI_BASE || env.DB_URI;
+  const dbName = env.DB_NAME;
+
+  if (!baseUri || !dbName) {
+    throw new Error(
+      "Missing DB config. Set MONGODB_URI_BASE (or DB_URI) and DB_NAME. See .env.example"
+    );
+  }
+
+  // Clean base URI (remove trailing / and ? params DB if any), append DB_NAME
+  const cleanBase = baseUri.replace(/[^/]*$/, "").replace(/\/+$/, "");
+  return `${cleanBase}/${dbName}`;
+};
+
 const connectDB = async () => {
   mongoose.connection.on("connected", () => {
     console.log("Connected to MongoDB");
@@ -16,18 +48,7 @@ const connectDB = async () => {
     console.log("Disconnected from MongoDB");
   });
 
-  const baseUri = process.env.MONGODB_URI_BASE || process.env.DB_URI;
-  const dbName = process.env.DB_NAME;
-
-  if (!baseUri || !dbName) {
-    throw new Error(
-      "Missing DB config. Set MONGODB_URI_BASE (or DB_URI) and DB_NAME. See .env.example"
-    );
-  }
-
-  // Clean base URI (remove trailing / and ? params DB if any), append DB_NAME
-  const cleanBase = baseUri.replace(/[^/]*$/, "").replace(/\/+$/, "");
-  const fullUri = `${cleanBase}/${dbName}`;
+  const fullUri = resolveDbUri();
 
   // Log masked
   const maskedUri = fullUri.replace(
@@ -56,8 +77,10 @@ const connectDB = async () => {
     //
     // One-time cleanup for an existing deployment: the two conflicting text
     // indexes that used to sit on `Product` (see models/Colors.ts) are still on
-    // the collection, because this call will not remove them. Drop them once by
-    // hand, or run `Model.syncIndexes()` for that model explicitly.
+    // the collection, because this call will not remove them. Run
+    // `npm run indexes:products -- --fix`, which drops exactly those and then
+    // builds the declared ones. It is not done here because a startup path that
+    // drops indexes is the very thing this function was changed to stop doing.
     await Promise.all(
       Object.values(mongoose.models).map((model) =>
         model.createIndexes().catch((err) => {

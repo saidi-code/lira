@@ -21,6 +21,7 @@ import Order from "../models/Order.js";
 import StockMovement from "../models/StockMovement.js";
 import { applyMovement } from "../services/inventoryService.js";
 import { strandedReservations } from "../services/reconcileService.js";
+import { isDirectRun } from "../utils/isDirectRun.js";
 
 export interface RepairResult {
   fulfilled: number;
@@ -181,7 +182,7 @@ const main = async () => {
 };
 
 // Only run when executed directly, so importing this for a test is inert.
-if (process.argv[1]?.includes("repairStrandedReservations")) {
+if (isDirectRun("repairStrandedReservations")) {
   main().catch(async (error) => {
     console.error("repair:reservations failed:", error);
     await Inventory.db.close().catch(() => undefined);

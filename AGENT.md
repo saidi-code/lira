@@ -613,18 +613,23 @@ the product really did change.
 
 ### One-off migrations
 
-Both are read-only by default; neither needs to run on a fresh database.
+All three are read-only by default; none needs to run on a fresh database.
 
 | Command | Purpose |
 |---|---|
 | `npm run repair:reservations` | Orders shipped *before* the `commit` fix still hold their units. Reconcile cannot see them (both sides of its comparison are wrong by the same amount), so this finds them by looking for fulfilled orders whose hold was never settled. `-- --fix` clears them via a real `release` movement. |
 | `npm run backfill:deltas` | Historical `StockMovement` rows predate the `delta` column. `-- --fix` derives each one from its `type`. |
+| `npm run indexes:products` | Drops the two stale text indexes on `Product`, then builds the indexes the schema declares. Read the deployment checklist before running with `-- --fix`: until this has been run on an existing database, no `Product` index exists at all. |
 
-Both refuse to guess. `repair:reservations` skips orders with no warehouse
+All three refuse to guess. `repair:reservations` skips orders with no warehouse
 stamp and never releases more than is actually held, so it cannot drive
 `reserved` negative. `backfill:deltas` reports old `transfer` rows as
 unrecoverable rather than inventing a direction for them — their only record of
-direction was a sign the schema used to reject.
+direction was a sign the schema used to reject. `indexes:products` drops only
+indexes it can identify as *text* indexes the schema does not declare; anything
+else extraneous is reported and left in place, because a hand-added index might
+be there on purpose and dropping the wrong one is not something a report can
+undo.
 
 ### Adding a Movement Type
 
@@ -1030,8 +1035,10 @@ Two follow-ups, both product decisions rather than bugs:
 
   **One-time cleanup needed on an existing deployment:** the two conflicting text
   indexes that used to sit on `Product` are still on the collection, because
-  `createIndexes()` will not remove them. Drop them by hand, or run
-  `Product.syncIndexes()` once.
+  `createIndexes()` will not remove them. Run `npm run indexes:products -- --fix`
+  (see the deployment checklist). `Product.syncIndexes()` would remove them too,
+  but it drops *every* index the schema does not declare, which is the asymmetry
+  this component exists to avoid — so it is not used here either.
 
 ## `escapeRegex` — mandatory for any user input in a query
 
@@ -1254,16 +1261,18 @@ without the flag, read the report, and only then decide.
 4. Only after reviewing: repeat each with `--fix`, then re-run `reconcile` and
    confirm "No drift".
 
-**Then, once, by hand:**
+**Then, once, on an existing deployment:**
 
-- Drop the two stale text indexes on `Product`. They were created by schemas
+- `npm run indexes:products` — drops the two stale text indexes on `Product` and
+  then builds the indexes the schema declares. They were created by schemas
   embedded inside it; `Product.init()` could not build any index while they
-  existed, and `createIndexes()` will not remove them. Either drop them in
-  `mongosh` or run `Product.syncIndexes()` once — explicitly, for that model
-  only.
-- Verify `Product` indexes actually exist now. `db.ts` logs and continues on
-  failure, so a failed `init()` is otherwise silent:
-  `db.products.getIndexes()` should list the declared ones.
+  existed, so **no Product index was ever built** and every query that should have
+  used one fell back to a collection scan. `createIndexes()` will not remove them,
+  which is why this is a separate, deliberate step.
+  Report-only by default, and exits 2 when there is something to drop. `-- --fix`
+  removes them. It reads the resulting indexes back afterwards, so the "Final
+  state" listing is evidence rather than a claim — that is the check the previous
+  advice ("verify `db.products.getIndexes()` by hand") was asking for.
 
 **Required environment before real traffic:**
 

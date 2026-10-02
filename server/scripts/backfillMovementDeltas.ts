@@ -20,6 +20,7 @@ import connectDB from "../config/db.js";
 import Inventory from "../models/Inventory.js";
 import StockMovement from "../models/StockMovement.js";
 import { recoverableDelta } from "../services/reconcileService.js";
+import { isDirectRun } from "../utils/isDirectRun.js";
 
 export interface BackfillResult {
   legacy: number;
@@ -123,7 +124,7 @@ const main = async () => {
 };
 
 // Only run when executed directly, so importing this for a test is inert.
-if (process.argv[1]?.includes("backfillMovementDeltas")) {
+if (isDirectRun("backfillMovementDeltas")) {
   main().catch(async (error) => {
     console.error("backfill:deltas failed:", error);
     await Inventory.db.close().catch(() => undefined);
