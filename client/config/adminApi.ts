@@ -9,22 +9,13 @@
 // ==========================================
 import { api } from "./api";
 import type { Pagination } from "./orderApi";
+import type { UserRole } from "../constants/roles";
 
-/** Mirrors `USER_ROLES` in `server/models/User.ts`. */
-export type UserRole =
-  | "user"
-  | "admin"
-  | "manager"
-  | "cashier"
-  | "warehouse_staff";
-
-export const USER_ROLES: readonly UserRole[] = [
-  "user",
-  "admin",
-  "manager",
-  "cashier",
-  "warehouse_staff",
-];
+// The role list lives in `constants/roles` so the permission rules can use it
+// without dragging in the HTTP client. Re-exported here because callers already
+// import it from this module.
+export { USER_ROLES } from "../constants/roles";
+export type { UserRole };
 
 export interface AdminUser {
   _id: string;

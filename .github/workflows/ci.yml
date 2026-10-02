@@ -97,7 +97,7 @@ jobs:
           ls -la "$MONGOMS_DOWNLOAD_DIR"
 
   client:
-    name: client — typecheck + lint
+    name: client — typecheck + lint + unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -122,3 +122,18 @@ jobs:
       # query hook lives — were never linted at all, in CI or by hand.
       - name: Lint
         run: npx eslint .
+
+      # The role rules in `constants/permissions.ts` decide which backoffice
+      # screens exist per role, and they are a hand-copied mirror of the
+      # server's `authorize(...)` lists. Nothing else would notice them drifting
+      # apart, so they are pinned here like the server's own unit tests.
+      #
+      # A KNOWN GAP, not an oversight: this typecheck runs *without* the
+      # expo-router generated types, because `.expo/` is gitignored and only the
+      # dev server writes them. So `router.push("/admin/typo")` compiles clean
+      # here and fails on a machine that has run `expo start` once. The
+      # permission tests below are the part that can run DB-free and secret-free;
+      # regenerating the route types in CI would need a Metro build and is left
+      # as a known limitation rather than pretended to be covered.
+      - name: Unit tests
+        run: npm test

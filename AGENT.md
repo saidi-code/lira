@@ -1159,6 +1159,25 @@ This deliberately needs no dashboard access. The one thing that closes this gap
 is a human clicking "send test event", so the only credential it ever required is
 the signing secret already in `.env`.
 
+**What the roles can see.** `client/constants/permissions.ts` mirrors each route's
+`authorize(...)` list, and `app/admin/_layout.tsx` filters tabs with it. It used
+to be a single `role !== "admin"` check, which bounced a `manager` or
+`warehouse_staff` member to the homepage even though the server had already
+opened every inventory and transfer endpoint to them. Read the
+`router.use(protect, authorize(...))` lines when changing it — the routes are the
+original, that file is the copy, and `client/tests/permissions.test.ts` fails if
+the two disagree about which roles are staff.
+
+`cashier` is deliberately not staff: it is assignable and the enum validates it,
+but no route grants it anything, so admitting it would show an empty backoffice.
+
+The backoffice now reaches inventory: stock levels, a low-stock view, the
+movement ledger and adjustments. `available` (quantity − reserved) is what the
+screens show, never raw `quantity`, because showing on-hand stock is what makes a
+backoffice look healthy while the shop is already selling what is spoken for.
+Still unreachable from any UI, though finished and tested on the server: purchase
+orders, receiving, transfers, suppliers, warehouses and user/role management.
+
 The signature check is covered as well. `webhookSignature.integration.test.ts`
 drives the real handler over a real socket, signing payloads with
 `standardwebhooks` — the library Clerk itself verifies with — against a secret
@@ -1207,6 +1226,7 @@ runs exactly them on every push to `production` and on every pull request.
 | `server/` | `npx tsc --noEmit --pretty false` | types — `noUnusedLocals` is on, so dead imports fail the build |
 | `server/` | `npm run lint` | ESLint — unreachable code, floating promises, useless assignment |
 | `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back), `tests/orderLifecycle.test.ts` (payment expiry) |
+| `client/` | `npm test` | `tests/permissions.test.ts` (which backoffice screens each role gets) |
 | `client/` | `npx tsc --noEmit --pretty false` | types |
 | `client/` | `npx expo lint` | ESLint (flat config) |
 
@@ -1229,6 +1249,14 @@ Keeping CI trustworthy:
 - **`types/express.d.ts` must stay a module.** Its `export {}` is what makes
   `declare global` legal; removing it silently drops the `req.user` augmentation
   and every controller stops compiling (TS2339).
+- **The client typecheck runs without expo-router's generated types.** `.expo/`
+  is gitignored and only the dev server writes `router.d.ts`, so in CI
+  `router.push("/admin/typo")` compiles clean and fails on any machine that has
+  run `expo start` once. Worth closing with a cached Metro type generation, but
+  it costs a full bundle step — recorded rather than pretended to be covered.
+- **The client's own role rules are a hand-copy of the server's.** A test asserts
+  they agree on which roles are staff, but nothing parses the route files, so a
+  new `authorize(...)` argument can still be forgotten here.
 - Node 22 in CI matches the local toolchain.
 
 ### Still manual — needs a live MongoDB

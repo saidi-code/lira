@@ -1,12 +1,14 @@
 import { COLORS } from "@/constants";
 import { useAppColors } from "@/constants/utility";
-import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+
+import { usePermissions } from "../../hooks/usePermissions";
+
 export default function AdminLayout() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded, isStaff, can } = usePermissions();
 
   const router = useRouter();
 
@@ -15,10 +17,12 @@ export default function AdminLayout() {
   const colors = useAppColors();
 
   useEffect(() => {
-    if (isLoaded && (!user || user.publicMetadata?.role !== "admin")) {
+    // Only once Clerk has resolved: `role` is null until then, and redirecting on
+    // that would bounce a signed-in manager out during the first render.
+    if (isLoaded && !isStaff) {
       router.replace("/");
     }
-  }, [isLoaded, user, router]);
+  }, [isLoaded, isStaff, router]);
 
   if (!isLoaded) {
     return (
@@ -28,7 +32,7 @@ export default function AdminLayout() {
     );
   }
 
-  if (!user || user.publicMetadata?.role !== "admin") return null;
+  if (!isStaff) return null;
 
   return (
     <Tabs
@@ -54,19 +58,31 @@ export default function AdminLayout() {
         ),
       }}
     >
+      {/*
+        Tabs are filtered by capability, and `href: null` removes the tab rather
+        than just hiding its icon — the route stays registered but is guarded by
+        its own screen, so a deep link cannot walk past this.
+
+        The old gate was `role !== "admin"`, which hid the inventory and transfer
+        tools from the `manager` and `warehouse_staff` roles the server had
+        already opened to. A manager could call every inventory endpoint
+        successfully and never see a single one of them.
+      */}
       <Tabs.Screen
         name="index"
         options={{
           title: "Dashboard",
+          href: can("dashboard") ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="products"
+        name="inventory"
         options={{
-          title: "Products",
+          title: "Stock",
+          href: can("inventory.read") ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cube-outline" size={size} color={color} />
           ),
@@ -76,8 +92,19 @@ export default function AdminLayout() {
         name="orders"
         options={{
           title: "Orders",
+          href: can("orders") ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="products"
+        options={{
+          title: "Products",
+          href: can("products") ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pricetag-outline" size={size} color={color} />
           ),
         }}
       />
