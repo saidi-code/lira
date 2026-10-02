@@ -619,7 +619,7 @@ All three are read-only by default; none needs to run on a fresh database.
 |---|---|
 | `npm run repair:reservations` | Orders shipped *before* the `commit` fix still hold their units. Reconcile cannot see them (both sides of its comparison are wrong by the same amount), so this finds them by looking for fulfilled orders whose hold was never settled. `-- --fix` clears them via a real `release` movement. |
 | `npm run backfill:deltas` | Historical `StockMovement` rows predate the `delta` column. `-- --fix` derives each one from its `type`. |
-| `npm run indexes:products` | Drops the two stale text indexes on `Product`, then builds the indexes the schema declares. Read the deployment checklist before running with `-- --fix`: until this has been run on an existing database, no `Product` index exists at all. |
+| `npm run indexes:products` | Drops the stale text index on `Product`, then builds the indexes the schema declares. Read the deployment checklist before running with `-- --fix`: until this has been run on an existing database, no `Product` index exists at all. |
 
 All three refuse to guess. `repair:reservations` skips orders with no warehouse
 stamp and never releases more than is actually held, so it cannot drive
@@ -1136,6 +1136,29 @@ Everything else gets a 200 so Clerk stops retrying it. The write goes through
 `applyUserPlan` behind a `UserWriter`, so it is exercised against a real database
 by `npm run test:integration`.
 
+**Confirming a live delivery.** The crypto, the secret and every rejection path are
+covered by tests, but no test can prove that Clerk's own request reaches the
+server *through whatever proxy sits in front of it* — and a webhook that never
+lands is not a degraded experience, it is every customer locked out behind
+"user not found in database", because `protect` resolves the local `User` by
+`clerkId`. So that has to be checked once, against the real deployment, by
+sending a real event and looking at the database:
+
+```
+npm run verify:clerk-sync                          # the 5 most recent accounts
+npm run verify:clerk-sync -- --recent 15           # only those synced just now
+npm run verify:clerk-sync -- --clerk-id user_abc   # one specific account
+```
+
+Read-only, and it exits 2 when nothing arrived, so a check can tell "arrived"
+from "did not" without reading the output. Send the event from Clerk's Webhooks
+log, then run it with `--recent`: a new `user` row means the delivery landed and
+the whole auth path is proven end to end.
+
+This deliberately needs no dashboard access. The one thing that closes this gap
+is a human clicking "send test event", so the only credential it ever required is
+the signing secret already in `.env`.
+
 The signature check is covered as well. `webhookSignature.integration.test.ts`
 drives the real handler over a real socket, signing payloads with
 `standardwebhooks` — the library Clerk itself verifies with — against a secret
@@ -1263,16 +1286,21 @@ without the flag, read the report, and only then decide.
 
 **Then, once, on an existing deployment:**
 
-- `npm run indexes:products` — drops the two stale text indexes on `Product` and
-  then builds the indexes the schema declares. They were created by schemas
-  embedded inside it; `Product.init()` could not build any index while they
+- `npm run indexes:products` — drops the stale text index on `Product` and
+  then builds the indexes the schema declares. It was created by a schema
+  embedded inside `Product`; `Product.init()` could not build any index while it
   existed, so **no Product index was ever built** and every query that should have
-  used one fell back to a collection scan. `createIndexes()` will not remove them,
+  used one fell back to a collection scan. `createIndexes()` will not remove it,
   which is why this is a separate, deliberate step.
   Report-only by default, and exits 2 when there is something to drop. `-- --fix`
-  removes them. It reads the resulting indexes back afterwards, so the "Final
+  removes it. It reads the resulting indexes back afterwards, so the "Final
   state" listing is evidence rather than a claim — that is the check the previous
   advice ("verify `db.products.getIndexes()` by hand") was asking for.
+
+  Note it is *one* index, not the two older notes here claimed. MongoDB permits a
+  single text index per collection, so the second one could never be created —
+  which is exactly why `init()` failed. Had the first not been blocking the
+  second, `init()` would have thrown on a duplicate-name error instead.
 
 **Required environment before real traffic:**
 
