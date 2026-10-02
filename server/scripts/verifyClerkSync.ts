@@ -30,7 +30,10 @@ export interface SyncedUser {
   name?: string;
   email?: string;
   role?: string;
-  createdAt?: Date;
+  // `IUser` types this as `string`, while a plain `Date` is what a freshly
+  // constructed row carries. Both go through `new Date(...)` below, so accept
+  // either rather than fighting the model's declared type.
+  createdAt?: Date | string;
 }
 
 /** Whether a row was written within `minutes` of `now`. Pure. */
