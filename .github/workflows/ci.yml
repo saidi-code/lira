@@ -54,18 +54,29 @@ jobs:
       # verified: that a `$inc` lands, that a schema hook fires, that a receipt is
       # applied once. It found two double-apply bugs that the unit tests — which
       # only assert on pure functions — passed cleanly.
-      # `mongodb-memory-server` downloads a mongod binary at runtime. Cached on the
-      # library version, so it survives between runs but is re-fetched when the
-      # package is upgraded.
+      #
+      # `mongodb-memory-server` downloads a ~100 MB mongod binary on first use. Its
+      # own default location is `node_modules/.cache/mongodb-memory-server`, which
+      # `npm ci` deletes on every run — caching that path could never survive, and
+      # an earlier version of this workflow cached `~/.cache/mongodb-binaries`,
+      # which the library never writes to. That cache silently missed every time
+      # and saved nothing.
+      #
+      # `MONGOMS_DOWNLOAD_DIR` pins the location instead, and the resolver treats it
+      # as the first place to both *look for* and *write* the binary. The variable
+      # and the cache path below must stay identical: if they drift, the cache
+      # misses again and the download returns, silently.
       - name: Cache the MongoDB binary
         uses: actions/cache@v4
         with:
-          path: ~/.cache/mongodb-binaries
+          path: ${{ github.workspace }}/.mongodb-binaries
           key: mongodb-binary-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
 
       - name: Integration tests (mongodb-memory-server)
         # Downloads the mongod binary on a cold cache (~100 MB). The step above
         # keeps every subsequent run off the network.
+        env:
+          MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.mongodb-binaries
         run: npm run test:integration
 
   client:

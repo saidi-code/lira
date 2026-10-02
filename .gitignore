@@ -1,0 +1,17 @@
+# .gitignore (repo root)
+# ==========================================
+# Scoped deliberately: `server/.gitignore` and `client/.gitignore` handle their
+# own trees. This file only covers build artefacts that land at the root.
+
+# The mongod binary that `mongodb-memory-server` downloads.
+#
+# CI pins this location via `MONGOMS_DOWNLOAD_DIR` (see .github/workflows/ci.yml)
+# and caches it, because the library's own default — node_modules/.cache/... —
+# is deleted by `npm ci` on every run. The same variable name is easy to reach
+# for locally, and the directory is ~100 MB of binaries that must never be
+# committed, so it is ignored here rather than left to chance.
+.mongodb-binaries/
+
+# misc
+.DS_Store
+Thumbs.db
