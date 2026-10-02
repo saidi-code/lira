@@ -172,6 +172,33 @@ export function useReceivePurchaseOrder(id: string) {
   });
 }
 
+/**
+ * Cancels an order. The server 409s once any line has stock received against it,
+ * because cancelling then would orphan goods that are physically on a shelf.
+ *
+ * Wraps an API method that existed with no hook over it — the endpoint was
+ * reachable only by hand until a screen needed it.
+ */
+export function useCancelPurchaseOrder() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const token = await getToken();
+      return purchasingApi.cancelPurchaseOrder(id, token);
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: purchasingKeys.purchaseOrders() });
+      toast.show({ type: "successToast", text2: res.message ?? "Order cancelled", topOffset: 100 });
+    },
+    onError: (error) => {
+      // 409: something was already received. Cancelling now would lose stock.
+      toast.show({ type: "errorToast", text2: messageFrom(error, "Could not cancel this order"), topOffset: 100 });
+    },
+  });
+}
+
 // ---------------- Transfers ----------------
 
 export function useTransfersQuery(params?: {

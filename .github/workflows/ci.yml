@@ -131,9 +131,10 @@ jobs:
       # A KNOWN GAP, not an oversight: this typecheck runs *without* the
       # expo-router generated types, because `.expo/` is gitignored and only the
       # dev server writes them. So `router.push("/admin/typo")` compiles clean
-      # here and fails on a machine that has run `expo start` once. The
-      # permission tests below are the part that can run DB-free and secret-free;
-      # regenerating the route types in CI would need a Metro build and is left
-      # as a known limitation rather than pretended to be covered.
+      # here and fails on a machine that has run `expo start` once — which is
+      # exactly what the purchasing routes hit. The permission tests below are
+      # the part that can run DB-free and secret-free; regenerating the route
+      # types in CI would need a Metro build and is left as a known limitation
+      # rather than pretended to be covered.
       - name: Unit tests
         run: npm test

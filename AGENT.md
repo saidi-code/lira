@@ -1175,8 +1175,21 @@ The backoffice now reaches inventory: stock levels, a low-stock view, the
 movement ledger and adjustments. `available` (quantity − reserved) is what the
 screens show, never raw `quantity`, because showing on-hand stock is what makes a
 backoffice look healthy while the shop is already selling what is spoken for.
-Still unreachable from any UI, though finished and tested on the server: purchase
-orders, receiving, transfers, suppliers, warehouses and user/role management.
+
+It also reaches purchasing: suppliers, raising an order, and **receiving**, which
+is the only call that turns an order into stock. Each line shows what is still
+outstanding and defaults to the full remainder, because a complete delivery
+should be one tap. Partial receipts are supported deliberately — a supplier
+splitting a shipment is not an error, and a line can be received more than once.
+
+Adding a `Buy` tab surfaced a third instance of the same pattern: an API method
+with no hook over it. `purchasingApi.cancelPurchaseOrder` existed and was
+reachable only by hand; `useCancelPurchaseOrder` now wraps it. Its 409 is worth
+reading — the server refuses to cancel once any line has stock in, because
+cancelling then would orphan goods sitting on a shelf.
+
+Still unreachable from any UI, though finished and tested on the server:
+transfers, warehouses, and user/role management.
 
 The signature check is covered as well. `webhookSignature.integration.test.ts`
 drives the real handler over a real socket, signing payloads with

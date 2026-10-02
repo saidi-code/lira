@@ -89,6 +89,16 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
+        name="purchasing"
+        options={{
+          title: "Buy",
+          href: can("purchasing") ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="orders"
         options={{
           title: "Orders",
