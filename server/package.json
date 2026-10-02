@@ -14,7 +14,7 @@
     "repair:reservations": "npx tsx scripts/repairStrandedReservations.ts",
     "backfill:deltas": "npx tsx scripts/backfillMovementDeltas.ts",
     "test": "node --import tsx --test tests/pricing.test.ts tests/cancel.test.ts tests/orderLifecycle.test.ts tests/inventory.test.ts tests/purchasing.test.ts tests/clerkWebhook.test.ts tests/auth.test.ts tests/escapeRegex.test.ts",
-    "test:integration": "node --import tsx --test tests/ledger.integration.test.ts tests/webhook.integration.test.ts tests/orderStock.integration.test.ts tests/scripts.integration.test.ts tests/orderLifecycle.integration.test.ts",
+    "test:integration": "node --import tsx --test tests/ledger.integration.test.ts tests/webhook.integration.test.ts tests/webhookSignature.integration.test.ts tests/orderStock.integration.test.ts tests/scripts.integration.test.ts tests/orderLifecycle.integration.test.ts",
     "lint": "eslint .",
     "preview:invoice": "tsx scripts/previewInvoice.ts"
   },

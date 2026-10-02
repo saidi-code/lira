@@ -1127,8 +1127,16 @@ status so a double-submit cannot move the goods twice. `in_transit` is bookkeepi
 `user.created` / `user.updated` upsert the local `User`; `user.deleted` removes it.
 Everything else gets a 200 so Clerk stops retrying it. The write goes through
 `applyUserPlan` behind a `UserWriter`, so it is exercised against a real database
-by `npm run test:integration` — `verifyWebhook` needs a live Clerk secret, but
-everything after it does not.
+by `npm run test:integration`.
+
+The signature check is covered as well. `webhookSignature.integration.test.ts`
+drives the real handler over a real socket, signing payloads with
+`standardwebhooks` — the library Clerk itself verifies with — against a secret
+generated per run, so no real credential is needed or committed. A tampered body
+that reuses a genuine signature, a foreign secret, absent signature headers, a
+replayed timestamp, an unset secret and a non-base64 secret are each refused with
+a 400 and write nothing. All six are fail-closed, and that was confirmed by
+mutating the handler to skip verification: 7 of the 10 tests fail when it does.
 
 Two things that suite found, neither visible to a unit test:
 
@@ -1261,10 +1269,15 @@ without the flag, read the report, and only then decide.
 
 - `CRON_SECRET` — until set, `POST /internal/orders/release-expired` returns 503
   and unpaid orders are never released. An unset secret means disabled, never open.
-- `CLERK_WEBHOOK_SIGNING_SECRET` — **unverified against a live secret.** This is
-  the only line in the codebase standing between the server and a forged webhook
-  that can create a user with any role. Test one valid and one tampered payload
-  before trusting it.
+- `CLERK_WEBHOOK_SIGNING_SECRET` — the crypto path is now tested (see **Webhooks**):
+  every rejection case is fail-closed, and this project's own secret was confirmed
+  to be well-formed `whsec_` + base64 that the library accepts. What remains
+  unverified is a *live* Clerk delivery through the host's proxy, so send one real
+  event from the dashboard and confirm the `User` appears.
+  The trap to know: a truncated or non-base64 secret makes `new Webhook(secret)`
+  throw on every request, so every webhook returns 400 and no user is ever created.
+  That is safe but total — it locks every customer out and reads exactly like a
+  Clerk outage, so check this variable first if signups stop syncing.
 - Pricing/window variables — the server recomputes every amount, so client values
   are display only. Wrong values here mean wrong invoices.
 - A real payment webhook. Until one is wired, `PUT /orders/:id/pay` is the only
