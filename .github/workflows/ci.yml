@@ -30,8 +30,26 @@ jobs:
     defaults:
       run:
         working-directory: server
+    env:
+      # Set at JOB level, not on the test step. `mongodb-memory-server` ships a
+      # postinstall hook that pre-downloads the mongod binary, so the download
+      # happens during `npm ci`. Scoped to the test step alone, the postinstall
+      # never saw this variable and put the binary in
+      # `node_modules/.cache/mongodb-memory-server` instead — a directory `npm ci`
+      # deletes on every run. The resolver then *found* that copy at test time and
+      # never wrote here, so this directory stayed empty, the cache saved nothing,
+      # and every push re-downloaded ~100 MB while CI stayed green.
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.mongodb-binaries
     steps:
       - uses: actions/checkout@v4
+
+      # Restored before `npm ci` on purpose: on a hit the postinstall finds the
+      # binary already present and skips the download, which is the whole point.
+      - name: Restore the MongoDB binary
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.mongodb-binaries
+          key: mongodb-binary-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
 
       - uses: actions/setup-node@v4
         with:
@@ -55,29 +73,25 @@ jobs:
       # applied once. It found two double-apply bugs that the unit tests — which
       # only assert on pure functions — passed cleanly.
       #
-      # `mongodb-memory-server` downloads a ~100 MB mongod binary on first use. Its
-      # own default location is `node_modules/.cache/mongodb-memory-server`, which
-      # `npm ci` deletes on every run — caching that path could never survive, and
-      # an earlier version of this workflow cached `~/.cache/mongodb-binaries`,
-      # which the library never writes to. That cache silently missed every time
-      # and saved nothing.
-      #
-      # `MONGOMS_DOWNLOAD_DIR` pins the location instead, and the resolver treats it
-      # as the first place to both *look for* and *write* the binary. The variable
-      # and the cache path below must stay identical: if they drift, the cache
-      # misses again and the download returns, silently.
-      - name: Cache the MongoDB binary
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.mongodb-binaries
-          key: mongodb-binary-${{ runner.os }}-${{ hashFiles('server/package-lock.json') }}
-
+      # The binary these tests need is downloaded by the postinstall during
+      # `npm ci` and restored from cache above; see the job-level env for why the
+      # location is pinned rather than left to the library's default.
       - name: Integration tests (mongodb-memory-server)
-        # Downloads the mongod binary on a cold cache (~100 MB). The step above
-        # keeps every subsequent run off the network.
-        env:
-          MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.mongodb-binaries
         run: npm run test:integration
+
+      # Guards the cache above. A cache step pointed at an empty directory
+      # "succeeds" and saves nothing — which is exactly how this went unnoticed:
+      # CI stayed green while every push re-downloaded ~100 MB. If the pinned
+      # directory is ever empty again, fail loudly and show where mongod went.
+      - name: Assert the binary landed where it is cached
+        run: |
+          if [ -z "$(ls -A "$MONGOMS_DOWNLOAD_DIR" 2>/dev/null)" ]; then
+            echo "::error::$MONGOMS_DOWNLOAD_DIR is empty, so the cache saves nothing"
+            echo "mongod was found in these locations instead:"
+            find "$HOME" "$GITHUB_WORKSPACE" -name 'mongod*' -type f 2>/dev/null | head -20
+            exit 1
+          fi
+          ls -la "$MONGOMS_DOWNLOAD_DIR"
 
   client:
     name: client — typecheck + lint
