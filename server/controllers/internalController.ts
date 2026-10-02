@@ -20,6 +20,31 @@ const secretMatches = (provided: string, expected: string): boolean =>
     crypto.createHash("sha256").update(expected).digest()
   );
 
+/**
+ * Pulls the caller's secret out of the request, accepting either header.
+ *
+ * `x-cron-secret` is ours. `Authorization: Bearer …` is what Vercel Cron sends
+ * on its own when a `CRON_SECRET` environment variable is set, so supporting it
+ * is the difference between a scheduled sweep that works and one that 401s
+ * forever. Both are compared the same constant-time way, and an unset
+ * `CRON_SECRET` still disables the endpoint rather than opening it.
+ *
+ * Exported and pure so the rejection paths are testable without a database —
+ * these are the lines that decide who can restock the shop.
+ */
+export const extractCronSecret = (req: {
+  get(name: string): string | undefined;
+}): string => {
+  const direct = req.get("x-cron-secret");
+  if (direct) return direct;
+
+  const authorization = req.get("authorization");
+  // Case-insensitive scheme: RFC 7235 says the scheme token is not
+  // case-sensitive, and a scheduler sending `bearer` is not an attacker.
+  const match = /^bearer\s+(.+)$/i.exec(authorization ?? "");
+  return match ? match[1].trim() : "";
+};
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
@@ -42,7 +67,7 @@ export const releaseExpiredOrdersHandler = async (
     });
   }
 
-  const provided = req.get("x-cron-secret") ?? "";
+  const provided = extractCronSecret(req);
   if (!provided || !secretMatches(provided, expected)) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }

@@ -917,7 +917,7 @@ body (see §11 Order Pricing).
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | PUT | `/orders/:id/pay` | `admin` | mark an order paid (settled COD delivery, or a gateway callback); 409 when it is no longer awaiting payment |
-| POST | `/internal/orders/release-expired` | `x-cron-secret` | cancel unpaid online orders past their window and restock them; `?limit=` 1–500 (default 100); 503 while `CRON_SECRET` is unset |
+| POST or GET | `/internal/orders/release-expired` | `x-cron-secret`, or `Authorization: Bearer …` | cancel unpaid online orders past their window and restock them; `?limit=` 1–500 (default 100); 503 while `CRON_SECRET` is unset. GET exists because Vercel Cron only issues GET. |
 
 ### Inventory
 
@@ -1293,6 +1293,23 @@ Keeping CI trustworthy:
 - **The client's own role rules are a hand-copy of the server's.** A test asserts
   they agree on which roles are staff, but nothing parses the route files, so a
   new `authorize(...)` argument can still be forgotten here.
+- **No Redis, no BullMQ, and `server/jobs/` does not exist.** Earlier drafts of
+  this document described a BullMQ worker layer as though it were architecture.
+  It was never built, and it should not be: this server deploys to Vercel
+  (`server/vercel.json`, `@vercel/node`), which runs request-scoped functions that
+  are frozen between invocations. A long-lived worker holding a Redis connection
+  cannot run there, so a `jobs/` directory would be code that never executes —
+  worse than its absence, because it would look finished.
+
+  What the sweep actually uses is a secret-guarded endpoint that something
+  external pokes. On Vercel that is a `crons` entry in `server/vercel.json`,
+  which sends `Authorization: Bearer $CRON_SECRET` and only ever issues GET —
+  hence both accepted headers and the GET route. Schedule limits are plan
+  dependent (Hobby allows daily), so it is deliberately not committed blind.
+
+  **Until `CRON_SECRET` is set and something calls it, unpaid orders are never
+  released** and their stock stays reserved forever. That is the one live gap
+  here, and it is a configuration change on the deployment, not a code change.
 - Node 22 in CI matches the local toolchain.
 
 ### Still manual — needs a live MongoDB
