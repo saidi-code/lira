@@ -18,6 +18,9 @@ on:
   push:
     branches: [production]
   pull_request:
+  # Lets CI be re-run from the Actions tab without pushing a commit — useful for
+  # confirming a flake, or for testing a cache change without touching history.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
