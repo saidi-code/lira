@@ -19,6 +19,9 @@
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { after, before, describe, it } from "node:test";
 
 import express from "express";
@@ -31,6 +34,24 @@ import {
   normalizeError,
 } from "../middlewares/errorHandler.js";
 
+/**
+ * The installed Express major, read from node_modules rather than hard-coded.
+ *
+ * Only Express 5 forwards a rejected promise from an async handler to the error
+ * middleware. On Express 4 the same handler leaves the request hanging until it
+ * times out, with no error anywhere — and 63 of our handlers have no `next`, so
+ * all of them depend on this. It changes silently on an upgrade, which is why it
+ * is asserted rather than assumed.
+ */
+// `__dirname` does not exist here: the package is `"type": "module"`, so this
+// resolves from import.meta.url instead.
+const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const expressMajor = Number(
+  JSON.parse(
+    readFileSync(path.join(serverRoot, "node_modules", "express", "package.json"), "utf8")
+  ).version.split(".")[0]
+);
 const STOCK_MESSAGE = "Product.stock validation failed: 3 is less than minimum 0";
 
 /**
@@ -167,6 +188,11 @@ describe("over HTTP", () => {
     app.get("/boom", () => {
       throw new Error("MongoServerError: host 10.0.3.4 timed out");
     });
+    app.get("/async-throws", async () => {
+      // No `next`, exactly like 63 of our real handlers. Express 5 still routes
+      // the rejection here; Express 4 would leave the request hanging.
+      throw new Error("rejected from an async handler");
+    });
     app.get("/app-error", () => {
       throw new AppError("Nothing left in stock", { status: 409 });
     });
@@ -237,5 +263,31 @@ describe("over HTTP", () => {
     // this into an ordinary handler that is skipped on error, and the request
     // hangs until it times out — with no error reported anywhere.
     assert.equal(errorHandler.length, 4);
+  });
+
+  it("catches a rejected async handler that never calls next", async () => {
+    // 63 of our handlers are `async (req, res)` with no `next`, so an unexpected
+    // rejection has to reach this handler by itself. Only Express 5 forwards it;
+    // on 4 the request hangs until it times out with no error anywhere. Proven
+    // here rather than read off the version number, because the behaviour is what
+    // matters and it changes silently on upgrade.
+    const res = await fetch(`${base}/async-throws`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    const body = await res.json();
+
+    assert.equal(res.status, 500);
+    assert.equal(body.message, "Something went wrong. Please try again.");
+    // The original text stays in the log, not in the response.
+    assert.doesNotMatch(JSON.stringify(body), /from an async handler/);
+  });
+
+  it("runs on the Express version that forwards async rejections", () => {
+    assert.ok(
+      expressMajor >= 5,
+      `express ${expressMajor} does not forward a rejected async handler to the ` +
+        "error middleware, so every handler without a `next` hangs instead of " +
+        "reporting an error. Add `next` to those handlers, or wrap the router."
+    );
   });
 });

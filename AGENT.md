@@ -1338,6 +1338,21 @@ Keeping CI trustworthy:
   by arity, so dropping `next` turns it into an ordinary handler that is skipped
   on error and the request hangs until it times out. There is a test on
   `errorHandler.length`.
+- **We are on Express 5, and 63 handlers depend on that.** Only Express 5 forwards
+  a rejected promise from an `async (req, res)` handler to the error middleware.
+  On Express 4 the request simply hangs until it times out, with no error logged.
+  Since most controllers keep their own `try/catch`, this is currently a backstop
+  rather than the main path — but it is what catches anything a catch block
+  misses. `tests/errorHandler.test.ts` proves the behaviour over a real socket
+  and asserts the major version, so a downgrade (or an accidental Express 4 pin)
+  fails rather than silently turning every oversight into a timeout.
+- **The remaining `status(500)` sites in other controllers are not fixed.** The 53
+  in `OrderController`, `AddressController`, `productController` and the rest still
+  catch and respond themselves, so a CastError inside one of those is still a 500
+  rather than a 400. They no longer leak `error.message` — that only ever happened
+  in the cart and wishlist handlers — so the remaining cost is a wrong status on
+  the caller's own mistake, not an information leak. Converting them is mechanical
+  (`next(error)`) but touches 14 files, so it is left as its own change.
 - **The client's own role rules are a hand-copy of the server's.** A test asserts
   they agree on which roles are staff, but nothing parses the route files, so a
   new `authorize(...)` argument can still be forgotten here. The tab bar has the
