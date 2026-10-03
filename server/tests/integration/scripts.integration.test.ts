@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
 import Inventory from "../../models/Inventory.js";
 import Order from "../../models/Order.js";
@@ -29,7 +29,7 @@ let mongod: MongoMemoryServer;
 const quiet = () => undefined;
 
 before(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: LAUNCH_TIMEOUT_MS } });
   await mongoose.connect(mongod.getUri());
   await StockMovement.init();
   await Order.init();

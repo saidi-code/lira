@@ -19,7 +19,7 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
 import Product from "../../models/Products.js";
 import {
@@ -45,7 +45,7 @@ const indexNames = async () =>
   (await Product.collection.indexes()).map((i) => i.name);
 
 before(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: LAUNCH_TIMEOUT_MS } });
   // See the header: this is what makes the assertions mean anything.
   await mongoose.connect(mongod.getUri(), { autoIndex: false });
 });

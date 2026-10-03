@@ -1338,6 +1338,29 @@ Keeping CI trustworthy:
   by arity, so dropping `next` turns it into an ordinary handler that is skipped
   on error and the request hangs until it times out. There is a test on
   `errorHandler.length`.
+- **Two routers had no auth at all, and that was a live hole.** `categoriesRoutes.ts`
+  and `collectionsRoutes.ts` registered every route with no middleware, so
+  `POST /api/v1/categories`, `PUT`/`DELETE` on both, and all five collection
+  routes were reachable by anyone unauthenticated — including writes, which
+  rewrite the shop's navigation. Both are fixed: reads stay public (the storefront
+  browses them without a session), writes are `protect, authorize('admin')`.
+  `tests/routeGuards.test.ts` reads the router files and fails on any unguarded
+  write, and separately asserts catalogue *reads* stay public so a future
+  over-correction cannot lock the shop out of its own categories.
+  Its parser has to understand `router.use(protect)`,
+  `router.use(protect, authorize('admin'))` and `upload.array(...)` sitting in the
+  argument list — all three forms appear here, and a parser that misses any of
+  them reports correct code as unguarded.
+- **A customer's own writes are not staff writes.** The same test only demands an
+  `authorize(...)` role on the routers that manage global catalogue data.
+  Requiring it everywhere would flag `POST /cart`, `POST /orders` and the address
+  routes — where a signed-in customer is the correct and only caller.
+- **`mongodb-memory-server` needs `instance.launchTimeout`, not `startupTimeout`,
+  and it is nested.** The default 10s timed out once on a loaded machine and
+  failed all 7 integration suites at once, which reads like a code change broke
+  them. `tests/integration/mongod.ts` holds the value in one place; the compiler
+  caught the wrong name and the wrong nesting, which is why it is typed rather
+  than cast.
 - **We are on Express 5, and 63 handlers depend on that.** Only Express 5 forwards
   a rejected promise from an `async (req, res)` handler to the error middleware.
   On Express 4 the request simply hangs until it times out, with no error logged.

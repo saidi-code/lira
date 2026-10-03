@@ -27,7 +27,7 @@ import type { AddressInfo } from "node:net";
 import { after, before, beforeEach, describe, it } from "node:test";
 import express from "express";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 import { Webhook } from "standardwebhooks";
 
 import clerkWebhook from "../../controllers/webhooks.js";
@@ -105,7 +105,7 @@ const post = (
   });
 
 before(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: LAUNCH_TIMEOUT_MS } });
   await mongoose.connect(mongod.getUri());
   await User.init();
 
