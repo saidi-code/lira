@@ -142,13 +142,19 @@ jobs:
       # server's `authorize(...)` lists. Nothing else would notice them drifting
       # apart, so they are pinned here like the server's own unit tests.
       #
-      # A KNOWN GAP, not an oversight: this typecheck runs *without* the
-      # expo-router generated types, because `.expo/` is gitignored and only the
-      # dev server writes them. So `router.push("/admin/typo")` compiles clean
-      # here and fails on a machine that has run `expo start` once — which is
-      # exactly what the purchasing routes hit. The permission tests below are
-      # the part that can run DB-free and secret-free; regenerating the route
-      # types in CI would need a Metro build and is left as a known limitation
-      # rather than pretended to be covered.
+      # `adminGuards.test.ts` goes further: it walks `app/admin/`, derives which
+      # screens need a `RequireCapability` guard from those same role rules, and
+      # fails on a screen missing one, a guard naming the wrong capability, or a
+      # wrapper that is not the default export. `href: null` hides a tab without
+      # unregistering the route, so an unguarded screen is reachable by deep link
+      # and 403s — which is exactly how `transfers/warehouses.tsx` was found.
+      #
+      # Both are DB-free and secret-free, which is why they are safe here; the
+      # route types they might depend on are generated in the step above.
+      #
+      # (This comment previously described route types as a known gap that would
+      # need a Metro build. That was true until the generator step was added —
+      # it runs in ~0.1s without Metro, so the gap is closed and the claim was
+      # stale. Left here rather than deleted so the change is visible.)
       - name: Unit tests
         run: npm test
