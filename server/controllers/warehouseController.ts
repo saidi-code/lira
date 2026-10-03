@@ -108,9 +108,13 @@ export const setDefaultWarehouse = async (
       data: warehouse,
     });
   } catch (error) {
+    console.error("Error setting default warehouse:", error);
     return res.status(400).json({
       success: false,
-      message: error instanceof Error ? error.message : "Could not set default",
+      // The fallback, never `error.message`: a Mongoose ValidationError here
+      // names the collection and the field, which is schema detail, not a
+      // message for the caller.
+      message: "Could not set default",
     });
   }
 };

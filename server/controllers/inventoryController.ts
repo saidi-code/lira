@@ -17,8 +17,17 @@ import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
 const isValidId = (id: unknown): id is string =>
   typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
 
-const message = (error: unknown, fallback: string): string =>
-  error instanceof Error ? error.message : fallback;
+/**
+ * The fallback is always the message the caller sends.
+ *
+ * This used to be `error instanceof Error ? error.message : fallback`, which
+ * looked like a tidier version of the same thing and was the last remaining
+ * disclosure in the API: a Mongoose `ValidationError` or `CastError` message
+ * names the collection, the field path and the constraint, and all five call
+ * sites here are catch blocks — so this helper returned exactly the text we had
+ * spent the error handler removing. The detail belongs in the log.
+ */
+const message = (_error: unknown, fallback: string): string => fallback;
 
 /** GET /inventory — stock levels, optionally filtered by warehouse. */
 export const listInventory = async (

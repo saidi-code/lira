@@ -554,7 +554,6 @@ export const createOrder = async (
     return res.status(500).json({
       success: false,
       message: "Error creating order",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -586,10 +585,10 @@ export const getMyOrders = async (
       pagination: buildPaginationMeta(total, page, limit),
     });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching orders",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -636,10 +635,10 @@ export const getOrderById = async (
 
     return res.status(200).json({ success: true, data: order });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching order",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -676,10 +675,10 @@ export const getAllOrders = async (
       pagination: buildPaginationMeta(total, page, limit),
     });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching orders",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -791,10 +790,10 @@ export const updateOrderStatus = async (
       data: order,
     });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error updating order",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -858,10 +857,10 @@ export const cancelOrder = async (
       data: cancelled ?? order,
     });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error cancelling order",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -908,10 +907,10 @@ export const deleteOrder = async (
       message: "Order deleted successfully",
     });
   } catch (error) {
+    console.error("OrderController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error deleting order",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

@@ -58,7 +58,6 @@ export const getProducts = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Error fetching products',
-      error: error instanceof Error ? error.message : error,
     });
   }
 };
@@ -194,7 +193,6 @@ export const getProductById = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Error fetching product',
-      error: error instanceof Error ? error.message : error,
     });
   }
 };

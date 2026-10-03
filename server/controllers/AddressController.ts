@@ -91,10 +91,10 @@ export const createAddress = async (
       data: address,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error creating address",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -116,10 +116,10 @@ export const getAllAddresses = async (
       data: addresses,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching addresses",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -145,10 +145,10 @@ export const getAddressByUser = async (
       data: addresses,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching addresses",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -197,10 +197,10 @@ export const getAddressById = async (
       data: address,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching address",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -272,10 +272,10 @@ export const updateAddress = async (
       data: updatedAddress,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error updating address",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -325,10 +325,10 @@ export const deleteAddress = async (
       message: "Address deleted successfully",
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error deleting address",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -380,10 +380,10 @@ export const setDefaultAddress = async (
       data: address,
     });
   } catch (error) {
+    console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error setting default address",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

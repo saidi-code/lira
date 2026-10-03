@@ -1,0 +1,26 @@
+fix(server): stop leaking Mongoose messages through a second syntax
+
+The previous claim that nothing else leaked was wrong. That sweep grepped for
+"message: error.message" and removed ten sites. That is one spelling, not the
+bug: 21 more used "error: error instanceof Error ? error.message" -- the same
+disclosure, same response body, different syntax. Two more hid behind helpers:
+inventoryController "message(error, fallback)" returned the Mongoose text at all
+five of its call sites, and warehouseController passed error.message as the
+response message outright.
+
+So 23 additional disclosure sites across AddressController, OrderController,
+ReviewController, adminController, inventoryController, productController and
+warehouseController.
+
+The fix is deliberately the smallest one that removes the disclosure: drop the
+field. No signature change, no control-flow change. Two earlier attempts
+converted these catch blocks to next(error) and both had to be reverted after
+mangling the handler signatures.
+
+Eight sites remain, every one guarded by instanceof InsufficientStockError |
+ReceiveError | TransferError. Those are domain errors whose messages were
+written for a user, which is why a blanket rule would have been wrong.
+
+Removing the field left "catch (error)" unused in 18 places, which eslint
+caught. Each now logs the error, so the detail stays available to us and out of
+the response.

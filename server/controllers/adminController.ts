@@ -136,10 +136,10 @@ export const getAdminStats = async (
       },
     });
   } catch (error) {
+    console.error("adminController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching admin stats",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

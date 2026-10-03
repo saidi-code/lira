@@ -1369,6 +1369,19 @@ Keeping CI trustworthy:
   misses. `tests/errorHandler.test.ts` proves the behaviour over a real socket
   and asserts the major version, so a downgrade (or an accidental Express 4 pin)
   fails rather than silently turning every oversight into a timeout.
+- **Nothing reaches a response as `error.message` now, but only after being asked
+  twice.** The first sweep removed `message: error.message` and missed 21 sites
+  using `error: error instanceof Error ? error.message : "Unknown error"` — the
+  same disclosure in different syntax, so a grep for one spelling was not a grep
+  for the bug. The second pass found two more: a `message(error, fallback)` helper
+  in `inventoryController` that returned the Mongoose message at all five of its
+  call sites, and `warehouseController` passing `error.message` as the response
+  message outright. What remains is eight sites, every one guarded by an
+  `instanceof InsufficientStockError | ReceiveError | TransferError` — domain
+  errors whose messages were written for a user, which is what makes them safe.
+  **When a fix is "stop leaking internals", grep for the value, not the field
+  name:** `error.message`, `instanceof Error ? error.message` and a helper named
+  `message()` are one bug wearing three costumes.
 - **The remaining `status(500)` sites in other controllers are not fixed.** The 53
   in `OrderController`, `AddressController`, `productController` and the rest still
   catch and respond themselves, so a CastError inside one of those is still a 500

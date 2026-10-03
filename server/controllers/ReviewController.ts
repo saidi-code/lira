@@ -54,10 +54,10 @@ export const getProductReviews = async (
       data: reviews,
     });
   } catch (error) {
+    console.error("ReviewController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching reviews",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -97,10 +97,10 @@ export const upsertReview = async (
       data: review,
     });
   } catch (error) {
+    console.error("ReviewController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error saving review",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -125,10 +125,10 @@ export const getMyReviews = async (
       data: reviews,
     });
   } catch (error) {
+    console.error("ReviewController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching your reviews",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -166,10 +166,10 @@ export const deleteReview = async (
       message: "Review deleted successfully",
     });
   } catch (error) {
+    console.error("ReviewController failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error deleting review",
-      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
