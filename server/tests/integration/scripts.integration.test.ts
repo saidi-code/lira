@@ -15,15 +15,15 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import Inventory from "../models/Inventory.js";
-import Order from "../models/Order.js";
-import Product from "../models/Products.js";
-import StockMovement from "../models/StockMovement.js";
-import Warehouse from "../models/Warehouse.js";
-import { applyMovement, reserve } from "../services/inventoryService.js";
-import { reconcileStock } from "../scripts/reconcileStock.js";
-import { backfillMovementDeltas } from "../scripts/backfillMovementDeltas.js";
-import { repairStrandedReservations } from "../scripts/repairStrandedReservations.js";
+import Inventory from "../../models/Inventory.js";
+import Order from "../../models/Order.js";
+import Product from "../../models/Products.js";
+import StockMovement from "../../models/StockMovement.js";
+import Warehouse from "../../models/Warehouse.js";
+import { applyMovement, reserve } from "../../services/inventoryService.js";
+import { reconcileStock } from "../../scripts/reconcileStock.js";
+import { backfillMovementDeltas } from "../../scripts/backfillMovementDeltas.js";
+import { repairStrandedReservations } from "../../scripts/repairStrandedReservations.js";
 
 let mongod: MongoMemoryServer;
 const quiet = () => undefined;

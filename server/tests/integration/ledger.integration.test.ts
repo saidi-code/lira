@@ -22,12 +22,12 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import Inventory from "../models/Inventory.js";
-import Product from "../models/Products.js";
-import PurchaseOrder from "../models/PurchaseOrder.js";
-import StockMovement from "../models/StockMovement.js";
-import Transfer from "../models/Transfer.js";
-import Warehouse from "../models/Warehouse.js";
+import Inventory from "../../models/Inventory.js";
+import Product from "../../models/Products.js";
+import PurchaseOrder from "../../models/PurchaseOrder.js";
+import StockMovement from "../../models/StockMovement.js";
+import Transfer from "../../models/Transfer.js";
+import Warehouse from "../../models/Warehouse.js";
 import {
   applyMovement,
   available,
@@ -36,9 +36,9 @@ import {
   release,
   reserve,
   transfer,
-} from "../services/inventoryService.js";
-import { receivePurchaseOrder } from "../services/purchaseOrderService.js";
-import { applyTransferStatus } from "../services/transferService.js";
+} from "../../services/inventoryService.js";
+import { receivePurchaseOrder } from "../../services/purchaseOrderService.js";
+import { applyTransferStatus } from "../../services/transferService.js";
 
 let mongod: MongoMemoryServer;
 

@@ -15,13 +15,13 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import User, { USER_ROLES } from "../models/User.js";
+import User, { USER_ROLES } from "../../models/User.js";
 import {
   applyUserPlan,
   planForClerkEvent,
   type ClerkEventLike,
   type UserWriter,
-} from "../services/clerkUserMapper.js";
+} from "../../services/clerkUserMapper.js";
 
 let mongod: MongoMemoryServer;
 

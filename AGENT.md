@@ -1298,8 +1298,9 @@ runs exactly them on every push to `production` and on every pull request.
 |---|---|---|
 | `server/` | `npx tsc --noEmit --pretty false` | types — `noUnusedLocals` is on, so dead imports fail the build |
 | `server/` | `npm run lint` | ESLint — unreachable code, floating promises, useless assignment |
-| `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back), `tests/orderLifecycle.test.ts` (payment expiry) |
-| `client/` | `npm test` | `tests/permissions.test.ts` (which backoffice screens each role gets), `tests/adminGuards.test.ts` (that each screen actually enforces its own guard) |
+| `server/` | `npm test` | `tests/*.test.ts` — the money math, stock coming back, payment expiry, webhook mapping, cron auth, the error handler |
+| `server/` | `npm run test:integration` | `tests/integration/*.test.ts` — needs a real mongod (`mongodb-memory-server`) |
+| `client/` | `npm test` | `tests/*.test.ts` — which backoffice screens each role gets, that each screen enforces its own guard, which tabs each role is offered |
 | `client/` | `npx tsc --noEmit --pretty false` | types |
 | `client/` | `npx expo lint` | ESLint (flat config) |
 
@@ -1322,6 +1323,21 @@ Keeping CI trustworthy:
 - **`types/express.d.ts` must stay a module.** Its `export {}` is what makes
   `declare global` legal; removing it silently drops the `req.user` augmentation
   and every controller stops compiling (TS2339).
+- **Both test scripts glob; do not list files.** They used to enumerate each file by
+  name, which silently ignored any file added later — a new test could pass by
+  never running. Integration tests now live in `server/tests/integration/` rather
+  than sharing the directory, because `tests/*.test.ts` also matches
+  `*.integration.test.ts`: keeping them apart is the only separation that does not
+  depend on a glob trick that silently drops files. (An attempted
+  `tests/*[!.integration].test.ts` was read as a character class and quietly
+  excluded five real unit files.)
+- **A green test can still test nothing.** Verified by mutation rather than by
+  reading: the error handler's suite was confirmed to fail when the handler leaks
+  its internals, and the webhook signature suite when verification is skipped.
+- **`errorHandler` must keep four parameters.** Express selects error middleware
+  by arity, so dropping `next` turns it into an ordinary handler that is skipped
+  on error and the request hangs until it times out. There is a test on
+  `errorHandler.length`.
 - **The client's own role rules are a hand-copy of the server's.** A test asserts
   they agree on which roles are staff, but nothing parses the route files, so a
   new `authorize(...)` argument can still be forgotten here. The tab bar has the

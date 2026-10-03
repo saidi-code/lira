@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebhook from "./controllers/webhooks.js";
 import appRoutes from "./routes/index.js";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,6 +29,17 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use("/api/v1", appRoutes)
+
+// Order matters: `notFoundHandler` only runs if no route matched, and
+// `errorHandler` only if something reached `next(err)`. Both come after the
+// routes, with the 404 before the error handler so an unmatched path becomes a
+// clean JSON 404 instead of falling through.
+//
+// Express identifies an error middleware by arity, so `errorHandler` must keep
+// all four parameters — see the note in that file.
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });

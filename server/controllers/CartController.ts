@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
 // Get User Cart
 // Get /api/v1/cart
-export const getCart = async (req: Request, res: Response) => {
+export const getCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let cart = await Cart.findOne({
       user: req.user!._id,
@@ -14,12 +14,12 @@ export const getCart = async (req: Request, res: Response) => {
     res.json({ success: true, data: cart });
   } catch (error: any) {
     console.error("Error fetching cart:", error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 // Add To Cart
 // POST /api/v1/cart/add
-export const addToCart = async (req: Request, res: Response) => {
+export const addToCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { productId, quantity = 1, size, color } = req.body;
     if (!productId) {
@@ -138,12 +138,12 @@ if(product.type==="simple"){
     await cart.populate("items.product", "name images price stock sizes colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 // Update Item Quantity
 // PUT /api/v1/cart/item/:productId
-export const updateCartItem = async (req: Request, res: Response) => {
+export const updateCartItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { quantity, size, color } = req.body;
     const { productId } = req.params;
@@ -233,11 +233,11 @@ export const updateCartItem = async (req: Request, res: Response) => {
     await cart.populate("items.product", "name images price stock colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 
-export const deleteCartItem = async (req: Request, res: Response) => {
+export const deleteCartItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const size = req.query.size as string | undefined;
     const color = req.query.color as string | undefined;
@@ -274,12 +274,12 @@ export const deleteCartItem = async (req: Request, res: Response) => {
     await cart.populate("items.product", "name images price stock colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 // Clear Cart
 // DELETE api/v1/cart
-export const clearCart = async (req: Request, res: Response) => {
+export const clearCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
@@ -292,6 +292,6 @@ export const clearCart = async (req: Request, res: Response) => {
     await cart.save();
     res.json({ success: true, message: "Cart cleared", data: cart });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };

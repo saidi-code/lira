@@ -12,19 +12,19 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import Inventory from "../models/Inventory.js";
-import Order from "../models/Order.js";
-import Product from "../models/Products.js";
-import StockMovement from "../models/StockMovement.js";
-import Warehouse from "../models/Warehouse.js";
-import { applyMovement, available } from "../services/inventoryService.js";
-import { reserveForOrder } from "../services/orderStockService.js";
+import Inventory from "../../models/Inventory.js";
+import Order from "../../models/Order.js";
+import Product from "../../models/Products.js";
+import StockMovement from "../../models/StockMovement.js";
+import Warehouse from "../../models/Warehouse.js";
+import { applyMovement, available } from "../../services/inventoryService.js";
+import { reserveForOrder } from "../../services/orderStockService.js";
 import {
   expiryStore,
   markOrderPaid,
   releaseExpiredOrders,
-} from "../services/orderLifecycleService.js";
-import { cancelAndRestock } from "../controllers/OrderController.js";
+} from "../../services/orderLifecycleService.js";
+import { cancelAndRestock } from "../../controllers/OrderController.js";
 
 let mongod: MongoMemoryServer;
 const HOUR = 60 * 60 * 1000;

@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import WishList from "../models/WishList.js";
 import Product from "../models/Products.js";
 
-export const getWishList = async (req: Request, res: Response) => {
+export const getWishList = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let wishList = await WishList.findOne({ user: req.user!._id })
       .populate("items.product", "name images subtitle price category stock colors type")
@@ -14,11 +14,11 @@ export const getWishList = async (req: Request, res: Response) => {
 
     return res.json({ success: true, data: wishList });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 
-export const addToWishList = async (req: Request, res: Response) => {
+export const addToWishList = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { productId } = req.body;
     if (!productId) {
@@ -48,11 +48,11 @@ export const addToWishList = async (req: Request, res: Response) => {
 
     return res.json({ success: true, data: wishList });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 
-export const removeFromWishList = async (req: Request, res: Response) => {
+export const removeFromWishList = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { productId } = req.params;
     if (!productId) {
@@ -71,7 +71,7 @@ export const removeFromWishList = async (req: Request, res: Response) => {
 
     return res.json({ success: true, data: wishList });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    next(error); // status + message decided by the central error handler
   }
 };
 

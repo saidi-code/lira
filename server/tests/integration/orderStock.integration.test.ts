@@ -17,18 +17,18 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import Inventory from "../models/Inventory.js";
-import Order from "../models/Order.js";
-import Product from "../models/Products.js";
-import Warehouse from "../models/Warehouse.js";
-import { applyMovement, available } from "../services/inventoryService.js";
+import Inventory from "../../models/Inventory.js";
+import Order from "../../models/Order.js";
+import Product from "../../models/Products.js";
+import Warehouse from "../../models/Warehouse.js";
+import { applyMovement, available } from "../../services/inventoryService.js";
 import {
   commitOrderStock,
   releaseForOrder,
   reserveForOrder,
   transitionFor,
   type OrderStockLine,
-} from "../services/orderStockService.js";
+} from "../../services/orderStockService.js";
 
 let mongod: MongoMemoryServer;
 

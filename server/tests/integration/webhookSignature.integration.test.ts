@@ -30,8 +30,8 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { Webhook } from "standardwebhooks";
 
-import clerkWebhook from "../controllers/webhooks.js";
-import User from "../models/User.js";
+import clerkWebhook from "../../controllers/webhooks.js";
+import User from "../../models/User.js";
 
 let mongod: MongoMemoryServer;
 let httpServer: Server;

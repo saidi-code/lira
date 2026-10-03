@@ -21,11 +21,11 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-import Product from "../models/Products.js";
+import Product from "../../models/Products.js";
 import {
   dropStaleProductIndexes,
   inspectProductIndexes,
-} from "../scripts/productIndexes.js";
+} from "../../scripts/productIndexes.js";
 
 let mongod: MongoMemoryServer;
 const quiet = () => undefined;
