@@ -1,11 +1,30 @@
 import { COLORS } from "@/constants";
+import { ADMIN_TABS, type AdminTabName } from "@/constants/adminTabs";
 import { useAppColors } from "@/constants/utility";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, type ComponentProps } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { usePermissions } from "../../hooks/usePermissions";
+
+type IconName = ComponentProps<typeof Ionicons>["name"];
+
+/**
+ * Icons are presentation, so they stay here rather than in `constants/adminTabs`
+ * — that file is deliberately dependency-free so it can be tested without a
+ * bundler. Typed by `AdminTabName`, so adding a tab without an icon fails to
+ * compile instead of rendering a blank slot.
+ */
+const TAB_ICON: Record<AdminTabName, IconName> = {
+  index: "grid-outline",
+  inventory: "cube-outline",
+  purchasing: "cart-outline",
+  transfers: "swap-horizontal-outline",
+  staff: "people-outline",
+  orders: "receipt-outline",
+  products: "pricetag-outline",
+};
 
 export default function AdminLayout() {
   const { isLoaded, isStaff, can } = usePermissions();
@@ -59,87 +78,28 @@ export default function AdminLayout() {
       }}
     >
       {/*
-        Tabs are filtered by capability, and `href: null` removes the tab from the
-        bar. It does NOT unregister the route — a staff role is already inside
-        /admin, so a deep link still reaches a hidden screen. This file decides
-        what is offered; `RequireCapability` on each narrower screen decides what
-        actually mounts, which is why both exist.
+        Every tab is declared, and the ones this role cannot use get `href: null`.
+        Declaring only the permitted ones would not work: expo-router registers a
+        tab for any route file it finds, so the rest would reappear as tabs. The
+        list itself lives in `constants/adminTabs.ts` so that "which tabs does a
+        manager get?" is answerable by a test rather than by signing in.
 
-        The old gate was `role !== "admin"`, which hid the inventory and transfer
-        tools from the `manager` and `warehouse_staff` roles the server had
-        already opened to. A manager could call every inventory endpoint
-        successfully and never see a single one of them.
+        Hiding a tab is not gating it — `href: null` leaves the route reachable by
+        deep link, which is what `RequireCapability` on each screen is for.
       */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Dashboard",
-          href: can("dashboard") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="inventory"
-        options={{
-          title: "Stock",
-          href: can("inventory.read") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cube-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="purchasing"
-        options={{
-          title: "Buy",
-          href: can("purchasing") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cart-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="transfers"
-        options={{
-          title: "Move",
-          href: can("transfers") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="swap-horizontal-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="staff"
-        options={{
-          title: "Staff",
-          href: can("users") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: "Orders",
-          href: can("orders") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="products"
-        options={{
-          title: "Products",
-          href: can("products") ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pricetag-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      {ADMIN_TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            href: can(tab.capability) ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name={TAB_ICON[tab.name]} size={size} color={color} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

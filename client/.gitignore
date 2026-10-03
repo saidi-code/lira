@@ -36,6 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# scratch output (typecheck / lint / test dumps pasted from a shell, and the
+# `_*.txt` / `_*.bak` files left behind by a mutation test)
+*.txt
+/_*.txt
+/_*.bak
+
 app-example
 
 # generated native folders

@@ -1191,6 +1191,23 @@ The bug it was written for: `transfers/warehouses.tsx` was linked to from the
 transfers tab, which `warehouse_staff` can see, while the warehouses API is
 admin/manager only — so the tap led somewhere the server refused.
 
+**The tab list is data, not JSX.** `client/constants/adminTabs.ts` holds
+`ADMIN_TABS` (`name`, `title`, `capability`), and `app/admin/_layout.tsx` renders
+`ADMIN_TABS.map(...)`, so "which tabs does a manager get?" is a pure function
+(`visibleTabNames`) rather than something you can only learn by signing in as that
+role on a device. `client/tests/adminTabs.test.ts` pins it: the expected tab list
+per role, that every tab points at a route that exists, that every top-level screen
+has a tab, that no tab is offered to a role that cannot reach its capability, and
+that the layout still renders from the list rather than hand-written blocks.
+
+Two rules keep that file honest. Adding a tab means adding its icon, because
+`TAB_ICON` in the layout is typed `Record<AdminTabName, IconName>` — a tab with no
+icon is a compile error, and an icon left behind for a removed tab is caught by the
+test (the type cannot catch the reverse). And **`npm test` globs `tests/*.test.ts`**
+rather than listing files, because an explicitly-listed runner silently ignores a new
+test file — the first version of this suite had that bug and reported all-green with
+the file missing.
+
 The backoffice now reaches inventory: stock levels, a low-stock view, the
 movement ledger and adjustments. `available` (quantity − reserved) is what the
 screens show, never raw `quantity`, because showing on-hand stock is what makes a
@@ -1305,14 +1322,11 @@ Keeping CI trustworthy:
 - **`types/express.d.ts` must stay a module.** Its `export {}` is what makes
   `declare global` legal; removing it silently drops the `req.user` augmentation
   and every controller stops compiling (TS2339).
-- **The client typecheck runs without expo-router's generated types.** `.expo/`
-  is gitignored and only the dev server writes `router.d.ts`, so in CI
-  `router.push("/admin/typo")` compiles clean and fails on any machine that has
-  run `expo start` once. Worth closing with a cached Metro type generation, but
-  it costs a full bundle step — recorded rather than pretended to be covered.
 - **The client's own role rules are a hand-copy of the server's.** A test asserts
   they agree on which roles are staff, but nothing parses the route files, so a
-  new `authorize(...)` argument can still be forgotten here.
+  new `authorize(...)` argument can still be forgotten here. The tab bar has the
+  same shape and is now data (`constants/adminTabs.ts`), so "which tabs does a
+  manager get?" is answerable by a test instead of by signing in.
 - **No Redis, no BullMQ, and `server/jobs/` does not exist.** Earlier drafts of
   this document described a BullMQ worker layer as though it were architecture.
   It was never built, and it should not be: this server deploys to Vercel
@@ -1322,14 +1336,19 @@ Keeping CI trustworthy:
   worse than its absence, because it would look finished.
 
   What the sweep actually uses is a secret-guarded endpoint that something
-  external pokes. On Vercel that is a `crons` entry in `server/vercel.json`,
-  which sends `Authorization: Bearer $CRON_SECRET` and only ever issues GET —
-  hence both accepted headers and the GET route. Schedule limits are plan
-  dependent (Hobby allows daily), so it is deliberately not committed blind.
+  external pokes, and that is now wired: `server/vercel.json` carries a `crons`
+  entry for `0 3 * * *`, which Vercel calls with GET and
+  `Authorization: Bearer $CRON_SECRET` — hence both accepted headers and the GET
+  route. The schedule was checked against Vercel's published limits rather than
+  assumed, because an invalid cron expression **fails the deployment**: limits
+  were lifted to 100 jobs/project on every plan in January 2026, and the only
+  remaining Hobby restriction is frequency (once per day), which `0 3 * * *`
+  satisfies. Hobby also fires within ±59 min, which is fine for a daily sweep.
 
-  **Until `CRON_SECRET` is set and something calls it, unpaid orders are never
-  released** and their stock stays reserved forever. That is the one live gap
-  here, and it is a configuration change on the deployment, not a code change.
+  **`CRON_SECRET` still has to be set on the deployment.** Until it is, the sweep
+  returns 503, unpaid orders are never released, and their stock stays reserved
+  forever. That is the one live gap here, and it is a configuration change on
+  the deployment, not a code change.
 - Node 22 in CI matches the local toolchain.
 
 ### Still manual — needs a live MongoDB

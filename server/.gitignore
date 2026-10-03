@@ -26,6 +26,14 @@ temp/
 # scratch output (typecheck / lint / test dumps pasted from a shell)
 /*.txt
 
+# scratch output from background servers and one-off probes
+/_*.log
+/_*.out
+/_*.err
+/_*.mjs
+/_*.cjs
+/_*.ts
+
 # IDEs
 .vscode/
 .idea/
