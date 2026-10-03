@@ -6,6 +6,7 @@
 // is why the tap target is the whole row: this screen is a queue, the detail
 // screen is the work.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { usePurchaseOrdersQuery } from "@/hooks/usePurchasing";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,7 +52,17 @@ const statusText = (status: PurchaseOrderStatus) => {
   return "text-secondary";
 };
 
-export default function PurchaseOrdersScreen() {
+// Admin/manager only. `href: null` hides the tab from warehouse_staff but does
+// not unregister the route, so the guard is on the screen as well.
+export default function PurchaseOrdersRoute() {
+  return (
+    <RequireCapability capability="purchasing">
+      <PurchaseOrdersScreen />
+    </RequireCapability>
+  );
+}
+
+function PurchaseOrdersScreen() {
   const router = useRouter();
   const [status, setStatus] = useState<PurchaseOrderStatus | undefined>();
 

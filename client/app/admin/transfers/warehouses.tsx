@@ -6,6 +6,7 @@
 // `npm run seed:warehouses` is the supported way to add one. This screen says so
 // rather than offering a form that would have to be undone.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { useSetDefaultWarehouse, useWarehousesQuery } from "@/hooks/useInventory";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +19,18 @@ import {
   View,
 } from "react-native";
 
-export default function WarehousesScreen() {
+// Registered with `href: null` on the transfers tab, which hides the tab but
+// leaves the route reachable — so a warehouse_staff deep link lands here while
+// the server answers 403. The guard is on the screen for exactly that case.
+export default function WarehousesRoute() {
+  return (
+    <RequireCapability capability="warehouses">
+      <WarehousesScreen />
+    </RequireCapability>
+  );
+}
+
+function WarehousesScreen() {
   const { warehouses, isLoading, isRefetching, error, refetch } =
     useWarehousesQuery();
   const setDefault = useSetDefaultWarehouse();

@@ -5,6 +5,7 @@
 // An order cannot be raised without a supplier, so this is reachable from the
 // "New order" screen's empty state rather than being a separate chore.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { useCreateSupplier, useSuppliersQuery } from "@/hooks/usePurchasing";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,7 +22,16 @@ import {
   View,
 } from "react-native";
 
-export default function SuppliersScreen() {
+// Admin/manager only — suppliers carry the terms every PO is priced against.
+export default function SuppliersRoute() {
+  return (
+    <RequireCapability capability="suppliers">
+      <SuppliersScreen />
+    </RequireCapability>
+  );
+}
+
+function SuppliersScreen() {
   const { suppliers, isLoading, isRefetching, error, refetch } =
     useSuppliersQuery({ limit: 100 });
   const create = useCreateSupplier();

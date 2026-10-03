@@ -6,9 +6,9 @@
 // negative. Both are enforced here too, because a form that lets you submit
 // something guaranteed to fail is worse than one that explains why it cannot.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { useAdjustStock, useWarehousesQuery } from "@/hooks/useInventory";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -20,9 +20,16 @@ import {
   View,
 } from "react-native";
 
-export default function AdjustStockScreen() {
+export default function AdjustStockRoute() {
+  return (
+    <RequireCapability capability="inventory.adjust">
+      <AdjustStockScreen />
+    </RequireCapability>
+  );
+}
+
+function AdjustStockScreen() {
   const router = useRouter();
-  const { can } = usePermissions();
   const { warehouses } = useWarehousesQuery();
 
   // Pre-filled when arriving from a stock row, empty from the toolbar button.
@@ -38,27 +45,6 @@ export default function AdjustStockScreen() {
   const [reason, setReason] = useState("");
 
   const adjust = useAdjustStock();
-
-  // The route is only registered for roles with `inventory.adjust`, but a deep
-  // link can still land here, so the screen refuses rather than 403ing later.
-  if (!can("inventory.adjust")) {
-    return (
-      <View className="flex-1 items-center justify-center bg-surface px-8">
-        <Text className="text-primary font-bold text-lg text-center">
-          Not available for your role
-        </Text>
-        <Text className="text-secondary text-sm mt-2 text-center">
-          Adjusting stock is limited to admins and managers.
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mt-6 px-6 py-3 rounded-full bg-primary"
-        >
-          <Text className="text-white font-bold">Go back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   const amount = Number(quantity);
   const parsed = Number.isFinite(amount) && quantity.trim() !== "";

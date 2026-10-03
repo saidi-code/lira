@@ -5,7 +5,7 @@ export default function ProductsLayout() {
     return (
         <Stack
             screenOptions={{
-                headerStyle: { backgroundColor: "#fff" },
+                headerStyle: { backgroundColor: COLORS.white },
                 headerTintColor: COLORS.primary,
                 headerTitleStyle: { fontWeight: "bold" },
                 headerShadowVisible: false,

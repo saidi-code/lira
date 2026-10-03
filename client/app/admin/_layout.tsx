@@ -59,9 +59,11 @@ export default function AdminLayout() {
       }}
     >
       {/*
-        Tabs are filtered by capability, and `href: null` removes the tab rather
-        than just hiding its icon — the route stays registered but is guarded by
-        its own screen, so a deep link cannot walk past this.
+        Tabs are filtered by capability, and `href: null` removes the tab from the
+        bar. It does NOT unregister the route — a staff role is already inside
+        /admin, so a deep link still reaches a hidden screen. This file decides
+        what is offered; `RequireCapability` on each narrower screen decides what
+        actually mounts, which is why both exist.
 
         The old gate was `role !== "admin"`, which hid the inventory and transfer
         tools from the `manager` and `warehouse_staff` roles the server had

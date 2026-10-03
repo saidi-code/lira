@@ -7,6 +7,7 @@
 // says so rather than implying the goods are already at the destination.
 // ==========================================
 import { COLORS } from "@/constants";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   useSetTransferStatus,
   useTransfersQuery,
@@ -66,6 +67,7 @@ const ACTION_LABEL: Partial<Record<TransferStatus, string>> = {
 
 export default function TransfersScreen() {
   const router = useRouter();
+  const { can } = usePermissions();
   const [status, setStatus] = useState<TransferStatus | undefined>();
   const [confirm, setConfirm] = useState<BackendTransfer | null>(null);
 
@@ -88,15 +90,24 @@ export default function TransfersScreen() {
 
         <View className="flex-1" />
 
-        <TouchableOpacity
-          onPress={() => router.push("/admin/transfers/warehouses")}
-          className="flex-row items-center px-3 py-2 rounded-full bg-subtle"
-        >
-          <Ionicons name="business-outline" size={14} color={COLORS.secondary} />
-          <Text className="text-secondary text-xs font-bold ml-1">
-            Warehouses
-          </Text>
-        </TouchableOpacity>
+        {/*
+          The `transfers` tab is open to warehouse_staff, but managing the
+          warehouse list is not — `warehouses` is admin/manager only. This button
+          used to render for everyone, so a warehouse_staff member could tap
+          through to a screen the server answers with 403. Hidden here, and
+          `warehouses.tsx` guards itself for a deep link.
+        */}
+        {can("warehouses") && (
+          <TouchableOpacity
+            onPress={() => router.push("/admin/transfers/warehouses")}
+            className="flex-row items-center px-3 py-2 rounded-full bg-subtle"
+          >
+            <Ionicons name="business-outline" size={14} color={COLORS.secondary} />
+            <Text className="text-secondary text-xs font-bold ml-1">
+              Warehouses
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList

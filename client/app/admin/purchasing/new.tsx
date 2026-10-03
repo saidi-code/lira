@@ -6,6 +6,7 @@
 // stores the unit cost that was entered, so an autocomplete guessing a price
 // would be another way to order at the wrong number.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { useCreatePurchaseOrder, useSuppliersQuery } from "@/hooks/usePurchasing";
 import { useRouter } from "expo-router";
@@ -34,7 +35,17 @@ const newLine = (): Line => ({
   unitCost: "",
 });
 
-export default function NewPurchaseOrder() {
+// Admin/manager only. Reachable by deep link even when the Buy tab is hidden.
+// `suppliers` is listed here because the empty state links through to it.
+export default function NewPurchaseOrderRoute() {
+  return (
+    <RequireCapability capability="purchasing">
+      <NewPurchaseOrder />
+    </RequireCapability>
+  );
+}
+
+function NewPurchaseOrder() {
   const router = useRouter();
   const { suppliers } = useSuppliersQuery({ active: true });
   const create = useCreatePurchaseOrder();

@@ -1171,6 +1171,26 @@ the two disagree about which roles are staff.
 `cashier` is deliberately not staff: it is assignable and the enum validates it,
 but no route grants it anything, so admitting it would show an empty backoffice.
 
+**hiding a tab is not gating a route.** `href: null` on a `Tabs.Screen` removes the
+tab from the bar but leaves the route registered, and a manager or a
+`warehouse_staff` member is already inside `/admin` — so a deep link still reaches
+any screen, which then fires a request the server answers with 403 and shows a raw
+error toast. Every screen whose capability excludes some staff role therefore wraps
+itself in `<RequireCapability>` (`client/components/admin/RequireCapability.tsx`),
+which stops the screen mounting at all.
+
+That wrapper must be the **default export** of the route file. Dropping
+`export default` while adding it leaves a file that exports nothing; `tsc` stays
+silent, because nothing imports a route by name, and expo-router renders a blank
+screen. `client/tests/adminGuards.test.ts` derives which screens need a guard from
+`CAPABILITY_ROLES` and fails on a missing guard, a wrong capability, or a wrapper
+that is not the default export. It walks the directory rather than a list, so a new
+screen fails until somebody decides its guard.
+
+The bug it was written for: `transfers/warehouses.tsx` was linked to from the
+transfers tab, which `warehouse_staff` can see, while the warehouses API is
+admin/manager only — so the tap led somewhere the server refused.
+
 The backoffice now reaches inventory: stock levels, a low-stock view, the
 movement ledger and adjustments. `available` (quantity − reserved) is what the
 screens show, never raw `quantity`, because showing on-hand stock is what makes a
@@ -1262,7 +1282,7 @@ runs exactly them on every push to `production` and on every pull request.
 | `server/` | `npx tsc --noEmit --pretty false` | types — `noUnusedLocals` is on, so dead imports fail the build |
 | `server/` | `npm run lint` | ESLint — unreachable code, floating promises, useless assignment |
 | `server/` | `npm test` | `tests/pricing.test.ts` (the money math), `tests/cancel.test.ts` (stock coming back), `tests/orderLifecycle.test.ts` (payment expiry) |
-| `client/` | `npm test` | `tests/permissions.test.ts` (which backoffice screens each role gets) |
+| `client/` | `npm test` | `tests/permissions.test.ts` (which backoffice screens each role gets), `tests/adminGuards.test.ts` (that each screen actually enforces its own guard) |
 | `client/` | `npx tsc --noEmit --pretty false` | types |
 | `client/` | `npx expo lint` | ESLint (flat config) |
 

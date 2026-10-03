@@ -1,3 +1,4 @@
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { getStatusColor } from "../../constants/utility";
 
@@ -20,7 +21,17 @@ import Toast from "react-native-toast-message";
 import axios from "../../config/api";
 
 // import { dummyUser } from "../(tabs)/assets";
-export default function AdminOrders() {
+// Admin-only. `href: null` hides the tab from a manager but does not unregister
+// the route, so the guard is on the screen as well.
+export default function AdminOrdersRoute() {
+  return (
+    <RequireCapability capability="orders">
+      <AdminOrders />
+    </RequireCapability>
+  );
+}
+
+function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState([]);

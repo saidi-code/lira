@@ -10,6 +10,7 @@
 // so a line can be received more than once. The server 409s if a receipt would
 // exceed what was ordered, which is a data problem to fix, not a retry.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import {
   useCancelPurchaseOrder,
@@ -33,7 +34,16 @@ import type { BackendPurchaseOrderItem } from "@/config/purchasingApi";
 const productIdOf = (item: BackendPurchaseOrderItem) =>
   typeof item.product === "string" ? item.product : item.product._id;
 
-export default function PurchaseOrderDetail() {
+// Admin/manager only. Reachable by deep link even when the Buy tab is hidden.
+export default function PurchaseOrderDetailRoute() {
+  return (
+    <RequireCapability capability="purchasing">
+      <PurchaseOrderDetail />
+    </RequireCapability>
+  );
+}
+
+function PurchaseOrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 

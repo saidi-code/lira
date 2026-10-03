@@ -11,7 +11,7 @@
     "lint": "expo lint",
     "tunnel": "expo start --tunnel",
     "inst": "npx expo install --check",
-    "test": "node --import tsx --test tests/permissions.test.ts",
+    "test": "node --import tsx --test tests/permissions.test.ts tests/adminGuards.test.ts",
     "types:routes": "node scripts/generateRouteTypes.cjs"
   },
   "dependencies": {

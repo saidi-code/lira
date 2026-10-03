@@ -7,6 +7,7 @@
 // overwrites this. That is stated on the screen rather than left to be
 // discovered when a change silently reverts.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { USER_ROLES, type UserRole } from "@/constants/roles";
 import { useAdminUsers, useSetUserRole } from "@/hooks/useAdmin";
@@ -29,7 +30,17 @@ const ROLE_NOTE: Partial<Record<UserRole, string>> = {
   cashier: "grants no access today",
 };
 
-export default function StaffScreen() {
+// Admin-only. `href: null` hides the tab from a manager but does not unregister
+// the route, so the guard is on the screen as well.
+export default function StaffRoute() {
+  return (
+    <RequireCapability capability="users">
+      <StaffScreen />
+    </RequireCapability>
+  );
+}
+
+function StaffScreen() {
   const { users, isLoading, isRefetching, error, refetch } = useAdminUsers({
     limit: 100,
   });

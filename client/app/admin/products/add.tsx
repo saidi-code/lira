@@ -1,3 +1,4 @@
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { CATEGORIES, COLORS } from "@/constants";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +20,16 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import axios from "../../../config/api";
-export default function AddProduct() {
+// Admin-only. Reachable by deep link even when the Products tab is hidden.
+export default function AddProductRoute() {
+  return (
+    <RequireCapability capability="products">
+      <AddProduct />
+    </RequireCapability>
+  );
+}
+
+function AddProduct() {
   const router = useRouter();
   const { getToken } = useAuth();
   const [submitting, setSubmitting] = useState(false);

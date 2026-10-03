@@ -1,3 +1,4 @@
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +17,17 @@ import {
 import Toast from "react-native-toast-message";
 import axios from "../../../config/api";
 
-export default function AdminProducts() {
+// Admin-only. `href: null` hides the tab from a manager but does not unregister
+// the route, so the guard is on the screen as well.
+export default function AdminProductsRoute() {
+  return (
+    <RequireCapability capability="products">
+      <AdminProducts />
+    </RequireCapability>
+  );
+}
+
+function AdminProducts() {
   const { getToken } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);

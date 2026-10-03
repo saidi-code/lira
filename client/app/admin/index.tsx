@@ -7,6 +7,7 @@
 // query key, so a role change or a new order cannot invalidate it, and it is a
 // second, drifting description of how to reach the endpoint.
 // ==========================================
+import { RequireCapability } from "@/components/admin/RequireCapability";
 import { COLORS } from "@/constants";
 import { getStatusColor } from "../../constants/utility";
 import { useAdminStats } from "@/hooks/useAdmin";
@@ -44,7 +45,17 @@ const productKey = (item: RecentOrder["items"][number], index: number) => {
   return `${id}-${index}`;
 };
 
-export default function AdminDashboard() {
+// Admin-only, and the tab is the first thing a non-admin loses — but `href: null`
+// does not unregister the route, so the guard is on the screen as well.
+export default function AdminDashboardRoute() {
+  return (
+    <RequireCapability capability="dashboard">
+      <AdminDashboard />
+    </RequireCapability>
+  );
+}
+
+function AdminDashboard() {
   const { stats, isLoading, isFetching, refetch, error } = useAdminStats();
 
   const recentOrders = (stats?.recentOrders ?? []) as RecentOrder[];
