@@ -1369,6 +1369,29 @@ Keeping CI trustworthy:
   misses. `tests/errorHandler.test.ts` proves the behaviour over a real socket
   and asserts the major version, so a downgrade (or an accidental Express 4 pin)
   fails rather than silently turning every oversight into a timeout.
+- **The API had no input validation, and the first one applied found a bug in the
+  cart.** Every controller read `req.body` and compared it directly, which is not
+  safe because JavaScript's relational operators coerce instead of rejecting.
+  A body of `{"quantity": "abc"}` passed every guard in `addToCart`:
+  `"abc" <= 0` is false, `product.stock < "abc"` is false, and Mongoose then casts
+  to `NaN` where `NaN < 1` is also false — so the cart kept a line with a NaN
+  quantity for the order flow to read later. Every individual check was
+  reasonable; only the chain was wrong, which is why it survived.
+  `utils/validate.ts` is the fix — `asPositiveInteger`, `asInteger`, `asString`,
+  `asOptionalString`, `asOneOf`, `asObjectId` — each throwing an `AppError` with a
+  400 so the central error handler already covers it and no local try/catch is
+  needed. It is hand-rolled to match `pagination.ts` and `escapeRegex.ts` rather
+  than adding a dependency.
+  `tests/integration/cartValidation.integration.test.ts` drives the real handler
+  over a socket and is verified by mutation: reverting the fix fails exactly the
+  two tests that describe the exploit.
+- **Numeric strings are rejected rather than coerced.** The client already sends
+  real numbers, and a field the API accepts in two forms is a field that eventually
+  arrives in one.
+- **`fail()` in `utils/validate.ts` needs its explicit type annotation.** TypeScript
+  narrows after a `never`-returning call only when the callee is a function
+  declaration or an annotated `const`; an arrow function whose return type merely
+  *is* `never` does not narrow, and every use below it failed to compile.
 - **Nothing reaches a response as `error.message` now, but only after being asked
   twice.** The first sweep removed `message: error.message` and missed 21 sites
   using `error: error instanceof Error ? error.message : "Unknown error"` — the

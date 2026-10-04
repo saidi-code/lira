@@ -1,6 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
+import { asInteger, asPositiveInteger } from "../utils/validate.js";
+
+/**
+ * A sanity ceiling on a single line.
+ *
+ * Not a stock limit — that is checked against the product — but a bound on what a
+ * cart can ask for at all, so a single request cannot create a quantity large
+ * enough to be awkward to display or to reason about downstream.
+ */
+const MAX_CART_QUANTITY = 999;
 // Get User Cart
 // Get /api/v1/cart
 export const getCart = async (req: Request, res: Response, next: NextFunction) => {
@@ -21,18 +31,20 @@ export const getCart = async (req: Request, res: Response, next: NextFunction) =
 // POST /api/v1/cart/add
 export const addToCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { productId, quantity = 1, size, color } = req.body;
+    const { productId, size, color } = req.body;
     if (!productId) {
       return res
         .status(400)
         .json({ success: false, message: "productId is required" });
     }
 
-    if (quantity <= 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "quantity must be greater than 0" });
-    }
+    // Validated rather than compared. `quantity <= 0` and `product.stock <
+    // quantity` are both coercing comparisons, so a body of {"quantity": "abc"}
+    // makes each of them false: both guards pass, and Mongoose then stores NaN
+    // because `NaN < 1` is false as well. See utils/validate.ts.
+    const quantity = asPositiveInteger(req.body.quantity ?? 1, "quantity", {
+      max: MAX_CART_QUANTITY,
+    });
 
     if (typeof productId !== 'string' || productId.length < 12) {
       // prevents obvious invalid ObjectId values
@@ -157,6 +169,12 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
       return res.status(400).json({ success: false, message: "quantity is required" });
     }
 
+    // Zero and negatives still mean "remove this line" below, so this is
+    // asInteger rather than asPositiveInteger — but it is validated, because
+    // `quantity <= 0` and `product.stock < quantity` are coercing comparisons and
+    // a body of {"quantity": "abc"} passes both of them.
+    const wanted = asInteger(quantity, "quantity");
+
     const cart = await Cart.findOne({ user: req.user!._id });
     if (!cart) {
       return res.status(404).json({ success: false, message: "Cart not found" });
@@ -187,7 +205,9 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
       return res.status(404).json({ success: false, message: "Item not in cart" });
     }
 
-    if (quantity <= 0) {
+    // `wanted`, not the raw body value: from here on every comparison is against a
+    // number that is known to be one.
+    if (wanted <= 0) {
       cart.items = cart.items.filter((it) => {
         const sameProduct = it.product.toString() === productId.toString();
         const sameSize = (it.size ?? null) === normalizedSize;
@@ -197,7 +217,7 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
     } else {
       // stock validation (simple vs variable)
       if (product.type === "simple") {
-        if (product.stock < quantity) {
+        if (product.stock < wanted) {
           return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
         }
       }
@@ -219,12 +239,12 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
           return res.status(400).json({ success: false, message: "Selected variant is not available" });
         }
 
-        if ((variant as any).stock < quantity) {
+        if ((variant as any).stock < wanted) {
           return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${(variant as any).stock} article(s) disponible(s) pour cette variante` });
         }
       }
 
-      item.quantity = quantity;
+      item.quantity = wanted;
       item.price = product.price;
     }
 
