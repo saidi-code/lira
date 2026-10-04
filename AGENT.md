@@ -906,6 +906,29 @@ Standard CRUD (see §10 for role requirements). `POST /orders` additionally
 accepts an `Idempotency-Key` header and ignores any `shippingCost`/`tax` in the
 body (see §11 Order Pricing).
 
+**The wishlist's two writes are atomic, not check-then-write.** `POST /wishlist/add`
+used to `findOne`, see the product was absent, then `$push` it — so two overlapping
+requests both saw "not in the list" and both pushed. No unique index can catch
+that, because MongoDB cannot enforce uniqueness across the `product` field of an
+array of subdocuments. Five concurrent adds stored 4 and 7 copies.
+
+`$addToSet` is the obvious fix and **does not work here**: the `addedAt` default
+makes each candidate element `{product, addedAt: now}` distinct from the stored
+one, so MongoDB never recognises a duplicate. The guard has to be in the *filter*
+— `{"items.product": {$ne: productId}}` — which MongoDB evaluates as part of the
+same atomic update, so the check and the write cannot come apart. A null result
+then truthfully means "already in the list" instead of being guessed beforehand.
+
+`GET /wishlist` used the same read-then-`create` shape against the unique index on
+`user`, so two concurrent loads of a *new* account raced and one got a 409 on a
+plain GET. It is now a single upsert with `$setOnInsert`. A GET still writes, but
+it can no longer fail.
+
+Pinned by `tests/integration/wishlistConcurrently.integration.test.ts`, which
+fires the requests in parallel rather than awaiting one at a time — sequential
+awaits would pass against the old code, because the second call would observe the
+first call's write.
+
 ### Pricing
 
 | Method | Path | Auth | Notes |
@@ -1470,6 +1493,14 @@ Keeping CI trustworthy:
   new `authorize(...)` argument can still be forgotten here. The tab bar has the
   same shape and is now data (`constants/adminTabs.ts`), so "which tabs does a
   manager get?" is answerable by a test instead of by signing in.
+- **One integration test is flaky under parallel load, and it is not a code bug.**
+  `scripts.integration.test.ts` → "ignores a pending order as drift" failed once
+  with `6 available, 6 in the catalogue`, then passed 19/19 alone and in two
+  consecutive full runs. Each suite starts its own mongod, so adding an eighth
+  concurrent one is enough load to matter. **Before investigating a lone failure
+  here, re-run it alone and then re-run the suite** — a single red result in this
+  file is not evidence of a regression. The cost of guessing wrong is editing
+  correct code.
 - **No Redis, no BullMQ, and `server/jobs/` does not exist.** Earlier drafts of
   this document described a BullMQ worker layer as though it were architecture.
   It was never built, and it should not be: this server deploys to Vercel
