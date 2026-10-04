@@ -1,25 +1,44 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import Collection from '../models/Collections.js'; // adjust path
+import Collection from '../models/Collections.js';
+import { asObjectId, asString } from "../utils/validate.js";
+import { AppError } from "../middlewares/errorHandler.js"; // adjust path
 
 // ----------------------------------------
 // CREATE a new collection
 // ----------------------------------------
 export const createCollection = async (req: Request, res: Response) => {
   try {
-    const { title, subtitle, products, isActive, isFeatured, cta, banner } = req.body;
+    const body = req.body ?? {};
 
-    // Validate required fields (extra safety – validation middleware also does this)
-    if (!title || !subtitle || !cta || !banner) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validated rather than truthiness-checked. `if (!title || !subtitle || …)` is
+    // satisfied by an object, and Mongoose then stores "[object Object]" as the
+    // collection title — which is rendered on the storefront. The old comment
+    // here claimed "validation middleware also does this"; there is no such
+    // middleware in this codebase, which is probably why the gap lasted.
+    const title = asString(body.title, "title", { maxLength: 200 });
+    const subtitle = asString(body.subtitle, "subtitle", { maxLength: 300 });
+    const cta = asString(body.cta, "cta", { maxLength: 100 });
+    const banner = asString(body.banner, "banner", { maxLength: 500 });
+
+    // `products || []` accepted a bare string, which Mongoose then tried to cast
+    // to an array of ids. Checked explicitly so the error names the field.
+    const ids: string[] = [];
+    if (body.products !== undefined) {
+      if (!Array.isArray(body.products)) {
+        throw new AppError("products must be an array of ids", { status: 400 });
+      }
+      for (const id of body.products) {
+        ids.push(asObjectId(id, "products[]"));
+      }
     }
 
     const newCollection = new Collection({
       title,
       subtitle,
-      products: products || [],
-      isActive: isActive !== undefined ? isActive : true,
-      isFeatured: isFeatured !== undefined ? isFeatured : false,
+      products: ids,
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+      isFeatured: body.isFeatured !== undefined ? Boolean(body.isFeatured) : false,
       cta,
       banner,
     });
@@ -27,6 +46,10 @@ export const createCollection = async (req: Request, res: Response) => {
     const saved = await newCollection.save();
     return res.status(201).json(saved);
   } catch (error) {
+    // Re-thrown so the central handler keeps the 400 it carries; otherwise a
+    // validation failure is reported as a 500. See utils/validate.ts.
+    if (error instanceof AppError) throw error;
+
     console.error('Create collection error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }

@@ -6,24 +6,25 @@ import mongoose from "mongoose";
 
 const supplierSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true, maxlength: 200 },
     /** Named contact person — who a warehouse manager rings. */
-    contact: { type: String, default: "", trim: true },
+    contact: { type: String, default: "", trim: true, maxlength: 200 },
     email: {
       type: String,
       default: "",
       trim: true,
       lowercase: true,
+      maxlength: 200,
       match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Invalid email address"],
     },
-    phone: { type: String, default: "", trim: true },
+    phone: { type: String, default: "", trim: true, maxlength: 40 },
 
     address: {
-      street: { type: String, default: "" },
-      city: { type: String, default: "" },
-      state: { type: String, default: "" },
-      zipCode: { type: String, default: "" },
-      country: { type: String, default: "" },
+      street: { type: String, default: "", maxlength: 300 },
+      city: { type: String, default: "", maxlength: 100 },
+      state: { type: String, default: "", maxlength: 100 },
+      zipCode: { type: String, default: "", maxlength: 20 },
+      country: { type: String, default: "", maxlength: 100 },
     },
 
     /**

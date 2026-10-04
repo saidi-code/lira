@@ -1385,6 +1385,25 @@ Keeping CI trustworthy:
   `tests/integration/cartValidation.integration.test.ts` drives the real handler
   over a socket and is verified by mutation: reverting the fix fails exactly the
   two tests that describe the exploit.
+- **Collections had the address bug too, and a comment claiming a safety net that
+  does not exist.** `createCollection` guarded with `if (!title || !subtitle || …)`
+  — satisfied by an object, so `"[object Object]"` became a collection title
+  rendered on the storefront. The comment above it read "validation middleware
+  also does this". There is no validation middleware in this codebase; that
+  sentence is probably why nobody looked. Corrected, and `products || []` (which
+  accepted a bare string) is now an explicit array-of-ids check.
+- **Schema `maxlength` is the backstop, the controller is the message.** `Address`,
+  `Collections`, `Supplier` and `Categories` declared **zero** `maxlength`
+  between them, so a 10 MB string was a valid request as far as the model was
+  concerned. Both layers now bound the same values: the controller returns a 400
+  naming the field, and the schema rejects from any write path at all.
+  `PurchaseOrder.notes`, `Transfer.notes` and `StockMovement.note` already
+  declared `maxlength: 500`, and the adjustment `reason` is stored as `note`, so
+  those needed nothing.
+- **Asserting on a Mongoose error message is case-sensitive.** The schema-bounds
+  test expected `/Validation failed/`; Mongoose renders `"Category validation
+  failed"`, so four bounds that were working correctly appeared to fail. The
+  assertion, not the bounds, was wrong.
 - **Addresses stored `[object Object]`.** `createAddress` checked its fields with
   `if (!street || !city || …)`, which an object satisfies. Mongoose then coerced
   `{}` to the string `"[object Object]"` and saved it as the street — the value a

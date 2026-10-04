@@ -30,10 +30,13 @@ import Product from "../../models/Products.js";
 import Review from "../../models/Review.js";
 import Address from "../../models/Address.js";
 import Supplier from "../../models/Supplier.js";
+import Collection from "../../models/Collections.js";
+import Category from "../../models/Categories.js";
 import { upsertReview } from "../../controllers/ReviewController.js";
 import { updateProduct } from "../../controllers/productController.js";
 import { createAddress } from "../../controllers/AddressController.js";
 import { createSupplier } from "../../controllers/supplierController.js";
+import { createCollection } from "../../controllers/CollectionController.js";
 import { errorHandler, notFoundHandler } from "../../middlewares/errorHandler.js";
 import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
@@ -89,6 +92,7 @@ before(async () => {
   app.put("/products/:id", asUser(userId), updateProduct);
   app.post("/addresses", asUser(userId), createAddress);
   app.post("/suppliers", asUser(userId), createSupplier);
+  app.post("/collections", asUser(userId), createCollection);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
@@ -261,6 +265,76 @@ describe("address and supplier bodies", () => {
     assert.equal(supplier?.address?.city, "Lisbon");
     // Absent fields become empty strings, not "[object Object]".
     assert.equal(supplier?.address?.street, "");
+  });
+});
+describe("schema length bounds", () => {
+  // The controllers give the better message; these prove the schema is a real
+  // backstop, so a write from anywhere else is bounded too.
+  const models = [
+    ["Category", Category, { title: "ع".repeat(500), icon: "i" }],
+    ["Address", Address, { type: "Home", street: "s".repeat(9999), city: "c", state: "s", zipCode: "1", phoneNumber: "2" }],
+    ["Collection", Collection, { title: "t".repeat(9999), subtitle: "s", cta: "c", banner: "b" }],
+    ["Supplier", Supplier, { name: "n".repeat(9999) }],
+  ] as const;
+
+  for (const [name, model, doc] of models) {
+    it(`${name} refuses an over-long string`, async () => {
+      await assert.rejects(
+        () => (model as { create(d: unknown): Promise<unknown> }).create(doc),
+        // Case-insensitive on purpose: Mongoose renders the message as
+        // "<Model> validation failed: ...", so the capitalised form never matches.
+        /maximum allowed length|validation failed/i,
+        `${name} should reject an over-long field`
+      );
+    });
+  }
+});
+
+describe("collection create", () => {
+  const post = (path: string, body: unknown) =>
+    fetch(`${base}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  it("rejects a title that is an object", async () => {
+    const res = await post("/collections", {
+      title: { not: "a title" },
+      subtitle: "s",
+      cta: "c",
+      banner: "b",
+    });
+
+    // Before the fix this was truthy, so "[object Object]" became the title of a
+    // collection rendered on the storefront.
+    assert.equal(res.status, 400);
+    assert.equal(await Collection.countDocuments({}), 0);
+  });
+
+  it("rejects products that is not an array of ids", async () => {
+    const res = await post("/collections", {
+      title: "Summer",
+      subtitle: "s",
+      cta: "c",
+      banner: "b",
+      products: "not-an-array",
+    });
+
+    assert.equal(res.status, 400);
+  });
+
+  it("still creates a real collection", async () => {
+    const res = await post("/collections", {
+      title: "Summer",
+      subtitle: "Warm weather picks",
+      cta: "Shop now",
+      banner: "https://example.test/b.jpg",
+      products: [],
+    });
+
+    assert.equal(res.status, 201);
+    assert.equal((await Collection.findOne({ title: "Summer" }))?.cta, "Shop now");
   });
 });
 });
