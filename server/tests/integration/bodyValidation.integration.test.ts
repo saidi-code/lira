@@ -1,0 +1,175 @@
+// tests/integration/bodyValidation.integration.test.ts
+// ==========================================
+//   The same coercion bug, in the two other places it was found.
+//
+// `utils/validate.ts` was written after the cart accepted {"quantity": "abc"}.
+// Applying it to the rest of the API turned up two more instances of the same
+// shape, both on paths that change data a customer sees:
+//
+//   upsertReview    `!rating || rating < 1 || rating > 5` — three coercing
+//                   checks, so "abc" made all of them false and the rating was
+//                   stored as NaN. 2.7 passed too.
+//   updateProduct   `Number(price)` / `Number(stock)` — Number(null),
+//                   Number(""), Number([]) and Number(false) are all 0, so
+//                   {"stock": null} silently zeroed a product's stock, and
+//                   {"price": "abc"} stored NaN.
+//
+// What is NOT here is equally deliberate: inventoryController, transferController
+// and purchaseOrderController already guard with `Number.isFinite` /
+// `Number.isInteger`, which reject NaN correctly. Auditing them found nothing,
+// and pretending otherwise would make this file a list of everything rather than
+// of what was broken.
+// ==========================================
+import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+
+import express from "express";
+import mongoose from "mongoose";
+
+import Product from "../../models/Products.js";
+import Review from "../../models/Review.js";
+import { upsertReview } from "../../controllers/ReviewController.js";
+import { updateProduct } from "../../controllers/productController.js";
+import { errorHandler, notFoundHandler } from "../../middlewares/errorHandler.js";
+import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
+
+let mongod: MongoMemoryServer;
+let base: string;
+let userId: string;
+let server: ReturnType<typeof import("node:http").createServer>;
+
+const seedProduct = () =>
+  Product.create({
+    name: "Test perfume",
+    subtitle: "a subtitle",
+    description: "a description",
+    brand: "lyra",
+    category: new mongoose.Types.ObjectId(),
+    subCategory: "man",
+    sku: `SKU-${new mongoose.Types.ObjectId().toString()}`,
+    price: 100,
+    stock: 10,
+    type: "simple",
+    images: ["https://example.test/a.jpg"],
+  });
+
+const asUser = (id: string) => (
+  req: express.Request,
+  _res: express.Response,
+  next: express.NextFunction
+) => {
+  (req as express.Request & { user?: unknown }).user = {
+    _id: new mongoose.Types.ObjectId(id),
+    role: "user",
+  };
+  next();
+};
+
+const send = (method: "POST" | "PUT", path: string, body: unknown) =>
+  fetch(`${base}${path}`, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+before(async () => {
+  mongod = await MongoMemoryServer.create({
+    instance: { launchTimeout: LAUNCH_TIMEOUT_MS },
+  });
+  await mongoose.connect(mongod.getUri());
+
+  const app = express();
+  app.use(express.json());
+  userId = new mongoose.Types.ObjectId().toString();
+  app.post("/reviews/product/:id", asUser(userId), upsertReview);
+  app.put("/products/:id", asUser(userId), updateProduct);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  server = app.listen(0);
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+  const address = server.address();
+  base = `http://127.0.0.1:${typeof address === "object" && address ? address.port : 0}`;
+});
+
+after(async () => {
+  // closeAllConnections() is required, not a nicety: `fetch` (undici) holds
+  // connections open, and server.close() waits for them. Without this the suite
+  // hangs after its last assertion instead of exiting.
+  server.closeAllConnections();
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  await mongoose.disconnect();
+  await mongod.stop();
+});
+
+describe("review rating", () => {
+  it("rejects a rating that only looks numeric", async () => {
+    const product = await seedProduct();
+
+    for (const bad of ["abc", "3", true, {}, []]) {
+      const res = await send("POST", `/reviews/product/${product._id}`, { rating: bad });
+      assert.equal(res.status, 400, `rating=${JSON.stringify(bad)} should be rejected`);
+    }
+
+    assert.equal(await Review.countDocuments({ product: product._id }), 0);
+  });
+
+  it("rejects a fractional rating", async () => {
+    const product = await seedProduct();
+    const res = await send("POST", `/reviews/product/${product._id}`, { rating: 2.7 });
+
+    assert.equal(res.status, 400);
+    assert.equal(await Review.countDocuments({ product: product._id }), 0);
+  });
+
+  it("still accepts a whole rating in range", async () => {
+    const product = await seedProduct();
+    const res = await send("POST", `/reviews/product/${product._id}`, { rating: 4 });
+
+    assert.equal(res.status, 201);
+    const review = await Review.findOne({ product: product._id });
+    assert.equal(review?.rating, 4);
+  });
+});
+
+describe("product update", () => {
+  it("rejects a price or stock that only looks numeric", async () => {
+    const product = await seedProduct();
+
+    for (const bad of ["abc", null, "", [], false]) {
+      const res = await send("PUT", `/products/${product._id}`, { stock: bad });
+      assert.equal(res.status, 400, `stock=${JSON.stringify(bad)} should be rejected`);
+    }
+
+    const unchanged = await Product.findById(product._id);
+    assert.equal(unchanged?.stock, 10, "a rejected update must not change stock");
+  });
+
+  it("does not silently zero the stock", async () => {
+    // The specific harm: Number(null) is 0, so this used to succeed and leave the
+    // product unsellable, with no error anywhere.
+    const product = await seedProduct();
+    const res = await send("PUT", `/products/${product._id}`, { stock: null });
+
+    assert.equal(res.status, 400);
+    assert.equal((await Product.findById(product._id))?.stock, 10);
+  });
+
+  it("still accepts an ordinary update", async () => {
+    const product = await seedProduct();
+    const res = await send("PUT", `/products/${product._id}`, {
+      stock: 25,
+      price: 120,
+      // Required: updateProduct rejects an update whose final image list would
+      // be empty, so without this the request short-circuits before saving.
+      // Note that it answers 200 with `success: false` when it does — see the
+      // open question about that status in AGENT.md.
+      existingImages: "https://example.test/a.jpg",
+    });
+
+    assert.equal(res.status, 200);
+    const updated = await Product.findById(product._id);
+    assert.equal(updated?.stock, 25);
+    assert.equal(updated?.price, 120);
+  });
+});

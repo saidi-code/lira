@@ -1385,6 +1385,25 @@ Keeping CI trustworthy:
   `tests/integration/cartValidation.integration.test.ts` drives the real handler
   over a socket and is verified by mutation: reverting the fix fails exactly the
   two tests that describe the exploit.
+- **Validation only works if the controller forwards it.** `utils/validate.ts` throws
+  an `AppError` with a 400, but a handler with its own `catch (error) { return
+  res.status(500)… }` turns that back into a 500 — the caller's mistake reported
+  as our fault. `updateProduct` and `upsertReview` both did this, and the
+  integration test caught it immediately (400 expected, 500 returned). Any
+  controller that validates must also `next(error)` rather than answer, which is
+  the same change that removes its leak.
+- **A fourth leak spelling: `error: error?.message`.** The sweep in three commits
+  ago matched `error instanceof Error ? error.message` and removed the
+  `message: error.message` variant before it. This one uses optional chaining,
+  read as a different pattern entirely, and sat in `updateProduct` the whole time.
+- **`server.close()` hangs a test suite that used `fetch`.** undici keeps
+  connections alive, and `close()` waits for them — the suite passed every
+  assertion and then never exited. `closeAllConnections()` before `close()` is
+  the fix, applied to both socket-driven integration files.
+- **`updateProduct` answers 200 with `success: false`** when the resulting image
+  list would be empty. Not fixed — a client that checks the status rather than
+  the body will treat a rejected update as a success, which is worth deciding
+  deliberately.
 - **Numeric strings are rejected rather than coerced.** The client already sends
   real numbers, and a field the API accepts in two forms is a field that eventually
   arrives in one.

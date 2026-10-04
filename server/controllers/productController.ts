@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import Product from "../models/Products.js";
 import Category from "../models/Categories.js";
 import cloudinary from "../config/cloundinary.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
+import { asFiniteNumber, asInteger, asString } from "../utils/validate.js";
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -345,7 +346,11 @@ const transformStringToArray = (data: any): any[] => {
 // @desc    Update a product (admin) — fields + optional new images
 // @route   PUT /api/products/:id
 // @access  Admin
-export const updateProduct = async (req: Request, res: Response) => {
+export const updateProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const id = String(req.params.id);
 
@@ -361,10 +366,16 @@ export const updateProduct = async (req: Request, res: Response) => {
     // Scalar fields (only overwrite when provided)
     const { name, description, price, stock, category, isFeatured, sizes } = req.body;
 
-    if (name !== undefined) product.name = name;
-    if (description !== undefined) product.description = description;
-    if (price !== undefined) product.price = Number(price);
-    if (stock !== undefined) product.stock = Number(stock);
+    // Validated rather than `Number(...)`-cast. `Number(null)`, `Number("")`,
+    // `Number([])` and `Number(false)` are all 0, so `{"stock": null}` silently
+    // set a product's stock to zero, and `{"price": "abc"}` stored NaN. The
+    // fields are optional, so each is only checked when actually present.
+    if (name !== undefined) product.name = asString(name, "name", { maxLength: 200 });
+    if (description !== undefined) {
+      product.description = asString(description, "description", { maxLength: 5000 });
+    }
+    if (price !== undefined) product.price = asFiniteNumber(price, "price", { min: 0 });
+    if (stock !== undefined) product.stock = asInteger(stock, "stock", { min: 0 });
     if (isFeatured !== undefined) {
       product.isFeatured = isFeatured === true || isFeatured === "true";
     }
@@ -407,9 +418,12 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     return res.json({ success: true, message: "Product updated", data: product });
   } catch (error: any) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Error updating product", error: error?.message });
+    // Forwarded rather than answered here. A validation failure throws an
+    // AppError carrying a 400, and a local `catch` would turn it into a 500 —
+    // the caller's mistake reported as our fault. This also removes the last
+    // `error: error?.message` in the file, a leak variant an earlier sweep
+    // missed because it used optional chaining rather than an instanceof.
+    next(error);
   }
 };
 

@@ -102,6 +102,9 @@ before(async () => {
 });
 
 after(async () => {
+  // See bodyValidation.integration.test.ts: fetch keeps connections alive, and
+  // server.close() waits for them.
+  server.closeAllConnections();
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await mongoose.disconnect();
   await mongod.stop();

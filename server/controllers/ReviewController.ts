@@ -1,7 +1,8 @@
 // controllers/ReviewController.ts
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import Review from "../models/Review.js";
+import { asInteger } from "../utils/validate.js";
 
 // ==================== TYPES ====================
 // The `req.user` shape now comes from the Express global augmentation in
@@ -68,8 +69,9 @@ export const getProductReviews = async (
 // @access  Private
 export const upsertReview = async (
   req: Request & Request<ProductParams>,
-  res: Response
-): Promise<Response> => {
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
   try {
     const { id } = req.params;
     const { rating, comment } = req.body as CreateReviewBody;
@@ -78,16 +80,15 @@ export const upsertReview = async (
       return res.status(400).json({ success: false, message: "Invalid product id" });
     }
 
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({
-        success: false,
-        message: "Rating must be between 1 and 5",
-      });
-    }
+    // Validated rather than compared. `!rating || rating < 1 || rating > 5` is three
+    // coercing checks: "abc" makes every one of them false, so a string rating
+    // passed straight through and was stored as NaN. A fraction like 2.7 passed
+    // too. See utils/validate.ts.
+const validRating = asInteger(rating, "rating", { min: 1, max: 5 });
 
     const review = await Review.findOneAndUpdate(
       { user: req.user!._id, product: id },
-      { rating, comment: comment ?? "" },
+      { rating: validRating, comment: comment ?? "" },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
@@ -97,11 +98,10 @@ export const upsertReview = async (
       data: review,
     });
   } catch (error) {
-    console.error("ReviewController failed:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error saving review",
-    });
+    // Forwarded rather than answered here: a validation failure throws an
+    // AppError carrying a 400, and a local `catch` would report the caller's
+    // mistake as a server fault.
+    next(error);
   }
 };
 
