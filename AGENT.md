@@ -1385,6 +1385,21 @@ Keeping CI trustworthy:
   `tests/integration/cartValidation.integration.test.ts` drives the real handler
   over a socket and is verified by mutation: reverting the fix fails exactly the
   two tests that describe the exploit.
+- **Addresses stored `[object Object]`.** `createAddress` checked its fields with
+  `if (!street || !city || …)`, which an object satisfies. Mongoose then coerced
+  `{}` to the string `"[object Object]"` and saved it as the street — the value a
+  warehouse prints onto a parcel. `type` is now checked with `asOneOf` rather
+  than left to the schema enum, and every field has a length bound, because
+  `Address` declares no `maxlength` anywhere.
+- **`Supplier.address` is a nested object but was assigned any shape.** A string
+  went straight into `{street, city, state, zipCode, country}`. It is now built
+  field by field, and `contact`/`email`/`phone` — all unbounded Strings in the
+  schema — go through `asOptionalString`.
+- **A controller that validates must also forward the failure.** Re-throwing an
+  `AppError` from its own `catch` is enough; `createSupplier` and `createAddress`
+  both did this and both needed it. It is the same trap `updateProduct` and
+  `upsertReview` fell into, and it will keep happening — worth checking whenever
+  validation is added to a handler that already has a `catch`.
 - **Validation only works if the controller forwards it.** `utils/validate.ts` throws
   an `AppError` with a 400, but a handler with its own `catch (error) { return
   res.status(500)… }` turns that back into a 500 — the caller's mistake reported

@@ -7,6 +7,8 @@ import mongoose from "mongoose";
 import Supplier from "../models/Supplier.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
 import { getPagination, buildPaginationMeta } from "../utils/pagination.js";
+import { asOptionalString, asString } from "../utils/validate.js";
+import { AppError } from "../middlewares/errorHandler.js";
 
 const isValidId = (id: unknown): id is string =>
   typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
@@ -84,19 +86,34 @@ export const createSupplier = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { name, contact, email, phone, address, products } = req.body ?? {};
+    const { products } = req.body ?? {};
 
-    if (typeof name !== "string" || !name.trim()) {
-      return res.status(400).json(fail("name is required"));
+    // Validated rather than a `!== undefined` pass-through. Every one of these is
+    // a String in the schema with no maxlength, so an object became
+    // "[object Object]" and an arbitrarily long string became a large document.
+    // `address` is a nested object in the schema and must arrive as one.
+    const body = req.body ?? {};
+    const payload: Record<string, unknown> = {
+      name: asString(body.name, "name", { maxLength: 200 }),
+    };
+    payload.contact = asOptionalString(body.contact, "contact", { maxLength: 200 }) ?? "";
+    payload.email = asOptionalString(body.email, "email", { maxLength: 200 }) ?? "";
+    payload.phone = asOptionalString(body.phone, "phone", { maxLength: 40 }) ?? "";
+
+    if (body.address !== undefined) {
+      const raw = body.address;
+      if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+        throw new AppError("address must be an object", { status: 400 });
+      }
+      const a = raw as Record<string, unknown>;
+      payload.address = {
+        street: asOptionalString(a.street, "address.street", { maxLength: 300 }) ?? "",
+        city: asOptionalString(a.city, "address.city", { maxLength: 100 }) ?? "",
+        state: asOptionalString(a.state, "address.state", { maxLength: 100 }) ?? "",
+        zipCode: asOptionalString(a.zipCode, "address.zipCode", { maxLength: 20 }) ?? "",
+        country: asOptionalString(a.country, "address.country", { maxLength: 100 }) ?? "",
+      };
     }
-
-    // Body values stay `unknown` until validated, so the create payload is built
-    // explicitly rather than spread — a stray `isAdmin` must not reach the model.
-    const payload: Record<string, unknown> = { name: name.trim() };
-    if (contact !== undefined) payload.contact = contact;
-    if (email !== undefined) payload.email = email;
-    if (phone !== undefined) payload.phone = phone;
-    if (address !== undefined) payload.address = address;
 
     if (products !== undefined) {
       if (!Array.isArray(products)) {
@@ -113,6 +130,11 @@ export const createSupplier = async (
       .status(201)
       .json({ success: true, message: "Supplier created", data: supplier });
   } catch (error) {
+    // Re-thrown so the central handler keeps the 400 it carries. Without this
+    // a validation failure is reported as a 500 — the caller's mistake presented
+    // as a server fault. See utils/validate.ts.
+    if (error instanceof AppError) throw error;
+
     // The email `match` on the schema surfaces here.
     const message =
       error instanceof mongoose.Error.ValidationError

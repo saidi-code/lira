@@ -28,8 +28,12 @@ import mongoose from "mongoose";
 
 import Product from "../../models/Products.js";
 import Review from "../../models/Review.js";
+import Address from "../../models/Address.js";
+import Supplier from "../../models/Supplier.js";
 import { upsertReview } from "../../controllers/ReviewController.js";
 import { updateProduct } from "../../controllers/productController.js";
+import { createAddress } from "../../controllers/AddressController.js";
+import { createSupplier } from "../../controllers/supplierController.js";
 import { errorHandler, notFoundHandler } from "../../middlewares/errorHandler.js";
 import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
@@ -83,6 +87,8 @@ before(async () => {
   userId = new mongoose.Types.ObjectId().toString();
   app.post("/reviews/product/:id", asUser(userId), upsertReview);
   app.put("/products/:id", asUser(userId), updateProduct);
+  app.post("/addresses", asUser(userId), createAddress);
+  app.post("/suppliers", asUser(userId), createSupplier);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
@@ -172,4 +178,89 @@ describe("product update", () => {
     assert.equal(updated?.stock, 25);
     assert.equal(updated?.price, 120);
   });
+describe("address and supplier bodies", () => {
+  // Neither controller had these guards, and both write into documents whose
+  // schema declares no maxlength anywhere.
+  const post = (path: string, body: unknown) =>
+    fetch(`${base}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  it("rejects an address field that is an object", async () => {
+    const res = await post("/addresses", {
+      street: { not: "a street" },
+      city: "Tunis",
+      state: "Tunis",
+      zipCode: "1000",
+      phoneNumber: "+216 20 000 000",
+    });
+
+    // Before the fix this was truthy, so Mongoose stored "[object Object]" as
+    // the street — which is what gets printed on a parcel.
+    assert.equal(res.status, 400);
+    assert.equal(await Address.countDocuments({}), 0);
+  });
+
+  it("still creates a real address", async () => {
+    const res = await post("/addresses", {
+      type: "Home",
+      street: "12 rue de la Liberte",
+      city: "Tunis",
+      state: "Tunis",
+      zipCode: "1000",
+      phoneNumber: "+216 20 000 000",
+    });
+
+    assert.equal(res.status, 201);
+    assert.equal((await Address.findOne({}))?.street, "12 rue de la Liberte");
+  });
+
+  it("rejects an unknown address type", async () => {
+    const res = await post("/addresses", {
+      type: "Spaceship",
+      street: "12 rue de la Liberte",
+      city: "Tunis",
+      state: "Tunis",
+      zipCode: "1000",
+      phoneNumber: "+216 20 000 000",
+    });
+
+    assert.equal(res.status, 400);
+  });
+
+  it("rejects a supplier field that only looks like a string", async () => {
+    const res = await post("/suppliers", {
+      name: "Maison Duarte",
+      contact: { name: "nope" },
+    });
+
+    assert.equal(res.status, 400);
+    assert.equal(await Supplier.countDocuments({}), 0);
+  });
+
+  it("rejects a supplier address that is not an object", async () => {
+    // The schema nests address; a plain string used to be assigned straight in.
+    const res = await post("/suppliers", { name: "Maison Duarte", address: "somewhere" });
+
+    assert.equal(res.status, 400);
+    assert.equal(await Supplier.countDocuments({}), 0);
+  });
+
+  it("still creates a real supplier", async () => {
+    const res = await post("/suppliers", {
+      name: "Maison Duarte",
+      contact: "Ana",
+      address: { city: "Lisbon", country: "PT" },
+    });
+
+    assert.equal(res.status, 201);
+    const supplier = await Supplier.findOne({ name: "Maison Duarte" });
+    assert.equal(supplier?.contact, "Ana");
+    assert.equal(supplier?.address?.city, "Lisbon");
+    // Absent fields become empty strings, not "[object Object]".
+    assert.equal(supplier?.address?.street, "");
+  });
+});
 });

@@ -1,6 +1,8 @@
 // controllers/addressController.ts
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { asOneOf, asString } from "../utils/validate.js";
+import { AppError } from "../middlewares/errorHandler.js";
 import Address from "../models/Address.js";
 
 // ==================== TYPES ====================
@@ -42,16 +44,22 @@ export const createAddress = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { type, street, city, state, zipCode, phoneNumber, isDefault } =
-      req.body as CreateAddressBody;
+    const { isDefault } = req.body as CreateAddressBody;
+    const body = req.body as Record<string, unknown>;
 
-    // 1. Validate required fields
-    if (!street || !city || !state || !zipCode || !phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide all required fields",
-      });
-    }
+    // Validated rather than truthiness-checked. `if (!street || !city || …)` is
+    // satisfied by an object, and Mongoose then stores "[object Object]" as the
+    // street — which is what gets printed on a parcel. The lengths also bound
+    // document growth; the schema declares none.
+const street = asString(body.street, "street", { maxLength: 200 });
+const city = asString(body.city, "city", { maxLength: 100 });
+const state = asString(body.state, "state", { maxLength: 100 });
+const zipCode = asString(body.zipCode, "zipCode", { maxLength: 20 });
+const phoneNumber = asString(body.phoneNumber, "phoneNumber", { maxLength: 30 });
+const type =
+      body.type === undefined
+        ? "Other"
+        : asOneOf(body.type, "type", ["Home", "Work", "Other"] as const);
 
     // 2. Count existing addresses for this user
     const addressCount = await Address.countDocuments({ user: req.user!._id });
@@ -91,6 +99,10 @@ export const createAddress = async (
       data: address,
     });
   } catch (error) {
+    // Re-thrown so the central handler keeps the 400 it carries; without this a
+    // validation failure is reported as a 500. See utils/validate.ts.
+    if (error instanceof AppError) throw error;
+
     console.error("AddressController failed:", error);
     return res.status(500).json({
       success: false,
