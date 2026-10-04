@@ -15,8 +15,16 @@
 //   client does not disable while the mutation is in flight (`useFavoris`
 //   exposes `loading` but `toggleLike` never consults it).
 //
-//   The fix is `$addToSet`, which is a single atomic operation: the server
-//   decides whether the element is already there, so there is no window.
+//   The fix is the guard in the *filter*: `{"items.product": {$ne: productId}}`,
+//   which MongoDB evaluates as part of the same atomic update, so the check and
+//   the write cannot come apart.
+//
+//   `$addToSet` is the version of this most people reach for, and it was tried
+//   here first. It does not work: the `addedAt` default makes each candidate
+//   element `{product, addedAt: now}` different from the stored one, so MongoDB
+//   never recognises a duplicate and adds a second copy anyway. This header
+//   originally said otherwise — corrected after the tests measured 4 and 7 copies
+//   with `$addToSet` in place.
 //   ==========================================
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";

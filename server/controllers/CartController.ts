@@ -65,10 +65,12 @@ if(product.type==="simple"){
         .json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
     }
 }
-    let cart = await Cart.findOne({ user: req.user!._id });
-    if (!cart) {
-      cart = new Cart({ user: req.user!._id, items: [] });
-    }
+    // The cart document is not loaded here any more. It used to be fetched up
+    // front and mutated in memory, which is the read-modify-write this write
+    // path has been rewritten to avoid - and loading an unsaved `new Cart()`
+    // meant an add to a brand-new account began from a document that never
+    // existed in the database. The write below upserts, and the document is
+    // re-read once at the end to respond with.
     if (product.type === "variable") {
       if (!color || !size) {
         return res
@@ -106,48 +108,154 @@ if(product.type==="simple"){
 
 
 
-    const existingItem: any = cart.items.find(
-      (item: any) =>
-        item.product?.toString?.() === productId &&
-        (item.size ?? null) === normalizedSize &&
-        (item.color ?? null) === normalizedColor,
+    // The write, done atomically.
+    //
+    // This used to read the cart, mutate the array in Node, and save it back.
+    // That is a read-modify-write on a document MongoDB does not lock: two
+    // overlapping adds both read the same starting quantity and the second save
+    // discarded the first. Measured rather than assumed - 2 + 1 + 1 came back as
+    // 3, and three parallel adds to an empty cart came back as 1.
+    //
+    // The wishlist's filter-guard cannot fix this, because an increment depends
+    // on the value already stored. Here the increment and the total are computed
+    // *inside* the database, so the quantity read is whatever was stored at the
+    // moment of the write.
+    //
+    // Two operations, because they answer different questions:
+    //   1. `$inc` the existing line if one matches. The match is the full line
+    //      identity (product + size + colour), not just the product, so a
+    //      customer's two sizes of one perfume stay two separate lines.
+    //   2. If nothing matched (`matchedCount === 0`), push a new line. The null
+    //      result *is* the signal - reading first is the race being removed.
+    //
+    // `upsert` also covers "no cart yet": filtering on `user` means the first
+    // add creates the cart atomically rather than racing its own unique index.
+    const incremented = await Cart.updateOne(
+      {
+        user: req.user!._id,
+        items: {
+          $elemMatch: {
+            product: product._id,
+            size: normalizedSize,
+            color: normalizedColor,
+          },
+        },
+      },
+      {
+        $inc: { "items.$.quantity": quantity },
+        $set: { "items.$.price": product.price },
+      }
     );
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-      existingItem.price = product.price;
-    } else {
-      (cart.items as any).push({
-        product: product._id,
-        quantity,
-        price: product.price,
-        size: normalizedSize,
-        color: normalizedColor,
-      });
+    if (incremented.matchedCount === 0) {
+      // Ensure the cart document exists first, unconditionally.
+      //
+      // This has to be a separate, unfiltered upsert. A push guarded on the
+      // line being absent (`items: { $not: { $elemMatch: … } }`) does not merely
+      // fail to match an existing cart — with `upsert: true` it *inserts a second
+      // cart document* for the same user. Verified directly: a cart already
+      // holding the line came back `matchedCount: 0, upsertedCount: 1`, leaving
+      // two documents. So the guard belongs on the push only, and never on the
+      // upsert.
+      await Cart.updateOne(
+        { user: req.user!._id },
+        { $setOnInsert: { user: req.user!._id, items: [] } },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+
+      // Now push, guarded so only one of several concurrent adds can win. A
+      // bare `{ user }` push is the same race one step later: three adds that all
+      // found no matching line would all push, leaving three separate lines for
+      // one product instead of one line holding the total. Measured - adds of 1,
+      // 2 and 3 produced lines of 1, 2 and 3 rather than a single 6.
+      //
+      // `matchedCount === 0` here means a concurrent request pushed first, so
+      // this one increments instead. Two updates rather than one, because a push
+      // cannot express "add to the line if it exists" in a single operation.
+      const pushed = await Cart.updateOne(
+        {
+          user: req.user!._id,
+          items: {
+            $not: {
+              $elemMatch: {
+                product: product._id,
+                size: normalizedSize,
+                color: normalizedColor,
+              },
+            },
+          },
+        },
+        {
+          $push: {
+            items: {
+              product: product._id,
+              quantity,
+              price: product.price,
+              size: normalizedSize,
+              color: normalizedColor,
+            },
+          },
+        }
+      );
+
+      if (pushed.matchedCount === 0) {
+        await Cart.updateOne(
+          {
+            user: req.user!._id,
+            items: {
+              $elemMatch: {
+                product: product._id,
+                size: normalizedSize,
+                color: normalizedColor,
+              },
+            },
+          },
+          {
+            $inc: { "items.$.quantity": quantity },
+            $set: { "items.$.price": product.price },
+          }
+        );
+      }
     }
 
+    // totalAmount is recomputed by the database from the lines it now holds,
+    // rather than by summing an array in Node that another request may already
+    // have changed under us.
+    await Cart.updateOne(
+      { user: req.user!._id },
+      [
+        {
+          $set: {
+            totalAmount: {
+              $sum: {
+                $map: {
+                  input: { $ifNull: ["$items", []] },
+                  as: "line",
+                  in: { $multiply: ["$$line.price", { $ifNull: ["$$line.quantity", 0] }] },
+                },
+              },
+            },
+          },
+        },
+      ],
+      // `updatePipeline` is required, not optional: passing an array as the update
+      // is otherwise rejected with "Cannot pass an array to query updates unless
+      // the `updatePipeline` option is set", which surfaced as a 500 on every
+      // successful add.
+      { updatePipeline: true }
+    );
 
-    // Remove duplicate lines for safety (in case cart already contains duplicates)
-    // Keep only the first occurrence per (product + size + color)
-    const seen = new Set<string>();
-    cart.items = (cart.items as any).filter((it: any) => {
-      const key = `${it.product?.toString?.() ?? ""}::${it.size ?? ""}::${it.color ?? ""}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    cart.calculateTotal();
-
-    await cart.save();
+    const cart = await Cart.findOne({ user: req.user!._id })
+      .populate("items.product", "name images price stock sizes colors type");
 
     // remove corrupted cart items (where product reference is null/undefined)
     // to avoid populate() / client crashes
-    cart.items = cart.items.filter(
-      (i: any) => i?.product !== null && i?.product !== undefined,
-    );
+    if (cart) {
+      cart.items = cart.items.filter(
+        (i: any) => i?.product !== null && i?.product !== undefined,
+      );
+    }
 
-    await cart.populate("items.product", "name images price stock sizes colors type");
     res.json({ success: true, data: cart });
   } catch (error: any) {
     next(error); // status + message decided by the central error handler

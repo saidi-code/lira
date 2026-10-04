@@ -929,6 +929,39 @@ fires the requests in parallel rather than awaiting one at a time — sequential
 awaits would pass against the old code, because the second call would observe the
 first call's write.
 
+**The cart's add path is atomic, not read-modify-write.** `addToCart` used to
+`findOne` the cart, mutate `items` in Node, and `save()` it back. MongoDB applies
+no locking to that, so two overlapping adds both read the same starting quantity
+and the second save discarded the first. Measured: **2 + 1 + 1 came back as 3**,
+and three parallel adds of 1, 2 and 3 to an empty cart produced *three separate
+lines* rather than one line of 6.
+
+The wishlist's filter-guard cannot fix this, because an increment depends on the
+value already stored — anything that computes the new quantity in Node can lose an
+update. The increment and the total are now computed *inside* the database, so the
+quantity read is whatever was stored at the moment of the write. Three
+operations, because a `$push` cannot express "add to this line if it exists":
+
+1. `$inc` the matching line. The match is the **full line identity** (product +
+   size + colour), not just the product, so two sizes of one perfume stay two lines.
+2. Ensure the cart exists — an unconditional upsert on `user`.
+3. Push, guarded on the line still being absent; if `matchedCount === 0` a
+   concurrent request pushed first, so increment instead.
+
+**Never put the line-identity guard on the upsert.** A push filtered by
+`items: { $not: { $elemMatch: … } }` does not merely fail to match an existing
+cart — with `upsert: true` it **inserts a second cart document for the same
+user**. Verified directly: `matchedCount: 0, upsertedCount: 1`, two documents.
+Step 2 exists for that reason.
+
+`totalAmount` is recomputed by a pipeline update (`$sum` over `$map`) rather than
+in Node. Pipeline updates need `{ updatePipeline: true }` in Mongoose, or they are
+rejected with *"Cannot pass an array to query updates"* — which is a 500 on every
+successful add.
+
+Pinned by `tests/integration/cartConcurrency.integration.test.ts`. Removing the
+push guard makes both its tests fail, so it is not vacuous.
+
 ### Pricing
 
 | Method | Path | Auth | Notes |
