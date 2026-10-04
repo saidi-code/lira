@@ -271,8 +271,13 @@ describe("over HTTP", () => {
     // on 4 the request hangs until it times out with no error anywhere. Proven
     // here rather than read off the version number, because the behaviour is what
     // matters and it changes silently on upgrade.
+    // The timeout is a hang detector, not a speed budget: on Express 4 this request
+    // never gets a response, so the signal is what turns that into a failing test
+    // rather than a suite that hangs. It therefore has to be generous enough not
+    // to fire on a slow runner — node:test runs files concurrently, so a 2-core CI
+    // box can be scheduling a dozen suites while this one waits on a socket.
     const res = await fetch(`${base}/async-throws`, {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(10_000),
     });
     const body = await res.json();
 

@@ -33,6 +33,13 @@ describe("escapeRegex", () => {
     // it would be compiled straight into the query and run on an open endpoint.
     // Assert the pattern no longer backtracks, using a length that would hang if
     // the escape regressed.
+    //
+    // Wall-clock is the only way to observe "this does not run for ever", so the
+    // assertion is timing-based — which makes it the flakiest thing in the suite
+    // if the budget is tight. The work here is a single escaped match on 40
+    // characters, which is microseconds; a second is orders of magnitude of slack
+    // even on a loaded runner, and the exponential case would take effectively
+    // forever rather than something just over a second.
     const started = Date.now();
     assert.ok(!anchored("(a+)+b").test(`${"a".repeat(40)}c`));
     assert.ok(
