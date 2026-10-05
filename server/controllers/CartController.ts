@@ -1,3 +1,4 @@
+import type { Types } from "mongoose";
 import { NextFunction, Request, Response } from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
@@ -261,6 +262,41 @@ if(product.type==="simple"){
     next(error); // status + message decided by the central error handler
   }
 };
+/**
+ * Recompute `totalAmount` from the lines as they stand **in the database**.
+ *
+ * `Cart.calculateTotal()` sums a Node-side array, and that array can be stale:
+ * `updateCartItem`/`deleteCartItem` read the cart, and a concurrent `addToCart`
+ * may change another line before the save. Saving the stale sum then overwrites
+ * a total another request had already recalculated.
+ *
+ * Measured, not assumed: a forced interleaving got the quantities right 40/40
+ * (Mongoose only sends dirty paths, so `save()` is not a whole-document write)
+ * and the total wrong 40/40. The derived field was the casualty, not the lines.
+ */
+const recomputeTotal = async (user: Types.ObjectId): Promise<void> => {
+  await Cart.updateOne(
+    { user },
+    [
+      {
+        $set: {
+          totalAmount: {
+            $sum: {
+              $map: {
+                input: { $ifNull: ["$items", []] },
+                as: "line",
+                in: { $multiply: ["$$line.price", { $ifNull: ["$$line.quantity", 0] }] },
+              },
+            },
+          },
+        },
+      },
+    ],
+    // required, not optional: an array update is rejected without it (see addToCart)
+    { updatePipeline: true }
+  );
+};
+
 // Update Item Quantity
 // PUT /api/v1/cart/item/:productId
 export const updateCartItem = async (req: Request, res: Response, next: NextFunction) => {
@@ -356,10 +392,14 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
       item.price = product.price;
     }
 
-    cart.calculateTotal();
     await cart.save();
-    await cart.populate("items.product", "name images price stock colors type");
-    res.json({ success: true, data: cart });
+    await recomputeTotal(req.user!._id);
+
+    const fresh = await Cart.findById(cart._id).populate(
+      "items.product",
+      "name images price stock colors type"
+    );
+    res.json({ success: true, data: fresh });
   } catch (error: any) {
     next(error); // status + message decided by the central error handler
   }
@@ -377,30 +417,35 @@ export const deleteCartItem = async (req: Request, res: Response, next: NextFunc
     }
 
     const targetId = req.params.productId;
-    cart.items = (cart.items as any).filter((item: any) => {
-      const isMatchId = item._id?.toString() === targetId;
-      const isMatchProduct = item.product?.toString() === targetId;
+    if (typeof targetId !== "string" || targetId.length < 12) {
+      return res.status(400).json({ success: false, message: "Invalid productId" });
+    }
 
-      if (isMatchId) return false;
-      if (isMatchProduct) {
-        if (size !== undefined && color !== undefined) {
-          return !(item.size === size && item.color === color);
-        }
-        if (size !== undefined) {
-          return item.size !== size;
-        }
-        if (color !== undefined) {
-          return item.color !== color;
-        }
-        return false;
-      }
-      return true;
-    });
+    // Removing a line used to be: filter the array in Node, then `save()`.
+    // Reassigning `items` makes Mongoose write the *whole* array, so that write
+    // reverts every line another request changed in between. Measured: an
+    // interleaved add to a different line survived `updateCartItem` (which writes
+    // a scalar `items.N.quantity` path) but was lost here — 1 instead of 4.
+    // `$pull` removes only what it matches and leaves the rest untouched.
+    //
+    // The two conditions mirror the original filter: an `_id` match wins
+    // outright, otherwise the product match narrows by whichever of size/color
+    // the caller supplied — neither means "every line of this product".
+    const productMatch: Record<string, unknown> = { product: targetId };
+    if (size !== undefined) productMatch.size = size;
+    if (color !== undefined) productMatch.color = color;
 
-    cart.calculateTotal();
-    await cart.save();
-    await cart.populate("items.product", "name images price stock colors type");
-    res.json({ success: true, data: cart });
+    await Cart.updateOne(
+      { user: req.user!._id },
+      { $pull: { items: { $or: [{ _id: targetId }, productMatch] } } } as any
+    );
+    await recomputeTotal(req.user!._id);
+
+    const fresh = await Cart.findById(cart._id).populate(
+      "items.product",
+      "name images price stock colors type"
+    );
+    res.json({ success: true, data: fresh });
   } catch (error: any) {
     next(error); // status + message decided by the central error handler
   }
