@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { IFavorisItem, IProduct } from "../constants/types";
+import { IProduct } from "../constants/types";
 
 export interface BackendWishListItem {
   _id?: string;

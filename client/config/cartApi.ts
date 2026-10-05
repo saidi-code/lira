@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { ICartItem, IProduct } from "../constants/types";
+import { IProduct } from "../constants/types";
 
 export interface BackendCartItem {
   _id?: string;

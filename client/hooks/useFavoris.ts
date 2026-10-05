@@ -190,7 +190,7 @@ export function useFavoris() {
         return addToFavoris(product as IProduct);
       }
     },
-    [isSignedIn, favorisQuery.isLiked, removeFromFavoris, addToFavoris]
+    [isSignedIn, favorisQuery, removeFromFavoris, addToFavoris]
   );
 
   return {

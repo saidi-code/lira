@@ -1,0 +1,226 @@
+# Lira (ليرة) — Luxury Artisanal E-Commerce Platform
+
+> Merging ancient Arabic calligraphic artistry and royal Middle Eastern craftsmanship with contemporary quiet luxury.
+
+[![CI](https://github.com/saidi-code/lira/actions/workflows/ci.yml/badge.svg)](https://github.com/saidi-code/lira/actions/workflows/ci.yml)
+[![Node Version](https://img.shields.io/badge/node-22.x-brightgreen.svg)](https://nodejs.org/)
+
+---
+
+## 1. Overview
+
+**Lira (ليرة)** is a production-quality, full-stack luxury artisanal fashion and lifestyle e-commerce ecosystem. Tailored for Arabic-speaking markets with full RTL-first ergonomics, multi-language support (Arabic, French, English), and multi-currency operations (TND, EUR, USD, SAR).
+
+The ecosystem connects customer-facing touchpoints and operational back-office interfaces to a unified Express REST API backed by MongoDB.
+
+---
+
+## 2. Brand Identity & Design System
+
+The visual design system is anchored in tactile alabaster and cream canvas backdrops, warm charcoal and espresso typography (never harsh `#000000`), and restrained metallic gold accents:
+
+- **Artisanal Gold (`#B89354`):** Primary CTAs, active indicators, borders, prices.
+- **Canvas Background (`#FFF8F5` / `#FCF9F1`):** Handmade cotton paper feel.
+- **Warm Charcoal (`#3C3633`):** High contrast, warm typography.
+- **Editorial Typography:** Editorial serif titles (`Amiri`, `Noto Serif`, `Tajawal`) paired with clear modern sans for transactional data.
+- **RTL-First:** Seamless right-to-left layout and mirrored navigation ergonomics.
+
+---
+
+## 3. Repository Architecture
+
+```
+lira_app/
+├── AGENT.md                 # Single source of truth for agent & developer context
+├── README.md                # Project documentation and quickstart
+├── CONTRIBUTING.md          # Contribution guidelines & architectural invariants
+├── CHANGELOG.md             # Ecosystem release history and milestones
+│
+├── client/                  # Customer storefront & backoffice mobile app (Expo SDK 54)
+│   ├── app/                 # Expo Router v6 routes
+│   │   ├── (auth)/          # Clerk authentication screens
+│   │   ├── (drawer)/(tabs)/ # Core customer tabs (Storefront, Catalog, Cart, Wishlist, Profile)
+│   │   ├── admin/           # Role-gated backoffice (Inventory, Purchasing, Transfers, Staff, Warehouses)
+│   │   ├── checkout/        # Checkout flow with idempotency protection
+│   │   └── product/         # Product detail and curated presentation
+│   ├── components/          # Reusable UI widgets and layout containers
+│   ├── config/              # Typed API clients per domain
+│   ├── constants/           # Design tokens, theme store, translations, permissions
+│   ├── hooks/               # React Query data fetching & mutation hooks
+│   └── scripts/             # Route type generator for CI typechecking
+│
+├── admin/                   # Web backoffice (Vite + React Router)
+│   ├── src/pages/           # Dashboard, Orders, Products, Inventory, Purchasing, Staff
+│   └── src/lib/             # Typed API clients over @lira/shared
+│
+├── web/                     # Customer storefront (Next.js 14 App Router)
+│   ├── app/                 # Shop, product, cart, checkout, orders, wishlist
+│   └── middleware.ts        # Clerk request authentication
+│
+├── packages/
+│   ├── shared/              # @lira/shared: roles, permissions, currency, tokens, types
+│   └── config/              # @lira/config: shared tsconfig + eslint base
+│
+└── server/                  # Node.js + Express REST API (/api/v1)
+    ├── server.ts            # Application bootstrap & middleware stack
+    ├── config/              # MongoDB connection, pricing rules
+    ├── controllers/         # HTTP request orchestration & validation
+    ├── middlewares/         # Clerk authentication & RBAC authorization
+    ├── models/              # Mongoose schemas & indexes (Product, Order, Inventory, StockMovement, ...)
+    ├── routes/              # Mounted Express route modules
+    ├── scripts/             # Migration, reconciliation, and indexing utilities
+    ├── services/            # Core business logic (Ledger, Lifecycle, Stock, Purchasing)
+    └── tests/               # Unit and in-memory MongoDB integration test suites
+```
+
+---
+
+## 4. Key Subsystems
+
+### 4.1 Event-Sourced Inventory Ledger
+- **Golden Rule:** Stock is never mutated directly. Every change is an immutable `StockMovement` entry (`in`, `reserve`, `release`, `commit`, `transfer_in`, `transfer_out`, `adjust`).
+- **Atomic Operations:** Concurrency-safe reservations and commits prevent overselling under concurrent load.
+- **Reconciliation:** Built-in verification (`npm run reconcile`) detects drift between ledger totals and denormalized catalog stock.
+
+### 4.2 Replay Protection & Server-Authoritative Pricing
+- **Idempotency Keys:** `POST /api/v1/orders` requires unique customer-scoped idempotency keys to prevent duplicate orders or multiple charges on network retries.
+- **Server Pricing:** Shipping costs, discounts, and taxes are strictly recalculated on the server from MongoDB; client-submitted price totals are disregarded.
+
+### 4.3 Payment Lifecycle & Sweeps
+- **Automated Expiry Sweep:** `/api/v1/internal/orders/release-expired` automatically cancels expired pending online orders and releases reserved stock.
+- **Cron Authentication:** Compatible with Vercel Cron via `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`.
+
+### 4.4 Webhook Synchronization
+- **Clerk Auth Sync:** Verifies raw webhook signatures using `standardwebhooks` to ensure secure user profile and metadata synchronization.
+
+---
+
+## 5. Getting Started
+
+### Prerequisites
+- Node.js 22+
+- npm 10+
+- MongoDB instance (local or MongoDB Atlas)
+- Clerk account for authentication keys
+
+### 5.1 Server Setup
+
+```bash
+cd server
+npm install
+
+# Copy and configure environment variables
+cp .env.example .env # or edit .env directly
+
+# Seed catalog and default warehouse
+npm run seed
+npm run seed:warehouses
+
+# Start development server
+npm run server # starts with nodemon + tsx on port 5000
+```
+
+### 5.2 Mobile Client Setup
+
+```bash
+cd client
+npm install
+
+# Generate route types
+npm run types:routes
+
+# Start Expo dev server
+npm run start
+```
+
+### 5.3 Web Backoffice & Storefront Setup
+
+```bash
+cd admin
+npm install
+
+cp .env.example .env # or edit .env directly: VITE_API_URL + VITE_CLERK_PUBLISHABLE_KEY
+
+npm run dev # Vite dev server
+```
+
+```bash
+cd web
+npm install
+
+cp .env.example .env # or edit .env directly: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is
+                       # required even for `npm run build`, whose prerender fails without it
+
+npm run dev # Next.js dev server on :3001
+```
+
+### 5.4 Shared Packages
+
+`packages/shared` (`@lira/shared`) and `packages/config` (`@lira/config`) are
+consumed by path, not published: `admin` and `web` depend on
+`file:../packages/shared`. There is no workspace root, so each package keeps its
+own lockfile and is installed independently. `packages/shared` keeps its
+imports extensionless (`./types`, not `./types.js`) so both Vite and Next's
+webpack resolve them; only add a `.js` suffix if `moduleResolution` ever moves
+to `NodeNext`.
+
+---
+
+## 6. Verification & Testing
+
+Both `client/` and `server/` enforce strict type safety, linting, and automated testing run by GitHub Actions CI:
+
+### Server Checks
+```bash
+cd server
+npm test                 # Run fast, database-free unit tests (259 tests)
+npm run test:integration # Run full ledger & webhook integration tests against in-memory mongod (118 tests)
+npx tsc --noEmit         # Typecheck TypeScript files
+npm run lint             # ESLint analysis
+```
+
+### Client Checks
+```bash
+cd client
+npm test                 # Run permission & admin guard unit tests (62 tests)
+npm run types:routes     # Generate route type definitions
+npx tsc --noEmit         # Typecheck with generated route definitions
+npx eslint .             # ESLint analysis
+```
+
+### Web Backoffice & Storefront Checks
+```bash
+cd admin
+npm run typecheck        # tsc --noEmit
+npm run build            # tsc --noEmit && vite build
+
+cd web
+npm run typecheck        # tsc --noEmit
+npm run lint             # next lint (requires the .eslintrc.json in this directory;
+                         # without it `next lint` prompts and a non-interactive run hangs)
+npm run build            # next build (also requires NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+```
+
+---
+
+## 7. Migration Scripts
+
+The server provides dry-run and migration scripts for database maintenance:
+
+| Command | Description |
+|---|---|
+| `npm run seed:warehouses` | Seeds the default warehouse and initial inventory records |
+| `npm run reconcile` | Compares `Σ(quantity - reserved)` with catalog stock (`--fix` to sync) |
+| `npm run backfill:deltas` | Computes signed `delta` fields for historical stock movements |
+| `npm run repair:reservations` | Clears stranded holds from previously uncommitted orders |
+| `npm run indexes:products` | Ensures optimal indexes on the `Product` collection |
+| `npm run verify:clerk-sync` | Validates recent Clerk user webhook synchronization events |
+
+---
+
+## 8. License
+
+No license file is currently tracked in this repository. Only `server/package.json`
+declares a license (`ISC`); the other packages do not. Pick a license and add a
+top-level `LICENSE` file before any public release, and mirror it in each
+`package.json`.

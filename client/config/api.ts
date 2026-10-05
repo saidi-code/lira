@@ -13,6 +13,7 @@ export const API_BASE =
   LOCAL_API_URL ||
   "https://lira-lilac.vercel.app/api/v1";
 
+// eslint-disable-next-line import/no-named-as-default-member
 export const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: 15000,

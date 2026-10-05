@@ -62,7 +62,11 @@ export function useAdminUsers(params?: { page?: number; limit?: number }) {
     keepPreviousData: true,
   });
 
-  return { ...query, users: query.data?.rows ?? [] };
+  return {
+    ...query,
+    users: query.data?.rows ?? [],
+    pagination: query.data?.pagination ?? EMPTY,
+  };
 }
 
 /**
