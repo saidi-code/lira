@@ -1,0 +1,43 @@
+# electron-builder config — spec §5: lives inside apps/desktop-cashier/.
+appId: com.lira.desktop-cashier
+productName: Lira Cashier
+
+directories:
+  output: dist
+
+files:
+  - dist/**/*
+  - package.json
+  - "!**/*.map"
+
+extraResources:
+  - from: assets
+    to: assets
+
+win:
+  target:
+    - nsis
+    - zip
+  signAndEditExecutable: false
+nsis:
+  artifactName: lira-cashier-setup-${version}.exe
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+mac:
+  category: public.app-category.utility
+  target:
+    - dmg
+    - zip
+
+linux:
+  target:
+    - AppImage
+    - deb
+  maintainer: Lira
+  synopsis: Lira POS desktop app
+
+publish:
+  provider: github
+  owner: saidi-code
+  repo: lira

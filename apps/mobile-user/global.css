@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   Semantic theme tokens
+   ==========================================
+   Every Tailwind colour below resolves to one of these variables, so switching
+   the theme re-paints all ~250 className usages with no component changes.
+
+   The dark values live in a `prefers-color-scheme: dark` media query:
+   css-interop maps that to the `dark` subtype of the root variables, which the
+   runtime resolves from the active color scheme (Appearance / setColorScheme).
+
+   `primary`      – brand tone used for TEXT/icons  → lightens in dark
+   `primary-solid`– brand tone used as a BUTTON fill → stays dark so white
+                    text on top keeps its contrast
+   `card`         – raised card background (was bg-white)
+*/
+:root {
+  --color-canvas: 255 248 245; /* #FFF8F5 page background */
+  --color-surface: 255 248 245; /* #FFF8F5 section background */
+  --color-card: 255 255 255; /* #FFFFFF cards & sheets */
+  --color-body: 32 27 22; /* #201B16 body text */
+  --color-secondary: 75 85 99; /* #4B5563 muted body copy */
+  --color-muted: 107 114 128; /* #6B7280 de-emphasised copy */
+  --color-primary: 120 89 32; /* #785920 brand text/icon */
+  --color-primary-solid: 120 89 32; /* #785920 filled buttons */
+  --color-accent: 184 147 84; /* #B89354 gold accent */
+  --color-inactive: 168 162 158; /* #A8A29E muted icon */
+  --color-active: 180 83 9; /* #B45309 */
+  --color-skeleton: 229 231 235; /* #E5E7EB shimmer */
+  --color-subtle: 249 250 251; /* #F9FAFB faint fill */
+  --color-subtle-border: 243 244 246; /* #F3F4F6 hairline */
+  /* Modal / banner scrim — warm charcoal, never pure black (AGENT.md §3.6.3). */
+  --color-scrim: 32 27 22; /* #201B16 */
+  /* Error / alert tone: warm terracotta, never a saturated red (§3.1, §3.6.5). */
+  --color-danger: 163 82 59; /* #A3523B */
+  --color-danger-surface: 247 231 225; /* #F7E7E1 terracotta pill */
+  /* Status tones — muted heritage hues, never saturated primaries (§3.1).
+     Each pair is [text/icon, pill background]. */
+  --color-success: 95 112 82; /* #5F7052 moss — delivered */
+  --color-success-surface: 234 238 229; /* #EAEEE5 */
+  --color-info: 90 110 127; /* #5A6E7F slate — processing */
+  --color-info-surface: 232 237 240; /* #E8EDF0 */
+  --color-shipped: 122 92 110; /* #7A5C6E aubergine — shipped */
+  --color-shipped-surface: 240 233 238; /* #F0E9EE */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: 26 23 20; /* #1A1714 */
+    --color-surface: 26 23 20; /* #1A1714 */
+    --color-card: 45 40 36; /* #2D2824 */
+    --color-body: 245 239 233; /* #F5EFE9 */
+    --color-secondary: 168 162 158; /* #A8A29E */
+    --color-muted: 138 131 123; /* #8A837B */
+    --color-primary: 217 184 124; /* #D9B87C */
+    --color-primary-solid: 120 89 32; /* unchanged: white text sits on it */
+    --color-accent: 201 165 105; /* #C9A569 */
+    --color-inactive: 138 131 123; /* #8A837B */
+    --color-active: 224 138 46; /* #E08A2E */
+    --color-skeleton: 58 52 46; /* #3A342E */
+    --color-subtle: 38 34 31; /* #26221F */
+    --color-subtle-border: 55 49 45; /* #37312D */
+    --color-scrim: 18 16 14; /* #12100E — near-charcoal, never pure black */
+    --color-danger: 240 168 143; /* #F0A88F terracotta (dark) */
+    --color-danger-surface: 74 32 24; /* #4A2018 */
+    --color-success: 163 184 148; /* #A3B894 moss (dark) */
+    --color-success-surface: 38 44 34; /* #262C22 */
+    --color-info: 157 179 196; /* #9DB3C4 slate (dark) */
+    --color-info-surface: 36 45 51; /* #242D33 */
+    --color-shipped: 192 163 183; /* #C0A3B7 aubergine (dark) */
+    --color-shipped-surface: 50 40 49; /* #322831 */
+  }
+}
