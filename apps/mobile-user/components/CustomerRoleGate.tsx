@@ -32,7 +32,7 @@ export default function CustomerRoleGate({
   return (
     <View className="flex-1 items-center justify-center bg-surface px-8">
       <Text className="text-primary text-lg font-bold text-center">
-        This account belongs in another Lira app
+        This account belongs in another Lyra app
       </Text>
       <Text className="mt-3 text-center text-secondary">
         Sign out, then open the app assigned to your role.

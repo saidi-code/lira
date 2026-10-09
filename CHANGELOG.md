@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Lira (ليرة) project are documented in this file.
+All notable changes to the Lyra (ليرة) project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vercel Cron compatibility for automated order sweep (`GET` + `Bearer` secret support).
 
 ### Changed
+- Rebranded the product display name from **Lira** to **Lyra** (Arabic unchanged: ليرة) across all app surfaces — the storefront web, all three mobile clients, the admin portal, the Electron cashier, and the invoice email wordmark. Display names only; technical identifiers are intentionally unchanged: `@lira/shared`, `@lira/config`, `@lira/api-client`, `com.lira.desktop-cashier`, the `lira_app/` directory, `lira_logo.png`, the `lira-lilac` API host, npm package `name`s/`slug`s, and test fixtures.
 - Refactored `client/config/api.ts`, `cartApi.ts`, and `favorisApi.ts` to eliminate unused imports and resolve ESLint warnings.
 - Enhanced `useAdminUsers` hook to return pagination metadata with safe fallbacks.
 - Updated `useFavoris` hook dependency array to ensure reactive memoization integrity.

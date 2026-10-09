@@ -10,7 +10,7 @@ public class WinCapX {
   public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 }
 "@
-$hwnd = [WinCapX]::FindWindowX($null, "Lira Cashier")
+$hwnd = [WinCapX]::FindWindowX($null, "Lyra Cashier")
 if ($hwnd -eq [IntPtr]::Zero) {
   Write-Host "WINDOW-NOT-FOUND. Trying partial match..."
   Get-Process electron -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "electron pid:" $_.Id "title:" $_.MainWindowTitle }

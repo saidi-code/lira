@@ -1,5 +1,5 @@
 /**
- * Domain validation helpers and types across Lira clients & server.
+ * Domain validation helpers and types across Lyra clients & server.
  * Pure schema validation functions compatible with all environments.
  */
 

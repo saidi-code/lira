@@ -1,13 +1,13 @@
-# Lira (ليرة) — Complete Agent Context
+# Lyra (ليرة) — Complete Agent Context
 
-> Single source of truth for AI agents and developers working on the **Lira (ليرة)** luxury artisanal e-commerce ecosystem.
+> Single source of truth for AI agents and developers working on the **Lyra (ليرة)** luxury artisanal e-commerce ecosystem.
 > Includes: brand identity, design system, architecture, all clients, API, database, inventory domain, auth, notifications, deployment, and troubleshooting.
 
 ---
 
 ## 1. You Are Here
 
-You are an expert **React Native + Expo / Node.js + Express / Electron** engineer helping build and maintain **Lira (ليرة)**, a production-quality luxury artisanal fashion e-commerce platform.
+You are an expert **React Native + Expo / Node.js + Express / Electron** engineer helping build and maintain **Lyra (ليرة)**, a production-quality luxury artisanal fashion e-commerce platform.
 
 You write clean, simple, maintainable code. You prioritize clarity over unnecessary abstraction.
 
@@ -15,7 +15,7 @@ You write clean, simple, maintainable code. You prioritize clarity over unnecess
 
 ## 2. Brand Philosophy & Identity
 
-Lira merges ancient Arabic calligraphic artistry and royal Middle Eastern craftsmanship with contemporary quiet luxury. The brand communicates **heritage, bespoke curation, serenity, and tactile exclusivity**.
+Lyra merges ancient Arabic calligraphic artistry and royal Middle Eastern craftsmanship with contemporary quiet luxury. The brand communicates **heritage, bespoke curation, serenity, and tactile exclusivity**.
 
 - **Brand Essence:** Bespoke · Artisanal · Timeless · Serene · Architectural
 - **Brand Archetype:** High-End Editorial Boutique (Perfumes, Silks, Fine Leathers, Ceramics, Rare Jewelry)
@@ -26,7 +26,7 @@ Lira merges ancient Arabic calligraphic artistry and royal Middle Eastern crafts
 
 ## 3. Design System
 
-The Lira design system is the **visual contract** for every screen across Mobile, Admin, Storefront, and Desktop Cashier.
+The Lyra design system is the **visual contract** for every screen across Mobile, Admin, Storefront, and Desktop Cashier.
 
 ### 3.1 Color Palette & Tokens
 
@@ -67,7 +67,7 @@ The palette is anchored in **warm metallic gold**, **tactile alabaster/cream** b
 
 ### 3.2 Typography & Hierarchy
 
-Lira balances **editorial serif elegance** with **crystal-clear sans-serif legibility** for transactional data (prices, numbers, SKUs).
+Lyra balances **editorial serif elegance** with **crystal-clear sans-serif legibility** for transactional data (prices, numbers, SKUs).
 
 #### Type Families
 
@@ -228,11 +228,142 @@ Subtle **ambient luxury glow** using a transparent gold tint rather than muddy g
    - All clients share tokens via `@lira/shared`
    - Admin + Cashier stay LTR layout; Mobile + Storefront honor RTL
 
+### 3.7 Storefront Web Direction
+
+The customer storefront at `apps/web/` uses an editorial, category-led shopping
+flow inspired by the structure of [Albdah Oud](https://albdah.com/): a concise
+announcement strip, clear shopping navigation, an image-led campaign, browsable
+categories and collections, curated product rows, and a brand story near the end
+of the page. This is structural inspiration only; do not copy Albdah's logo,
+wording, product photography, colors, or other brand assets.
+
+- Keep the Lyra palette, Arabic-first RTL layout, serif display headings, and warm
+  quiet-luxury tone defined above. The reference site must never override Lyra's
+  brand tokens.
+- Build campaign and collection sections from active catalog data and product
+  images from the Lyra API. Keep graceful visual fallbacks for missing banners or
+  images; do not add unrelated stock photography.
+- Show truthful product availability and use `formatPrice()` for customer-facing
+  prices. Do not invent reviews, customer counts, delivery promises, discounts,
+  or quality certifications to imitate reference content.
+- Keep the storefront focused on shopping and customer account tasks. Do not add
+  management or dashboard features to the public customer web app.
+- Keep the header responsive: full shopping navigation and search on desktop,
+  compact brand/cart actions and horizontally scrollable navigation on mobile.
+  All interactive controls need accessible names and visible keyboard focus.
+- Use responsive image-led cards, restrained gold accents, warm surfaces, subtle
+  hover motion, and honor `prefers-reduced-motion`.
+- Record future storefront design changes in this subsection when they establish
+  a new page pattern, visual token, or interaction rule.
+
+#### 3.7.1 Storefront Typography (apps/web only)
+
+The storefront web app uses a different type pairing from the mobile clients.
+Colors, radii, shadows, spacing, and motion rules are unchanged; only the two
+type families differ.
+
+| Role | Family | Weights | Where |
+|---|---|---|---|
+| **Display / Headings** | `Reem Kufi` | 400 · 500 · 600 · 700 | `font-serif`, hero titles, page heads, product names |
+| **Body / UI / Data** | `Cairo` | 400 · 500 · 600 · 700 | `font-sans`, body copy, prices, badges, nav, forms |
+
+- Both families load from Google Fonts with a single `<link>` in
+  `app/layout.tsx` (weights pinned, `display=swap`). Do not use `next/font` for
+  them: it requires network access to `fonts.googleapis.com` at build time and
+  fails offline builds.
+- Two CSS variables are the single source of truth for the pairing, set inline
+  on `<body>` in `app/layout.tsx`:
+  - `--font-display` → `"Reem Kufi", "Noto Serif", serif`
+  - `--font-body` → `"Cairo", "IBM Plex Sans Arabic", system-ui, sans-serif`
+- `tailwind.config.ts` maps `fontFamily.serif` to `var(--font-display)` and
+  `fontFamily.sans` to `var(--font-body)`. `app/globals.css` repeats the same
+  variables with static fallbacks for `body`, `.category-mark`,
+  `.collection-placeholder`, and `.badge-count`. Change the family in all four
+  places together, or the fallbacks will drift from the Tailwind classes.
+- The `@next/next/no-page-custom-font` lint warning on the `<link>` is
+  intentional and suppressed inline with a comment explaining why. Do not
+  remove the suppression and do not reintroduce `next/font`.
+- Mobile clients keep their existing families (`Noto Serif` / `Tajawal` /
+  `Amiri` display and `IBM Plex Sans Arabic` body). This pairing is a
+  storefront-only decision.
+
+#### 3.7.2 Storefront Header Contract
+
+`apps/web/components/Header.tsx` is a client component and carries the whole
+shopping shell. It must always contain, in this order top-to-bottom:
+
+1. **Announcement strip** (`.announcement-bar`) — brand line plus a gold `✦`
+   separator. No prices, discounts, or shipping promises.
+2. **Main row** — logo (`/images/lira_logo.png`, `next/image`), desktop nav
+   (`lg:` and up), search form posting `q` to `/shop` (`xl:` and up), then the
+   action cluster.
+3. **Action cluster** — sign-in link / `UserButton`, the **favoris badge**, and
+   the **cart badge**.
+4. **Category chip strip** (`.menu-bar` / `.menu-chip`) — "كل الأقسام" plus up to
+   twelve live categories from `catalogApi.categories()`, horizontally
+   scrollable.
+5. **Mobile nav** (`lg:hidden`) — the same `NAV` items, horizontally scrollable.
+
+Rules for the two badges:
+
+- Both are `<Link>`s to `/wishlist` and `/cart` using the shared
+  `.header-action` class, each wrapping an inline SVG (`HeartIcon`, `BagIcon`).
+- Counts come from TanStack Query, gated on `isSignedIn`, and reuse the exact
+  query keys `["wishlist"]` and `["cart"]` so invalidation from any page
+  refreshes the header. Cart counts `quantity`; favoris counts `items.length`.
+- The count renders in `.badge-count` and only when greater than zero. It is
+  `aria-hidden` — the count is already spoken through the link's `aria-label`
+  (`المفضلة، 3 قطعة` / `حقيبة التسوق، 3 قطعة`).
+- Never render a badge for a signed-out visitor, and never hardcode a count.
+- Add a new header action by reusing `.header-action` + `.badge-count` rather
+  than a bespoke absolute-positioned span.
+
+#### 3.7.3 Storefront Page Layout Patterns
+
+Every storefront route follows the same four-part shell, so pages stay
+recognisable next to the reference structure:
+
+1. **Breadcrumb** — `nav[aria-label="مسار التصفح"]` with `.crumb` links and
+   `.breadcrumb-sep` separators.
+2. **Page head** — `header.page-head` holding an `.eyebrow` kicker, one
+   `font-serif text-3xl md:text-4xl` `h1`, and an optional muted count line.
+3. **Body** — either a single column, a sidebar grid
+   (`lg:grid-cols-[15rem_1fr]` on `/shop`), or a content + sticky summary grid
+   (`lg:grid-cols-[1fr_20rem]` on `/cart` and `/checkout`).
+4. **Empty state** — a centred `rounded-3xl` panel with a serif headline, one
+   muted sentence, and a single gold CTA back to `/shop`. Never a bare
+   `text-muted` sentence.
+
+Route specifics:
+
+| Route | Pattern |
+|---|---|
+| `/` | Hero → category tiles → collection cards → product grid → split brand story → three promise cards |
+| `/shop` | Breadcrumb + page head, left category sidebar with active state (`aria-current="page"`), product grid, numbered pagination that preserves `q` and `category` |
+| `/product/[id]` | Breadcrumb, main image plus up to four thumbnails (`useMemo`-deduped `gallery`), sticky buy column, color then size chips, low-stock and out-of-stock lines, add-to-bag + favoris buttons |
+| `/cart` | Breadcrumb, page head with item count, image thumbnails per line, sticky `ملخص الحقيبة` summary with checkout and continue-shopping CTAs |
+| `/checkout` | Breadcrumb, page head, address grid with `aria-pressed`, explicit cash-on-delivery note, sticky `ملخص الطلب` |
+| `/wishlist` | Breadcrumb, page head with saved count, product-card grid with per-card add-to-bag and remove |
+| `/orders` | Breadcrumb, page head, one row per order: Arabic-formatted date, status pill, total in `text-primary-dim` |
+
+Product card rules:
+
+- `components/ProductCard.tsx` stays a server component; all interactivity
+  lives in the client child `components/ProductCardActions.tsx`. It exposes an
+  add-to-bag button and a favoris heart, both redirecting signed-out visitors to
+  `/sign-in` and both disabled when `stock <= 0`.
+- The quick actions sit in `.card-actions` (revealed on `:hover` /
+  `:focus-within`, always visible under `@media (hover: none)`). The wrapper
+  calls `preventDefault()` + `stopPropagation()` so a click never navigates to
+  the product page.
+- Prices always come from `formatPrice(amount, "TND")`. Availability badges are
+  truthful: `نفدت الكمية` only when `stock <= 0`.
+
 ---
 
 ## 4. Project Overview
 
-Lira is a **full-stack, multi-client e-commerce platform** for luxury fashion and artisanal goods targeting Arabic-speaking markets, with multi-language (AR/FR/EN) and multi-currency (TND/EUR/USD/SAR) support.
+Lyra is a **full-stack, multi-client e-commerce platform** for luxury fashion and artisanal goods targeting Arabic-speaking markets, with multi-language (AR/FR/EN) and multi-currency (TND/EUR/USD/SAR) support.
 
 Six clients on one Express API, each purpose-built for a role:
 
@@ -246,6 +377,31 @@ Six clients on one Express API, each purpose-built for a role:
 | 6 | **Storefront Web** | `apps/web/` | Next.js 14 (App Router) | public | Public storefront and checkout |
 
 All clients consume REST at `/api/v1` and share types via `@lira/shared`.
+
+#### App Display Names
+
+The product name is **Lyra** in Latin script and **ليرة** in Arabic — they are the
+same word, so the Arabic mark never changes. Use the following per-app **display**
+names (what users see on the home screen, window title, or app store):
+
+| Client | Display name | Where |
+|---|---|---|
+| Mobile — User | `ليرة` | `apps/mobile-user/app.json` → `expo.name` |
+| Mobile — Manager | `Lyra Manager` | `apps/mobile-manager/app.json` → `expo.name` |
+| Mobile — Warehouse | `Lyra Warehouse` | `apps/mobile-warehouse/app.json` → `expo.name` |
+| Desktop — Cashier | `Lyra Cashier` | `electron-builder.yml` `productName`, menu, receipt, header |
+| Admin Web | `Lyra Admin` | `apps/web-admin/index.html` `<title>`, sidebar |
+| Storefront Web | `ليرة — Lyra` | `apps/web/app/layout.tsx` `metadata.title`, header/footer |
+
+Customer-facing apps keep the Arabic wordmark (ليرة) as the primary mark; staff apps
+are English/LTR and use role-suffixed names.
+
+**Do NOT rename technical identifiers** when rebranding display names. These stay as-is:
+`@lira/shared`, `@lira/config`, `@lira/api-client`, `com.lira.desktop-cashier`, Expo
+`slug`s, npm package `name`s, the `lira_app/` repo folder, `/images/lira_logo.png`, the
+`lira-lilac.vercel.app` API host, and test fixtures. A display rename is cosmetic; the
+scoped package names and reverse-DNS IDs are load-bearing for installs, deep links, and
+distribution.
 
 | Layer | Stack |
 |---|---|
@@ -324,7 +480,11 @@ lira_app/
 │   │   ├── tailwind.config.js
 │   │   └── vite.config.ts
 │   │
-│   └── web/                 # Storefront (Next.js)
+│   └── web/                 # Storefront (Next.js 14 App Router)
+│       ├── app/             # routes + globals.css (component classes)
+│       ├── components/      # Header, ProductCard, ProductCardActions, Providers
+│       ├── lib/             # api, catalog, shop (cart/wishlist/order/address)
+│       └── public/images/   # lira_logo.png
 │
 ├── packages/
 │   ├── shared/              # @lira/shared — types, schemas, tokens, roles
@@ -662,3 +822,100 @@ server-side check or rely on hiding the send form as the only permission boundar
   `skuInventoryDocumentSnapshots`. It refuses to write when SKU, size, or
   warehouse allocations cannot be derived safely. Never bypass those blockers
   by distributing stock arbitrarily.
+
+---
+
+## 11. Deployment — Storefront Web (`apps/web`) on Vercel
+
+The storefront is deployed to Vercel as project **`web`** (connected to the
+`saidi-code/lira` GitHub repo). Production alias:
+**https://web-theta-jade-30.vercel.app**. The API it talks to is the existing
+Express deployment at `https://lira-lilac.vercel.app/api/v1`.
+
+### 11.1 The monorepo gotcha (read before deploying again)
+
+`apps/web` is a Next.js app, but the repo has **no workspace root** (no
+`pnpm-workspace.yaml`, no root `package.json` workspaces). `apps/web` consumes
+shared code through a `file:` dependency:
+
+```jsonc
+// apps/web/package.json
+"@lira/shared": "file:../../packages/shared"
+```
+
+If you deploy by running `vercel deploy` **from inside `apps/web`**, the CLI
+uploads only that subdirectory. `packages/shared` is not included, `npm ci`
+symlinks `@lira/shared` to a path that does not exist on the build machine, and
+the build fails with `Module not found: Can't resolve '@lira/shared'`.
+
+The correct setup for this monorepo:
+
+- **Root Directory** on the Vercel project is set to **`apps/web`**
+  (`vercel project update --root-directory apps/web`). Vercel runs the build,
+  install, and dev commands from there.
+- Deploy from the **repository root**, not from `apps/web`. This uploads the
+  whole repo so `../../packages/shared` is present on the build machine. The
+  project link for a root-level deploy lives in `.vercel/project.json` (copied
+  from `apps/web/.vercel/project.json`; both point at the same `projectId`).
+- A root **`.vercelignore`** keeps the upload small: it excludes `server`, the
+  mobile apps, `apps/web-admin`, `apps/desktop-cashier`, and build output, but
+  **keeps `packages/`** — `@lira/shared` must stay in the upload.
+
+Do not "fix" a failed build by vendoring shared code into `apps/web` or by
+switching `@lira/shared` to relative imports. That breaks the single-source-of-
+truth rule (see §3 and the repo-structure section): every client must share
+types through `@lira/shared`.
+
+### 11.2 Required environment variables
+
+Set these as project env vars on Vercel (Production). `NEXT_PUBLIC_*` values are
+inlined into the client bundle at build time, so pass them with `--build-env`
+when deploying via CLI.
+
+| Variable | Value / source |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://lira-lilac.vercel.app/api/v1` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`) |
+| `CLERK_SECRET_KEY` | Clerk secret key (`sk_...`) |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` |
+
+Never commit real secrets. `apps/web/.env` holds local values only and is
+git-ignored. The GitHub Actions workflow (`.github/workflows/ci.yml`) builds
+`apps/web` with a **dummy** publishable key purely to exercise prerender; real
+auth through the deployed proxy is verified by hand.
+
+### 11.3 Deploy command (CLI, production)
+
+```bash
+# from the repository root, linked via .vercel/project.json
+vercel deploy --prod --yes \
+  --build-env NEXT_PUBLIC_API_URL=https://lira-lilac.vercel.app/api/v1 \
+  --build-env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_... \
+  --build-env CLERK_SECRET_KEY=sk_... \
+  --build-env NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
+  --build-env NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
+  --env NEXT_PUBLIC_API_URL=https://lira-lilac.vercel.app/api/v1 \
+  --env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_... \
+  --env CLERK_SECRET_KEY=sk_... \
+  --env NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
+  --env NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+### 11.4 Build expectations and verification
+
+A clean production build compiles all 12 routes: `/`, `/cart`, `/checkout`,
+`/checkout/success`, `/orders`, `/orders/[id]`, `/product/[id]`, `/shop`,
+`/sign-in/[[...sign-in]]`, `/sign-up/[[...sign-up]]`, `/wishlist`, plus
+middleware. Verify a live deploy without a browser session:
+
+```bash
+vercel curl https://web-theta-jade-30.vercel.app/
+```
+
+**Deployment Protection (Vercel Authentication) is on** for this project, so
+the public URL returns an auth wall to anonymous requests — this is expected.
+The build itself is the source of truth for a successful deploy; check the
+production build log with
+`vercel inspect <deployment-url> --logs` if a route misbehaves.
+

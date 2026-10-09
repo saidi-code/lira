@@ -15,8 +15,8 @@ const config: Config = {
         danger: "#A3523B",
       },
       fontFamily: {
-        serif: ["Noto Serif", "Amiri", "serif"],
-        sans: ["IBM Plex Sans Arabic", "system-ui", "sans-serif"],
+        serif: ["var(--font-display)", "Reem Kufi", "Noto Serif", "serif"],
+        sans: ["var(--font-body)", "Cairo", "IBM Plex Sans Arabic", "system-ui", "sans-serif"],
       },
       boxShadow: {
         card: "0 4px 20px rgba(184,147,84,0.08)",

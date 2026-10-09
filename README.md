@@ -1,4 +1,4 @@
-# Lira (ليرة) — Luxury Artisanal E-Commerce Platform
+# Lyra (ليرة) — Luxury Artisanal E-Commerce Platform
 
 > Merging ancient Arabic calligraphic artistry and royal Middle Eastern craftsmanship with contemporary quiet luxury.
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-**Lira (ليرة)** is a production-quality, full-stack luxury artisanal fashion and lifestyle e-commerce ecosystem. Tailored for Arabic-speaking markets with full RTL-first ergonomics, multi-language support (Arabic, French, English), and multi-currency operations (TND, EUR, USD, SAR).
+**Lyra (ليرة)** is a production-quality, full-stack luxury artisanal fashion and lifestyle e-commerce ecosystem. Tailored for Arabic-speaking markets with full RTL-first ergonomics, multi-language support (Arabic, French, English), and multi-currency operations (TND, EUR, USD, SAR).
 
 The ecosystem connects customer-facing touchpoints and operational back-office interfaces to a unified Express REST API backed by MongoDB.
 

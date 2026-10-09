@@ -23,3 +23,8 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Vercel CLI local link state. Not secrets (the auth token lives in the global
+# ~/.vercel), but it is machine-specific and recreated by `vercel link`, so it is
+# not project source. Deploys go through the GitHub integration.
+.vercel/

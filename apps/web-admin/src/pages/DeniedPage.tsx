@@ -7,7 +7,7 @@ export function DeniedPage() {
         <p className="font-serif text-3xl font-semibold text-primary">ليرة</p>
         <h1 className="mt-4 font-serif text-xl font-medium text-ink">Access Restricted</h1>
         <p className="mt-2 text-sm text-muted">
-          This portal is reserved exclusively for authorized Lira atelier staff and management.
+          This portal is reserved exclusively for authorized Lyra atelier staff and management.
         </p>
         <div className="mt-6">
           <SignOutButton>

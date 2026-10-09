@@ -1,0 +1,23 @@
+# .vercelignore (repo root)
+# ==========================================
+# This is a monorepo, but only `apps/web` is built by this Vercel project.
+# The root directory is `apps/web`, and `apps/web` depends on
+# `@lira/shared` via `file:../../packages/shared` (there is no workspace root).
+# So `packages/` MUST stay in the upload or `npm ci` symlinks `@lira/shared` to a
+# missing path and the build fails with "Can't resolve '@lira/shared'".
+#
+# Everything below is excluded purely to keep the upload small and the build
+# deterministic — none of it is referenced by the storefront build.
+
+.git
+server
+apps/mobile-manager
+apps/mobile-user
+apps/mobile-warehouse
+apps/desktop-cashier
+apps/web-admin
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+!.env.example

@@ -26,25 +26,53 @@ export default function OrdersPage() {
   const orders = data?.orders ?? [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-serif text-3xl">طلباتي</h1>
+    <div className="space-y-8">
+      <nav aria-label="مسار التصفح" className="crumb">
+        <Link href="/">الرئيسية</Link>
+        <span className="breadcrumb-sep" aria-hidden="true">/</span>
+        <span className="text-primary-dim">طلباتي</span>
+      </nav>
+
+      <header className="page-head">
+        <p className="eyebrow">حسابكم</p>
+        <h1 className="mt-2 font-serif text-3xl md:text-4xl">طلباتي</h1>
+        {orders.length > 0 ? (
+          <p className="mt-2 text-sm text-muted">{orders.length} طلب</p>
+        ) : null}
+      </header>
+
       {orders.length === 0 ? (
-        <p className="text-muted">لا توجد طلبات بعد.</p>
+        <div className="rounded-3xl border border-primary/15 bg-white px-6 py-16 text-center">
+          <p className="font-serif text-2xl">لا توجد طلبات بعد</p>
+          <p className="mt-2 text-sm text-muted">عندما تطلبوا من ليرة ستجدون كل تفاصيل الطلب هنا.</p>
+          <Link href="/shop" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-dim">
+            ابدأوا التسوّق
+          </Link>
+        </div>
       ) : (
         <ul className="space-y-4">
           {orders.map((o) => (
             <li key={o._id}>
               <Link
                 href={`/orders/${o._id}`}
-                className="block rounded-2xl border border-primary/10 bg-white p-5 shadow-card"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-primary/10 bg-white p-6 shadow-card transition hover:border-primary/30"
               >
-                <div className="flex justify-between">
-                  <span className="font-medium">{o.orderNumber}</span>
-                  <span className="rounded-full border border-primary/20 bg-surface-dim px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary-dim">
+                <div>
+                  <span className="font-serif text-lg">{o.orderNumber}</span>
+                  <p className="mt-1 text-xs text-muted">
+                    {new Date(o.createdAt).toLocaleDateString("ar", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <span className="rounded-full border border-primary/20 bg-surface-dim px-3 py-1 text-xs font-bold text-primary-dim">
                     {STATUS[o.orderStatus] ?? o.orderStatus}
                   </span>
+                  <span className="font-bold text-primary-dim">{formatPrice(o.totalAmount, "TND")}</span>
                 </div>
-                <p className="mt-2 text-primary">{formatPrice(o.totalAmount)}</p>
               </Link>
             </li>
           ))}

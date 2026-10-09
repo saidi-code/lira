@@ -1,4 +1,4 @@
-// Base ESLint configuration for Lira packages and apps
+// Base ESLint configuration for Lyra packages and apps
 export default [
   {
     ignores: [

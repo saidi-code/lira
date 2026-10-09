@@ -15,7 +15,7 @@ export default function WarehouseDenied() {
       </Text>
       <Text className="mt-3 text-center text-secondary">
         {typeof role === "string"
-          ? `This account is assigned to the ${role} role. Open the Lira app for your role.`
+          ? `This account is assigned to the ${role} role. Open the Lyra app for your role.`
           : "This account has no assigned role. Ask an administrator for access."}
       </Text>
       <TouchableOpacity

@@ -1,6 +1,6 @@
-# Contributing to Lira (ليرة)
+# Contributing to Lyra (ليرة)
 
-Thank you for contributing to Lira. This project holds high architectural and design standards to ensure consistency across mobile, web, and back-office platforms.
+Thank you for contributing to Lyra. This project holds high architectural and design standards to ensure consistency across mobile, web, and back-office platforms.
 
 Before submitting changes, please review these principles and conventions.
 

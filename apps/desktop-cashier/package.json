@@ -1,8 +1,8 @@
 {
   "name": "desktop-cashier",
   "version": "1.0.0",
-  "description": "Lira desktop POS app — receipt printing, USB scanner, kiosk",
-  "author": "Lira",
+  "description": "Lyra desktop POS app — receipt printing, USB scanner, kiosk",
+  "author": "Lyra",
   "private": true,
   "main": "dist/main/index.js",
   "scripts": {

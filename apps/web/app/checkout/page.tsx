@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { FALLBACK_PRICING, formatPrice } from "@lira/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { catalogApi } from "@/lib/catalog";
@@ -72,52 +73,87 @@ export default function CheckoutPage() {
   });
 
   return (
-    <div className="mx-auto max-w-xl space-y-8">
-      <h1 className="font-serif text-3xl">إتمام الطلب</h1>
-      <p className="text-sm text-muted">
-        الشحن والضريبة يُحسبان في الخادم. الأرقام أدناه للعرض فقط.
-      </p>
+    <div className="space-y-8">
+      <nav aria-label="مسار التصفح" className="crumb">
+        <Link href="/cart">حقيبة التسوق</Link>
+        <span className="breadcrumb-sep" aria-hidden="true">/</span>
+        <span className="text-primary-dim">إتمام الطلب</span>
+      </nav>
 
-      <section className="space-y-3">
-        <h2 className="font-serif text-xl">عنوان الشحن</h2>
-        {addresses.length === 0 ? (
-          <p className="text-muted">لا توجد عناوين. أضف عنواناً من التطبيق أولاً.</p>
-        ) : (
-          addresses.map((a) => (
-            <button
-              key={a._id}
-              onClick={() => setAddressId(a._id)}
-              className={`w-full rounded-2xl border p-4 text-right ${
-                selected?._id === a._id
-                  ? "border-primary bg-surface-dim"
-                  : "border-primary/15 bg-white"
-              }`}
-            >
-              <p className="font-medium">{a.type}</p>
-              <p className="text-sm text-muted">
-                {a.street}، {a.city}
+      <header className="page-head">
+        <p className="eyebrow">الخطوة الأخيرة</p>
+        <h1 className="mt-2 font-serif text-3xl md:text-4xl">إتمام الطلب</h1>
+        <p className="mt-2 text-sm text-muted">
+          الشحن والضريبة يُحسبان في الخادم. الأرقام أدناه للعرض فقط.
+        </p>
+      </header>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <h2 className="font-serif text-xl">عنوان الشحن</h2>
+            {addresses.length === 0 ? (
+              <p className="rounded-2xl border border-primary/15 bg-white p-5 text-sm text-muted">
+                لا توجد عناوين. أضف عنواناً من التطبيق أولاً.
               </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {addresses.map((a) => (
+                  <li key={a._id}>
+                    <button
+                      onClick={() => setAddressId(a._id)}
+                      aria-pressed={selected?._id === a._id}
+                      className={`w-full rounded-2xl border p-4 text-right transition ${
+                        selected?._id === a._id
+                          ? "border-primary bg-surface-dim"
+                          : "border-primary/15 bg-white hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="font-medium">{a.type}</p>
+                      <p className="text-sm text-muted">
+                        {a.street}، {a.city}
+                      </p>
+                      <p className="mt-1 text-xs text-muted">{a.phoneNumber}</p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-serif text-xl">طريقة الدفع</h2>
+            <p className="rounded-2xl border border-primary/15 bg-surface-dim p-5 text-sm text-primary-dim">
+              الدفع عند الاستلام — تدفعون عند وصول الطلب.
+            </p>
+          </section>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-44 lg:self-start">
+          <div className="rounded-3xl border border-primary/10 bg-white p-6 shadow-card">
+            <h2 className="font-serif text-xl">ملخص الطلب</h2>
+            <dl className="mt-5 space-y-3 text-sm">
+              <Row label="المجموع الفرعي" value={formatPrice(subtotal)} />
+              <Row label="الشحن" value={formatPrice(shipping)} />
+              <Row label="الضريبة" value={formatPrice(tax)} />
+            </dl>
+            <div className="mt-5 flex items-center justify-between border-t border-primary/10 pt-5">
+              <span className="text-muted">الإجمالي</span>
+              <span className="text-2xl font-bold text-primary-dim">{formatPrice(total, "TND")}</span>
+            </div>
+
+            {error ? <p className="mt-4 italic text-danger">{error}</p> : null}
+
+            <button
+              disabled={place.isLoading || !selected || !items.length}
+              onClick={() => place.mutate()}
+              className="mt-6 w-full rounded-full bg-primary py-4 font-medium text-white transition hover:bg-primary-dim disabled:opacity-50"
+            >
+              {place.isLoading ? "جاري التأكيد..." : "تأكيد الطلب — الدفع عند الاستلام"}
             </button>
-          ))
-        )}
-      </section>
-
-      <div className="space-y-2 rounded-2xl bg-white p-5 shadow-card">
-        <Row label="المجموع الفرعي" value={formatPrice(subtotal)} />
-        <Row label="الشحن" value={formatPrice(shipping)} />
-        <Row label="الضريبة" value={formatPrice(tax)} />
-        <Row label="الإجمالي" value={formatPrice(total)} strong />
+          </div>
+        </aside>
       </div>
-
-      {error ? <p className="italic text-danger">{error}</p> : null}
-
-      <button
-        disabled={place.isLoading || !selected || !items.length}
-        onClick={() => place.mutate()}
-        className="w-full rounded-xl bg-primary py-4 font-medium text-white disabled:opacity-50"
-      >
-        {place.isLoading ? "جاري التأكيد..." : "تأكيد الطلب — الدفع عند الاستلام"}
-      </button>
     </div>
   );
 }

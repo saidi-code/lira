@@ -64,7 +64,7 @@ export function ProductsPage() {
                         />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-dim text-xs text-primary-dim">
-                          Lira
+                          Lyra
                         </div>
                       )}
                       <span>{p.name}</span>

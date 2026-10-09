@@ -63,7 +63,7 @@ app.whenReady().then(() => {
 
   const menu = Menu.buildFromTemplate([
     {
-      label: "Lira Cashier",
+      label: "Lyra Cashier",
       submenu: [
         { role: "about" },
         {

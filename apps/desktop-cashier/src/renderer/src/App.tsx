@@ -49,7 +49,7 @@ function receiptFor(
   cashier: string,
 ): string[] {
   const lines = [
-    "======== LIRA (POS) ========",
+    "======== LYRA (POS) ========",
     `Order: ${orderRef}`,
     `Cashier: ${cashier}`,
     `Date: ${new Date().toLocaleString()}`,
@@ -258,7 +258,7 @@ function PosShell() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="brand">🇱🇷 Lira Cashier</div>
+        <div className="brand">🇱🇷 Lyra Cashier</div>
         <div className="user">{isLoaded ? user?.fullName ?? user?.username ?? "Cashier" : "…"}</div>
         <div className="printer">{printerBadge}</div>
         {/* Account menu → includes sign-out (spec §8 flow starts at login). */}
@@ -399,7 +399,7 @@ function AuthWindow() {
   return (
     <div className="app auth-window">
       <header className="app-header">
-        <div className="brand">🇱🇷 Lira Cashier</div>
+        <div className="brand">🇱🇷 Lyra Cashier</div>
         <div className="user">Sign in required — role: cashier</div>
       </header>
       <main className="auth-main">
@@ -428,7 +428,7 @@ function AuthWindow() {
 function BootScreen({ message }: { message: string }) {
   return (
     <div className="app boot-screen">
-      <div className="brand">🇱🇷 Lira Cashier</div>
+      <div className="brand">🇱🇷 Lyra Cashier</div>
       <p>{message}</p>
     </div>
   );
@@ -437,7 +437,7 @@ function BootScreen({ message }: { message: string }) {
 function AuthUnavailable() {
   return (
     <div className="app boot-screen">
-      <div className="brand">🇱🇷 Lira Cashier</div>
+      <div className="brand">🇱🇷 Lyra Cashier</div>
       <p className="err">✗ Auth unavailable — missing VITE_CLERK_PUBLISHABLE_KEY</p>
       <p className="auth-hint">
         Set it in <code>apps/desktop-cashier/.env</code> (copy from <code>server/.env</code>) and
@@ -451,12 +451,12 @@ function WrongRole({ signOut }: { signOut: () => Promise<void> }) {
   return (
     <div className="app auth-window">
       <header className="app-header">
-        <div className="brand">🇱🇷 Lira Cashier</div>
+        <div className="brand">🇱🇷 Lyra Cashier</div>
         <div className="user">Cashier account required</div>
       </header>
       <main className="auth-main">
         <p className="auth-hint">
-          This account belongs to another Lira app. Sign out and open the app
+          This account belongs to another Lyra app. Sign out and open the app
           assigned to your role.
         </p>
         <button type="button" className="btn" onClick={() => void signOut()}>

@@ -10,8 +10,8 @@ public class WinCap {
   public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 }
 "@
-$proc = Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*Lira*" } | Select-Object -First 1
-if (-not $proc) { Write-Host "NO-LIRA-WINDOW"; exit 1 }
+$proc = Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*Lyra*" } | Select-Object -First 1
+if (-not $proc) { Write-Host "NO-LYRA-WINDOW"; exit 1 }
 $hwnd = $proc.MainWindowHandle
 [void][WinCap]::SetForegroundWindow($hwnd)
 Start-Sleep -Milliseconds 800

@@ -91,7 +91,7 @@ const header = () => `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.primary};">
         <tr>
           <td align="center" style="padding:28px 24px 24px;">
-            <div style="font-family:Georgia,'Times New Roman',serif;font-size:30px;letter-spacing:10px;color:${BRAND.white};font-weight:bold;direction:ltr;">LIRA</div>
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:30px;letter-spacing:10px;color:${BRAND.white};font-weight:bold;direction:ltr;">LYRA</div>
             <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;color:${BRAND.white};opacity:.85;margin-top:6px;direction:ltr;">LUXURY STORE</div>
           </td>
         </tr>
@@ -318,7 +318,7 @@ export const invoiceEmailText = (
   order: InvoiceOrder
 ): string => {
   const lines: string[] = [
-    "LIRA — LUXURY STORE",
+    "LYRA — LUXURY STORE",
     "",
     `شكراً لشرائك، ${recipient.name}`,
     "سعدنا بخدمتك في متجر ليرا. تم استلام طلبك بنجاح.",
