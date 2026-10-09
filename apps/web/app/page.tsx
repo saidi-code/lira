@@ -12,8 +12,15 @@ const imageFor = (product?: Product) =>
   product?.images?.[0];
 
 export default async function HomePage() {
+  // Every fetch is guarded so a build-time API outage degrades to the page's
+  // designed empty state instead of failing `next build` during prerender.
+  // products() mirrors the collections()/categories() .catch() below; ISR
+  // (revalidate = 120) repopulates real data on the first request after deploy.
   const [{ products }, collections, categories] = await Promise.all([
-    catalogApi.products({ limit: 8, page: 1 }),
+    catalogApi.products({ limit: 8, page: 1 }).catch(() => ({
+      products: [] as Product[],
+      pagination: undefined,
+    })),
     catalogApi.collections().catch(() => []),
     catalogApi.categories().catch(() => []),
   ]);
