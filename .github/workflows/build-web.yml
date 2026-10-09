@@ -1,0 +1,62 @@
+# .github/workflows/build-web.yml
+# ==========================================
+# Dedicated build for the storefront (apps/web) on every push to `production`.
+#
+# GitHub Actions only reads workflows from `.github/` at the REPO ROOT — a
+# `apps/web/.github/` folder is ignored — so this file lives here, not inside
+# the app. It `working-directory`s into apps/web for the npm steps.
+#
+# This overlaps with the `web` job in `ci.yml`, which builds the same app on the
+# same trigger. Keep whichever you prefer and drop the other to avoid building
+# twice per push; this separate file exists so the production build is its own
+# named check you can require as a branch-protection gate and attach a deploy
+# step to later.
+#
+# `actions/checkout` pulls the whole repo, so `packages/shared` — which apps/web
+# depends on via `file:../../packages/shared` — is on disk for `npm ci` to
+# symlink. (This is exactly why the Vercel CLI deploy needed different setup: it
+# uploads only apps/web and cannot see the sibling package. See AGENT.md §11.)
+# ==========================================
+name: Build Web
+
+on:
+  push:
+    branches: [production]
+  # Lets the build be re-run from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+concurrency:
+  group: build-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-web:
+    name: web — build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      # The build prerenders every page, and Clerk throws without a publishable
+      # key — so without this the build fails in CI exactly as it does locally
+      # without one. The value below is SYNTHETIC (the same one ci.yml uses):
+      # invented for this file, never issued by any Clerk dashboard, so it
+      # authenticates nothing and cannot leak anything real. It only has to be
+      # well-formed enough to survive the constructor, which is all a prerender
+      # exercises; real auth through the deployment is verified by hand.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Zm9vLWJhci0wMC5jbGVyay5hY2NvdW50cy5kZXYk
+      NEXT_PUBLIC_API_URL: https://lira-lilac.vercel.app/api/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
