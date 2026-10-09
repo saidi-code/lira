@@ -181,6 +181,12 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate route types
+        run: npm run types:routes
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Unit tests
         run: npm test
 

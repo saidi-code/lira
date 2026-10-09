@@ -13,6 +13,7 @@ import {
   useWarehousesQuery,
 } from "@/hooks/useInventory";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -35,6 +36,7 @@ const warehouseName = (row: BackendInventoryRow) =>
   typeof row.warehouse === "string" ? "—" : row.warehouse.name;
 
 export default function InventoryScreen() {
+  const router = useRouter();
   const [warehouse, setWarehouse] = useState<string | undefined>(undefined);
   const [filter, setFilter] = useState<Filter>("all");
 

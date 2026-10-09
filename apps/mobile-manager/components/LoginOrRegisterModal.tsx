@@ -57,19 +57,6 @@ const LoginOrRegisterModal = ({ show,setShow }: { show: boolean ,setShow:any}) =
 
           <TouchableOpacity
             onPress={() =>{
-              router.push("/(auth)/signUp");
-              setShow(false);
-            }}
-            activeOpacity={0.8}
-            className="w-full py-4 rounded-full bg-primary-100 items-center mt-3"
-          >
-            <Text className="text-[#785920] text-lg font-bold font-tajwal">
-              إنشاء حساب
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() =>{
              setShow(false);
             }}
             activeOpacity={0.8}

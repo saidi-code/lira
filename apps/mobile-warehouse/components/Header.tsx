@@ -4,12 +4,8 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/index";
 import { HeaderProps } from "../constants/types";
-import { useCart } from "../hooks/useCart";
-import { useFavoris } from "../hooks/useFavoris";
 import OpenNavMenuBtn from "./OpenNavMenuBtn";
 const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
-  const { itemCount } = useCart();
-  const { itemsCount: favorisCount } = useFavoris();
   const router = useRouter();
   return (
     <View
@@ -47,38 +43,6 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
             </TouchableOpacity> */}
           </View>
         )}
-        <View className="flex-row gap-4 bg-primary/10 rounded-full px-4 py-2">
-          <TouchableOpacity
-            className="relative"
-            onPress={() => router.navigate("/cart")}
-          >
-            <Ionicons
-              name={itemCount > 0 ? "bag-sharp" : "bag-outline"}
-              size={20}
-              color={COLORS.primary}
-            />
-            <View className="absolute -bottom-2 -right-2 bg-accent/80 rounded-full w-5 h-5 items-center justify-center z-10">
-              <Text className="text-white  text-[8px] leading-[8px]  font-bold">
-                {itemCount}
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="relative"
-            onPress={() => router.navigate("/wishlist")}
-          >
-            <Ionicons
-              name={favorisCount > 0 ? "heart-sharp" : "heart-outline"}
-              size={20}
-              color={"#dc2626"}
-            />
-            <View className="absolute -bottom-2 -right-2 bg-accent/80 rounded-full w-5 h-5 items-center justify-center z-10">
-              <Text className="text-white  text-[8px] leading-[8px] font-bold">
-                {favorisCount}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
       </View>
       <View className=" absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         <Image

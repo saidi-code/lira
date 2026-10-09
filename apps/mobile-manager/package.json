@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node --import tsx --test \"tests/*.test.ts\"",
+    "types:routes": "node scripts/generateRouteTypes.cjs",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },

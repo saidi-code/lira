@@ -1,15 +1,13 @@
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import React, { useMemo, useCallback, memo } from "react";
-import { Text, TouchableOpacity, View, Pressable } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { usePrice } from "../hooks/usePrice";
 import { FavorisItemsProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../hooks/useFavoris";
-import { useRouter } from "expo-router";
 
 const FavorisItem = memo(({ product }: FavorisItemsProps) => {
-  const router = useRouter();
   const { addToCart } = useCart();
   const { toggleLike } = useFavoris();
   const price = usePrice();
@@ -29,11 +27,6 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
     addToCart(product, null, null);
   }, [product, addToCart]);
 
-  const handleNavigate = useCallback(() => {
-    if (!product?._id) return;
-    router.push(`/product/${product._id}`);
-  }, [product?._id, router]);
-
   if (!product) return null;
 
   return (
@@ -49,14 +42,14 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
               <Ionicons name="heart-sharp" color="#b89354" size={20} />
             </TouchableOpacity>
 
-            <Pressable onPress={handleNavigate} className="flex-col justify-start items-end flex-1 ml-2">
+            <View className="flex-col justify-start items-end flex-1 ml-2">
               <Text
                 className="text-right text-body text-lg font-body"
                 numberOfLines={1}
               >
                 {product.name}
               </Text>
-            </Pressable>
+            </View>
           </View>
 
           <View className="self-stretch flex-col justify-start items-end">
@@ -90,7 +83,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
       </View>
 
       {/* Product image */}
-      <Pressable onPress={handleNavigate} className="w-28 h-32 rounded-lg overflow-hidden bg-subtle">
+      <View className="w-28 h-32 rounded-lg overflow-hidden bg-subtle">
         <Image
           source={{ uri: imageUri }}
           style={{ width: 112, height: 128 }}
@@ -98,7 +91,7 @@ const FavorisItem = memo(({ product }: FavorisItemsProps) => {
           contentFit="cover"
           transition={200}
         />
-      </Pressable>
+      </View>
     </View>
   );
 });

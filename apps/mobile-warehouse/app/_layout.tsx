@@ -49,7 +49,7 @@ function WarehouseGate({ children }: { children: React.ReactNode }) {
       isWarehouseStaff &&
       (inAuth || (segments[0] !== "admin" && segments[0] !== "settings"))
     ) {
-      router.replace("/admin");
+      router.replace("/admin/inventory");
     }
   }, [isLoaded, isUserLoaded, isSignedIn, isWarehouseStaff, segments, router]);
 

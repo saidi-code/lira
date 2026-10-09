@@ -36,7 +36,7 @@ export default function AdminLayout() {
     // Only once Clerk has resolved: `role` is null until then, and redirecting on
     // that would bounce a signed-in manager out during the first render.
     if (isLoaded && !isStaff) {
-      router.replace("/");
+      router.replace("/(staff)/denied");
     }
   }, [isLoaded, isStaff, router]);
 

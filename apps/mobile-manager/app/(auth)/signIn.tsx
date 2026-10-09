@@ -55,7 +55,7 @@ export default function Page() {
               return;
             }
 
-            router.replace("/admin");
+            router.replace("/admin/inventory");
           },
         });
       } else if (signInAttempt.status === "needs_second_factor") {
@@ -114,7 +114,7 @@ export default function Page() {
               return;
             }
 
-            router.replace("/admin");
+            router.replace("/admin/inventory");
           },
         });
       } else {

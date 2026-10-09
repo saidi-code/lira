@@ -1,6 +1,5 @@
 import React, { useState, useCallback, memo } from "react";
-import { useRouter } from "expo-router";
-import { StyleSheet, Pressable, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ProductCardProps } from "../constants/types";
 import ChooseColorSizeModal from "./productCardComponents/ChooseColorSizeModal";
 import ProductCardCategoryComponent from "./productCardComponents/ProductCategoryComponent";
@@ -8,15 +7,11 @@ import ProductNameComponent from "./productCardComponents/ProductNameComponent";
 import ProductPriceComponent from "./productCardComponents/ProductPriceComponent";
 import AddToCartBtn from "./productCardComponents/AddToCartBtn";
 import AddToFavorisBtn from "./productCardComponents/AddToFavorisBtn";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/config/api";
 import ProductImage from "./productCardComponents/ProductImage";
 import { useAppColors } from "@/constants/utility";
 import { COLORS } from "@/constants";
 
 const ProductCard = memo(({ product }: ProductCardProps) => {
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   // Resolved per render: the module-level `styles` below is created once, so a
   // token read there freezes to the light palette. Overriding the card fill
@@ -27,35 +22,13 @@ const ProductCard = memo(({ product }: ProductCardProps) => {
     setShowModal(true);
   }, []);
 
-  const handleProductHover = useCallback(
-    (productId: string) => {
-      if (!productId) return;
-      queryClient.prefetchQuery({
-        queryKey: ["product", productId],
-        queryFn: async () => {
-          const res = await api.get(`/products/${productId}`);
-          return res.data ?? res;
-        },
-        staleTime: 5 * 60 * 1000,
-      });
-    },
-    [queryClient]
-  );
-
-  const handlePress = useCallback(() => {
-    if (!product?._id) return;
-    handleProductHover(product._id);
-    router.push(`/product/${product._id}`);
-  }, [product?._id, handleProductHover, router]);
-
   const categoryTitle =
     (product?.category as any)?.title ??
     (typeof product?.category === "string" ? product.category : "");
 
   return (
-    <Pressable
+    <View
       style={[styles.productCard, { backgroundColor: colors.card }]}
-      onPress={handlePress}
     >
       <View style={styles.imageContainer}>
         <ProductImage product={product} />
@@ -82,7 +55,7 @@ const ProductCard = memo(({ product }: ProductCardProps) => {
           />
         )}
       </View>
-    </Pressable>
+    </View>
   );
 });
 

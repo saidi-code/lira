@@ -1,7 +1,7 @@
 // app/_layout.tsx — Lyra Admin (mobile-admin)
 // ==========================================
 // Staff-only shell. Signed-out staff land on `/(auth)/signIn`; signed-in
-// staff land on `/admin` (the dashboard tab). There is deliberately no
+// staff land on `/admin/inventory` (the default staff tab). There is deliberately no
 // drawer, no shop tabs, no cart modal, no SettingsProvider — those are
 // consumer concerns that live in `mobile/`, not here.
 import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
@@ -52,8 +52,8 @@ function StaffGate({ children }: { children: React.ReactNode }) {
     const inAuth = segments[0] === "(auth)";
     const inDenied = segments[0] === "(staff)" && segments[1] === "denied";
     if (!isSignedIn && !inAuth) router.replace("/(auth)/signIn");
-    else if (isSignedIn && inAuth) router.replace(isManager ? "/admin" : "/(staff)/denied");
-    else if (isSignedIn && isManager && inDenied) router.replace("/admin");
+    else if (isSignedIn && inAuth) router.replace(isManager ? "/admin/inventory" : "/(staff)/denied");
+    else if (isSignedIn && isManager && inDenied) router.replace("/admin/inventory");
     else if (isSignedIn && !isManager && !inDenied) router.replace("/(staff)/denied");
   }, [isLoaded, isUserLoaded, isSignedIn, isManager, segments, router]);
 

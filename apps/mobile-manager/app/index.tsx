@@ -1,6 +1,6 @@
 // app/index.tsx — Lyra Admin entry
 // ==========================================
-// Everything real lives under `/admin` (dashboard tab) or `/(auth)/signIn`.
+// Everything real lives under `/admin/inventory` or `/(auth)/signIn`.
 // This file only decides which one to show first: the root Stack has no
 // `index` screen of its own, so without this redirect `router.replace("/")`
 // from the admin layout's Exit button would land on an empty route.
@@ -20,5 +20,5 @@ export default function AdminEntry() {
     );
   }
 
-  return <Redirect href={isSignedIn ? "/admin" : "/(auth)/signIn"} />;
+  return <Redirect href={isSignedIn ? "/admin/inventory" : "/(auth)/signIn"} />;
 }
