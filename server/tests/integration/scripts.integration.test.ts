@@ -27,6 +27,7 @@ import { repairStrandedReservations } from "../../scripts/repairStrandedReservat
 
 let mongod: MongoMemoryServer;
 const quiet = () => undefined;
+const FIXTURE_SKU = "SMP-1";
 
 before(async () => {
   mongod = await MongoMemoryServer.create({ instance: { launchTimeout: LAUNCH_TIMEOUT_MS } });
@@ -55,7 +56,7 @@ const fixture = async (stock: number) => {
   });
   const product = await Product.create({
     name: "Oud Wood 50ml",
-    sku: "SMP-1",
+    sku: FIXTURE_SKU,
     subtitle: "s",
     description: "d",
     category: new mongoose.Types.ObjectId(),
@@ -66,7 +67,7 @@ const fixture = async (stock: number) => {
   });
   await SkuInventory.create({
     product: product._id,
-    sku: product.sku ?? "SMP-1",
+    sku: FIXTURE_SKU,
     warehouse: warehouse._id,
     quantity: 0,
     reserved: 0,
@@ -74,7 +75,7 @@ const fixture = async (stock: number) => {
   if (stock > 0) {
     await applyMovement("in", {
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
       quantity: stock,
     });
@@ -83,7 +84,7 @@ const fixture = async (stock: number) => {
 };
 
 const orderFor = async (
-  product: { _id: mongoose.Types.ObjectId; name: string; stock: number; sku?: string | null },
+  product: { _id: mongoose.Types.ObjectId; name: string; stock: number },
   allocation: mongoose.Types.ObjectId | null,
   status: string
 ) =>
@@ -92,7 +93,7 @@ const orderFor = async (
     items: [
       {
         product: product._id,
-        sku: product.sku ?? "SMP-1",
+        sku: FIXTURE_SKU,
         name: product.name,
         price: 100,
         quantity: 2,
@@ -238,7 +239,7 @@ describe("npm run reconcile", () => {
     // availability, so comparing the wrong figure would flag every open order.
     const { product, warehouse } = await fixture(10);
     await reserve([
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id, quantity: 4 },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id, quantity: 4 },
     ]);
     await Product.updateOne({ _id: product._id }, { $set: { stock: 6 } });
 
@@ -260,7 +261,7 @@ describe("npm run repair:reservations", () => {
     const { product, warehouse } = await fixture(10);
     await orderFor(product, warehouse._id as mongoose.Types.ObjectId, "shipped");
     await SkuInventory.updateOne(
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
@@ -270,7 +271,7 @@ describe("npm run repair:reservations", () => {
 
     const untouched = await SkuInventory.findOne({
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
     }).lean();
     assert.equal(untouched?.reserved, 2, "still stranded until --fix");
@@ -283,7 +284,7 @@ describe("npm run repair:reservations", () => {
       "shipped"
     );
     await SkuInventory.updateOne(
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
@@ -292,7 +293,7 @@ describe("npm run repair:reservations", () => {
 
     const repaired = await SkuInventory.findOne({
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
     }).lean();
     assert.equal(repaired?.reserved, 0, "the phantom hold is gone");
@@ -318,11 +319,11 @@ describe("npm run repair:reservations", () => {
     // The commit movement is the proof the hold was cleared, so the repair must
     // leave it alone.
     await reserve([
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id, quantity: 2 },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id, quantity: 2 },
     ]);
     await applyMovement("commit", {
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
       quantity: 2,
       reference: order.orderNumber ?? "",
@@ -330,7 +331,7 @@ describe("npm run repair:reservations", () => {
 
     const row = await SkuInventory.findOne({
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
     }).lean();
     assert.equal(row?.reserved, 0, "already settled");
@@ -345,7 +346,7 @@ describe("npm run repair:reservations", () => {
     const { product, warehouse } = await fixture(10);
     await orderFor(product, null, "shipped");
     await SkuInventory.updateOne(
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
@@ -355,7 +356,7 @@ describe("npm run repair:reservations", () => {
 
     const untouched = await SkuInventory.findOne({
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
     }).lean();
     assert.equal(untouched?.reserved, 2);
@@ -370,7 +371,7 @@ describe("npm run repair:reservations", () => {
     );
     // The order says 2, but only 1 is genuinely still held.
     await SkuInventory.updateOne(
-      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
+      { product: product._id, sku: FIXTURE_SKU, warehouse: warehouse._id },
       { $set: { quantity: 9, reserved: 1 } }
     );
 
@@ -378,7 +379,7 @@ describe("npm run repair:reservations", () => {
 
     const row = await SkuInventory.findOne({
       product: product._id,
-      sku: product.sku ?? "SMP-1",
+      sku: FIXTURE_SKU,
       warehouse: warehouse._id,
     }).lean();
     assert.equal(row?.reserved, 0, "clamped, not driven negative");
