@@ -15,7 +15,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
-import Inventory from "../../models/Inventory.js";
+import SkuInventory from "../../models/SkuInventory.js";
 import Order from "../../models/Order.js";
 import Product from "../../models/Products.js";
 import StockMovement from "../../models/StockMovement.js";
@@ -64,8 +64,9 @@ const fixture = async (stock: number) => {
     price: 100,
     stock,
   });
-  await Inventory.create({
+  await SkuInventory.create({
     product: product._id,
+    sku: product.sku ?? "SMP-1",
     warehouse: warehouse._id,
     quantity: 0,
     reserved: 0,
@@ -73,6 +74,7 @@ const fixture = async (stock: number) => {
   if (stock > 0) {
     await applyMovement("in", {
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
       quantity: stock,
     });
@@ -81,7 +83,7 @@ const fixture = async (stock: number) => {
 };
 
 const orderFor = async (
-  product: { _id: mongoose.Types.ObjectId; name: string; stock: number },
+  product: { _id: mongoose.Types.ObjectId; name: string; stock: number; sku?: string | null },
   allocation: mongoose.Types.ObjectId | null,
   status: string
 ) =>
@@ -90,6 +92,7 @@ const orderFor = async (
     items: [
       {
         product: product._id,
+        sku: product.sku ?? "SMP-1",
         name: product.name,
         price: 100,
         quantity: 2,
@@ -235,7 +238,7 @@ describe("npm run reconcile", () => {
     // availability, so comparing the wrong figure would flag every open order.
     const { product, warehouse } = await fixture(10);
     await reserve([
-      { product: product._id, warehouse: warehouse._id, quantity: 4 },
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id, quantity: 4 },
     ]);
     await Product.updateOne({ _id: product._id }, { $set: { stock: 6 } });
 
@@ -256,8 +259,8 @@ describe("npm run repair:reservations", () => {
     // The `out` that used to stand in for `commit`: units gone, hold left behind.
     const { product, warehouse } = await fixture(10);
     await orderFor(product, warehouse._id as mongoose.Types.ObjectId, "shipped");
-    await Inventory.updateOne(
-      { product: product._id, warehouse: warehouse._id },
+    await SkuInventory.updateOne(
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
@@ -265,8 +268,9 @@ describe("npm run repair:reservations", () => {
     assert.equal(result.stranded, 1);
     assert.equal(result.cleared, 0, "read-only unless asked");
 
-    const untouched = await Inventory.findOne({
+    const untouched = await SkuInventory.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
     }).lean();
     assert.equal(untouched?.reserved, 2, "still stranded until --fix");
@@ -278,16 +282,17 @@ describe("npm run repair:reservations", () => {
       warehouse._id as mongoose.Types.ObjectId,
       "shipped"
     );
-    await Inventory.updateOne(
-      { product: product._id, warehouse: warehouse._id },
+    await SkuInventory.updateOne(
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
     const result = await repairStrandedReservations({ fix: true, log: quiet });
     assert.equal(result.cleared, 1);
 
-    const repaired = await Inventory.findOne({
+    const repaired = await SkuInventory.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
     }).lean();
     assert.equal(repaired?.reserved, 0, "the phantom hold is gone");
@@ -313,17 +318,19 @@ describe("npm run repair:reservations", () => {
     // The commit movement is the proof the hold was cleared, so the repair must
     // leave it alone.
     await reserve([
-      { product: product._id, warehouse: warehouse._id, quantity: 2 },
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id, quantity: 2 },
     ]);
     await applyMovement("commit", {
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
       quantity: 2,
       reference: order.orderNumber ?? "",
     });
 
-    const row = await Inventory.findOne({
+    const row = await SkuInventory.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
     }).lean();
     assert.equal(row?.reserved, 0, "already settled");
@@ -337,8 +344,8 @@ describe("npm run repair:reservations", () => {
     // current default instead would credit a warehouse that never held them.
     const { product, warehouse } = await fixture(10);
     await orderFor(product, null, "shipped");
-    await Inventory.updateOne(
-      { product: product._id, warehouse: warehouse._id },
+    await SkuInventory.updateOne(
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
       { $set: { quantity: 8, reserved: 2 } }
     );
 
@@ -346,8 +353,9 @@ describe("npm run repair:reservations", () => {
     assert.equal(result.unstamped, 1);
     assert.equal(result.cleared, 0, "refused rather than guessed");
 
-    const untouched = await Inventory.findOne({
+    const untouched = await SkuInventory.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
     }).lean();
     assert.equal(untouched?.reserved, 2);
@@ -361,15 +369,16 @@ describe("npm run repair:reservations", () => {
       "delivered"
     );
     // The order says 2, but only 1 is genuinely still held.
-    await Inventory.updateOne(
-      { product: product._id, warehouse: warehouse._id },
+    await SkuInventory.updateOne(
+      { product: product._id, sku: product.sku ?? "SMP-1", warehouse: warehouse._id },
       { $set: { quantity: 9, reserved: 1 } }
     );
 
     await repairStrandedReservations({ fix: true, log: quiet });
 
-    const row = await Inventory.findOne({
+    const row = await SkuInventory.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
     }).lean();
     assert.equal(row?.reserved, 0, "clamped, not driven negative");

@@ -147,9 +147,12 @@ describe("product update", () => {
     const product = await seedProduct();
 
     for (const bad of ["abc", null, "", [], false]) {
-      const res = await send("PUT", `/products/${product._id}`, { stock: bad });
-      assert.equal(res.status, 400, `stock=${JSON.stringify(bad)} should be rejected`);
+      const res = await send("PUT", `/products/${product._id}`, { price: bad });
+      assert.equal(res.status, 400, `price=${JSON.stringify(bad)} should be rejected`);
     }
+
+    const stockUpdate = await send("PUT", `/products/${product._id}`, { stock: 25 });
+    assert.equal(stockUpdate.status, 400, "stock must use the inventory adjustment flow");
 
     const unchanged = await Product.findById(product._id);
     assert.equal(unchanged?.stock, 10, "a rejected update must not change stock");
@@ -168,7 +171,6 @@ describe("product update", () => {
   it("still accepts an ordinary update", async () => {
     const product = await seedProduct();
     const res = await send("PUT", `/products/${product._id}`, {
-      stock: 25,
       price: 120,
       // Required: updateProduct rejects an update whose final image list would
       // be empty, so without this the request short-circuits before saving.
@@ -179,7 +181,7 @@ describe("product update", () => {
 
     assert.equal(res.status, 200);
     const updated = await Product.findById(product._id);
-    assert.equal(updated?.stock, 25);
+    assert.equal(updated?.stock, 10, "ordinary product edits do not alter ledger stock");
     assert.equal(updated?.price, 120);
   });
 describe("address and supplier bodies", () => {

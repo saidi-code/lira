@@ -22,7 +22,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import mongoose from "mongoose";
 import { MongoMemoryServer, LAUNCH_TIMEOUT_MS } from "./mongod.js";
 
-import Inventory from "../../models/Inventory.js";
+import SkuInventory from "../../models/SkuInventory.js";
 import Product from "../../models/Products.js";
 import PurchaseOrder from "../../models/PurchaseOrder.js";
 import StockMovement from "../../models/StockMovement.js";
@@ -85,9 +85,10 @@ const seed = async (stock: number) => {
     stock,
   });
 
-  await Inventory.create({
+  await SkuInventory.create({
     product: product._id,
-    warehouse: warehouse._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id,
     quantity: 0,
     reserved: 0,
     reorderLevel: 2,
@@ -96,6 +97,7 @@ const seed = async (stock: number) => {
   if (stock > 0) {
     await applyMovement("in", {
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: warehouse._id,
       quantity: stock,
       reference: "seed",
@@ -105,7 +107,7 @@ const seed = async (stock: number) => {
 };
 
 const row = (product: mongoose.Types.ObjectId, warehouse: mongoose.Types.ObjectId) =>
-  Inventory.findOne({ product, warehouse }).lean();
+  SkuInventory.findOne({ product, warehouse }).lean();
 
 describe("the ledger writes to a real database", () => {
   it("seeds the opening balance without doubling it", async () => {
@@ -124,6 +126,7 @@ describe("the ledger writes to a real database", () => {
 
     const movement = await StockMovement.findOne({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       type: "in",
     }).lean();
 
@@ -152,7 +155,9 @@ describe("the ledger writes to a real database", () => {
     const { product, warehouse } = await seed(10);
 
     await reserve([
-      { product: product._id, warehouse: warehouse._id, quantity: 4 },
+      { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id, quantity: 4 },
     ]);
     let inventory = await row(product._id, warehouse._id);
     assert.equal(inventory?.quantity, 10, "a hold does not move the shelf");
@@ -160,7 +165,9 @@ describe("the ledger writes to a real database", () => {
     assert.equal(available(inventory as never), 6);
 
     await release([
-      { product: product._id, warehouse: warehouse._id, quantity: 4 },
+      { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id, quantity: 4 },
     ]);
     inventory = await row(product._id, warehouse._id);
     assert.equal(inventory?.reserved, 0);
@@ -173,10 +180,14 @@ describe("the ledger writes to a real database", () => {
     const { product, warehouse } = await seed(10);
 
     await reserve([
-      { product: product._id, warehouse: warehouse._id, quantity: 4 },
+      { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id, quantity: 4 },
     ]);
     await commit([
-      { product: product._id, warehouse: warehouse._id, quantity: 4 },
+      { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id, quantity: 4 },
     ]);
 
     const inventory = await row(product._id, warehouse._id);
@@ -191,7 +202,9 @@ describe("the ledger writes to a real database", () => {
     await assert.rejects(
       () =>
         commit([
-          { product: product._id, warehouse: warehouse._id, quantity: 4 },
+          { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id, quantity: 4 },
         ]),
       /Not enough stock/
     );
@@ -209,7 +222,8 @@ describe("the ledger writes to a real database", () => {
     });
 
     await transfer(warehouse._id, other._id, [
-      { product: product._id, quantity: 3 },
+      { product: product._id,
+      sku: product.sku ?? "SMP-1", quantity: 3 },
     ]);
 
     const source = await row(product._id, warehouse._id);
@@ -220,6 +234,7 @@ describe("the ledger writes to a real database", () => {
     // Two legs, each naming its own side — no sign required.
     const legs = await StockMovement.find({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       type: { $in: ["transfer_out", "transfer_in"] },
     })
       .sort({ type: 1 })
@@ -247,7 +262,8 @@ describe("the ledger writes to a real database", () => {
       fromWarehouse: warehouse._id,
       toWarehouse: other._id,
       status: "draft",
-      items: [{ product: product._id, name: "Oud", quantity: 3 }],
+      items: [{ product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 3 }],
     });
 
     // Bookkeeping only — nothing has physically moved yet, and the destination
@@ -277,7 +293,8 @@ describe("the ledger writes to a real database", () => {
       fromWarehouse: warehouse._id,
       toWarehouse: other._id,
       status: "draft",
-      items: [{ product: product._id, name: "Oud", quantity: 3 }],
+      items: [{ product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 3 }],
     });
 
     await applyTransferStatus(String(doc._id), "completed");
@@ -305,7 +322,8 @@ describe("the ledger writes to a real database", () => {
       fromWarehouse: warehouse._id,
       toWarehouse: other._id,
       status: "completed",
-      items: [{ product: product._id, name: "Oud", quantity: 3 }],
+      items: [{ product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 3 }],
     });
 
     // Terminal state: a `completed` transfer must not be dragged backwards,
@@ -325,13 +343,15 @@ describe("the ledger writes to a real database", () => {
       supplier: supplierId,
       status: "ordered",
       items: [
-        { product: product._id, name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
+        { product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
       ],
     });
 
     const result = await receivePurchaseOrder(
       String(po._id),
-      [{ product: product._id, quantity: 6 }],
+      [{ product: product._id,
+      sku: product.sku ?? "SMP-1", quantity: 6 }],
       warehouse._id as mongoose.Types.ObjectId
     );
 
@@ -356,13 +376,15 @@ describe("the ledger writes to a real database", () => {
       supplier: supplierId,
       status: "ordered",
       items: [
-        { product: product._id, name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
+        { product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
       ],
     });
 
     await receivePurchaseOrder(
       String(po._id),
-      [{ product: product._id, quantity: 6 }],
+      [{ product: product._id,
+      sku: product.sku ?? "SMP-1", quantity: 6 }],
       warehouse._id as mongoose.Types.ObjectId
     );
 
@@ -371,6 +393,7 @@ describe("the ledger writes to a real database", () => {
 
     const movements = await StockMovement.countDocuments({
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       type: "in",
     });
     assert.equal(movements, 1, "and audited exactly once");
@@ -393,6 +416,7 @@ describe("the ledger writes to a real database", () => {
 
     await applyMovement("in", {
       product: product._id,
+      sku: product.sku ?? "SMP-1",
       warehouse: fresh._id,
       quantity: 4,
     });
@@ -416,7 +440,8 @@ describe("the ledger writes to a real database", () => {
       () =>
         applyMovement("out", {
           product: product._id,
-          warehouse: fresh._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: fresh._id,
           quantity: 1,
         }),
       /Not enough stock/
@@ -434,7 +459,8 @@ describe("the ledger writes to a real database", () => {
       supplier: supplierId,
       status: "ordered",
       items: [
-        { product: product._id, name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
+        { product: product._id,
+      sku: product.sku ?? "SMP-1", name: "Oud", quantity: 10, unitCost: 40, receivedQty: 0 },
       ],
     });
 
@@ -442,7 +468,8 @@ describe("the ledger writes to a real database", () => {
       () =>
         receivePurchaseOrder(
           String(po._id),
-          [{ product: product._id, quantity: 11 }],
+          [{ product: product._id,
+      sku: product.sku ?? "SMP-1", quantity: 11 }],
           warehouse._id as mongoose.Types.ObjectId
         ),
       /only 10 outstanding/
@@ -454,8 +481,10 @@ describe("the ledger writes to a real database", () => {
 
   it("flags stock at or below its reorder level", async () => {
     const { product, warehouse } = await seed(5);
-    await Inventory.updateOne(
-      { product: product._id, warehouse: warehouse._id },
+    await SkuInventory.updateOne(
+      { product: product._id,
+      sku: product.sku ?? "SMP-1",
+      warehouse: warehouse._id },
       { $set: { reorderLevel: 5 } }
     );
 
