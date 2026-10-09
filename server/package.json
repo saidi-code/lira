@@ -21,7 +21,7 @@
     "audit:public-routes": "npx tsx scripts/auditPublicRoutes.ts",
     "verify:clerk-sync": "npx tsx scripts/verifyClerkSync.ts",
     "test": "node --import tsx --test \"tests/*.test.ts\"",
-    "test:integration": "node --import tsx --test \"tests/integration/*.test.ts\"",
+    "test:integration": "node --import tsx --test --test-concurrency=1 \"tests/integration/*.test.ts\"",
     "lint": "eslint .",
     "preview:invoice": "tsx scripts/previewInvoice.ts"
   },
