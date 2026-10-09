@@ -1,0 +1,76 @@
+name: SKU inventory migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview is read-only. Apply requires a completed backup and a configured active default warehouse.
+        type: choice
+        options:
+          - preview
+          - apply
+        default: preview
+        required: true
+      backup_confirmed:
+        description: Confirm a restorable MongoDB backup exists before applying.
+        type: boolean
+        default: false
+        required: true
+      warehouse_confirmed:
+        description: Confirm SKU stock belongs in the configured active default warehouse.
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sku-inventory-migration-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: SKU inventory ${{ inputs.mode }}
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: server
+    env:
+      DB_URI: ${{ secrets.DB_URI }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+
+      - name: Validate production configuration and apply confirmations
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          BACKUP_CONFIRMED: ${{ inputs.backup_confirmed }}
+          WAREHOUSE_CONFIRMED: ${{ inputs.warehouse_confirmed }}
+        run: |
+          if [ -z "$DB_URI" ] || [ -z "$DB_NAME" ]; then
+            echo "::error::Configure DB_URI and DB_NAME secrets in the production GitHub environment."
+            exit 1
+          fi
+          if [ "$MODE" = "apply" ] && { [ "$BACKUP_CONFIRMED" != "true" ] || [ "$WAREHOUSE_CONFIRMED" != "true" ]; }; then
+            echo "::error::Apply requires a restorable backup and confirmation of the active default warehouse assignment."
+            exit 1
+          fi
+
+      - name: Read-only migration preview
+        if: inputs.mode == 'preview'
+        run: npm run migrate:sku-inventory
+
+      - name: Apply migration
+        if: inputs.mode == 'apply'
+        run: npm run migrate:sku-inventory -- --apply

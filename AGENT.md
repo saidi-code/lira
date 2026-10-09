@@ -636,3 +636,29 @@ server-side check or rely on hiding the send form as the only permission boundar
   verify its install/test/build commands and local `file:` dependencies from
   that directory. Keep `package.json` and `package-lock.json` in sync so `npm ci`
   works in CI.
+
+## 10. SKU inventory and safe migration
+
+- A simple product is one sellable SKU. It may have `featureImage` plus an
+  `images` gallery; its stock is held in `SkuInventory` by product, SKU, and
+  warehouse.
+- A variable product has color records with `featureImage` and `images`, and
+  exactly one size per variant SKU. Each color/size SKU has independent stock.
+  `variant.stock` and `Product.stock` are compatibility snapshots of available
+  units; `SkuInventory.quantity` and `reserved` are authoritative.
+- Warehouse bin location belongs to the SKU inventory row. Every adjustment,
+  receipt, transfer, order reservation, release, and fulfillment must include
+  the SKU and use `server/services/inventoryService.ts`. Never mutate stock
+  snapshots directly.
+- New purchase orders and transfers for variable products must specify the
+  intended SKU. Do not group multiple sizes under one SKU or guess a warehouse
+  split when legacy stock was stored only at product level.
+- Before deploying the SKU stock paths to an existing database, run
+  `npm run migrate:sku-inventory` in `server` for a read-only preview. Resolve
+  every reported blocker, make a MongoDB backup, then run
+  `npm run migrate:sku-inventory -- --apply`. The migration is additive: it
+  leaves legacy `Inventory` rows in place and stores snapshots of documents it
+  enriches in `skuInventoryMigrationSnapshots` and
+  `skuInventoryDocumentSnapshots`. It refuses to write when SKU, size, or
+  warehouse allocations cannot be derived safely. Never bypass those blockers
+  by distributing stock arbitrarily.
