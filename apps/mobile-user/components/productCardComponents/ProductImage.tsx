@@ -7,7 +7,7 @@ const ProductImage = ({ product}:{product:any}) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const blurhash ='U9IqZ800009FWAx]D%-n00bv%#~p01R*_2D*';
-  const imageUri = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
+  const imageUri = product.featureImage ?? product.images?.[0] ?? product.colors?.[0]?.featureImage ?? product.colors?.[0]?.images?.[0];
   const isOutOfStock = product.stock === 0;
 
   return (

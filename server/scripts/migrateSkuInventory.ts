@@ -65,7 +65,19 @@ const migrate = async () => {
       Warehouse.collection.findOne({ isDefault: true, isActive: true }),
       mongoose.connection.collection("skuInventoryMigrationSnapshots").find({}).toArray(),
     ]);
-    const snapshotByProduct = new Map(previousSnapshots.map((snapshot: any) => [id(snapshot.productId), snapshot.product as RawProduct]));
+    // `structuredClone()` turns BSON ObjectIds into plain objects in some Node
+    // versions. Only trust snapshots whose embedded product ID still matches;
+    // use the untouched live product as the recovery source for older malformed
+    // snapshots, then repair those snapshots during --apply.
+    const invalidSnapshots = previousSnapshots.filter((snapshot: any) =>
+      id(snapshot.product?._id) !== id(snapshot.productId)
+    );
+    const snapshotByProduct = new Map(
+      previousSnapshots
+        .filter((snapshot: any) => id(snapshot.product?._id) === id(snapshot.productId))
+        .map((snapshot: any) => [id(snapshot.productId), snapshot.product as RawProduct])
+    );
+    const liveProductById = new Map(liveProducts.map((product) => [id(product._id), product]));
     const products = liveProducts.map((product) => snapshotByProduct.get(id(product._id)) ?? product);
     const productById = new Map(products.map((product) => [id(product._id), product]));
     const rowsByProduct = new Map<string, any[]>();
@@ -180,6 +192,7 @@ const migrate = async () => {
             variants: (color.variants ?? []).map((variant) => ({
               ...variant,
               size: Array.isArray(variant.size) ? variant.size[0] : variant.size,
+              stock: variantRows.find((row) => row.sku === String(variant.sku ?? ""))?.available ?? Number(variant.stock ?? 0),
             })),
           })),
         });
@@ -317,10 +330,19 @@ const migrate = async () => {
 
     const snapshots = mongoose.connection.collection("skuInventoryMigrationSnapshots");
     const documentSnapshots = mongoose.connection.collection("skuInventoryDocumentSnapshots");
+    for (const snapshot of invalidSnapshots as any[]) {
+      const original = liveProductById.get(id(snapshot.productId));
+      if (original) {
+        await snapshots.updateOne(
+          { productId: snapshot.productId },
+          { $set: { product: original } }
+        );
+      }
+    }
     for (const { product, stock, colors } of catalogUpdates) {
       await snapshots.updateOne(
         { productId: product._id },
-        { $setOnInsert: { product: structuredClone(product), capturedAt: new Date() } },
+        { $setOnInsert: { product, capturedAt: new Date() } },
         { upsert: true }
       );
     }

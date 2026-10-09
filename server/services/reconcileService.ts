@@ -3,7 +3,7 @@
 // RECONCILIATION (AGENT.md §9)
 // ==========================================
 // `Product.stock` is a denormalised convenience for the catalogue; the ledger in
-// `Inventory` + `StockMovement` is the truth. Drift between them means a write
+// `SkuInventory` + `StockMovement` is the truth. Drift between them means a write
 // bypassed `inventoryService` — usually a hand-edited document.
 //
 // Both sides are compared as *availability* (§9): `Σ(quantity − reserved)` versus
@@ -68,6 +68,7 @@ export const findDrift = (rows: ReconciliationInput[]): DriftRow[] =>
 
 export interface StrandedOrderLine {
   product: string;
+  sku?: string;
   name: string;
   quantity: number;
 }

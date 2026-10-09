@@ -32,6 +32,7 @@ export class ReceiveError extends Error {
 
 export interface ReceivableLine {
   product: mongoose.Types.ObjectId;
+  sku?: string | null;
   name: string;
   quantity: number;
   receivedQty: number;
@@ -39,6 +40,7 @@ export interface ReceivableLine {
 
 export interface ReceiptRequest {
   product: mongoose.Types.ObjectId;
+  sku?: string;
   quantity: number;
 }
 
@@ -104,6 +106,7 @@ export const receiptGuard = (
   items: {
     $elemMatch: {
       product: line.product,
+        ...(line.sku ? { sku: line.sku } : {}),
       receivedQty: { $lte: line.quantity - requested },
     },
   },
@@ -148,7 +151,10 @@ export const receivePurchaseOrder = async (
   // Validate everything up front — a half-applied receipt is worse than none.
   const lines = po.items as unknown as ReceivableLine[];
   const plan = request.map((line) => {
-    const target = lines.find((item) => String(item.product) === String(line.product));
+    const target = lines.find((item) =>
+      String(item.product) === String(line.product) &&
+      (!line.sku || String(item.sku ?? "") === line.sku)
+    );
     if (!target) {
       throw new ReceiveError(
         `Product ${line.product} is not on this purchase order`
@@ -177,6 +183,7 @@ export const receivePurchaseOrder = async (
     await receive(
       plan.map((entry) => ({
         product: entry.product,
+        sku: entry.line.sku ?? undefined,
         quantity: entry.delta,
         reference: po.orderNumber ?? undefined,
         user: userId ?? null,
@@ -240,6 +247,7 @@ export const receivePurchaseOrder = async (
         plan.map((entry) =>
           applyMovement("out", {
             product: entry.product,
+            sku: entry.line.sku ?? undefined,
             warehouse: warehouseId,
             quantity: entry.delta,
             reference: po.orderNumber ?? undefined,

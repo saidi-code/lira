@@ -121,7 +121,7 @@ export const createTransfer = async (
       return res.status(400).json(fail("Both warehouses must be active"));
     }
 
-    const raw = items as { product?: unknown; quantity?: unknown }[];
+    const raw = items as { product?: unknown; sku?: unknown; quantity?: unknown }[];
     const products = await Product.find({
       _id: { $in: raw.map((line) => String(line.product ?? "")) },
     });
@@ -136,7 +136,16 @@ export const createTransfer = async (
         throw new TransferError(`Invalid quantity for ${product.name}`);
       }
 
-      return { product: product._id, name: product.name, quantity };
+      let sku = typeof line.sku === "string" ? line.sku.trim() : "";
+      if (product.type === "simple") sku = String(product.sku ?? sku).trim();
+      if (product.type === "variable") {
+        const validSku = product.colors?.some((color: any) =>
+          color.variants?.some((variant: any) => variant.sku === sku && variant.isActive !== false)
+        );
+        if (!sku || !validSku) throw new TransferError(`Choose a valid variant SKU for ${product.name}`);
+      }
+      if (!sku) throw new TransferError(`Product ${product.name} has no SKU`);
+      return { product: product._id, sku, name: product.name, quantity };
     });
 
     const transfer = await Transfer.create({

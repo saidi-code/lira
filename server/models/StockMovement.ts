@@ -74,6 +74,8 @@ const stockMovementSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    /** Sellable SKU; absent only on legacy product-level movements. */
+    sku: { type: String, trim: true, default: null },
     warehouse: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Warehouse",

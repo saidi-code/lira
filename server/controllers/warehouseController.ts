@@ -5,7 +5,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Warehouse from "../models/Warehouse.js";
-import Inventory from "../models/Inventory.js";
+import SkuInventory from "../models/SkuInventory.js";
 
 const isValidId = (id: unknown): id is string =>
   typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
@@ -64,8 +64,8 @@ export const getWarehouse = async (
       return res.status(404).json({ success: false, message: "Warehouse not found" });
     }
 
-    const rows = await Inventory.find({ warehouse: id })
-      .populate("product", "name price")
+    const rows = await SkuInventory.find({ warehouse: id })
+      .populate("product", "name price sku type")
       .lean();
 
     const totalUnits = rows.reduce((sum, row) => sum + row.quantity, 0);

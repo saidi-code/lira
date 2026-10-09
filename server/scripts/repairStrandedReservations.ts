@@ -16,7 +16,7 @@
 // ==========================================
 import "dotenv/config";
 import connectDB from "../config/db.js";
-import Inventory from "../models/Inventory.js";
+import SkuInventory from "../models/SkuInventory.js";
 import Order from "../models/Order.js";
 import StockMovement from "../models/StockMovement.js";
 import { applyMovement } from "../services/inventoryService.js";
@@ -80,12 +80,14 @@ export const repairStrandedReservations = async ({
 
     const lines = [];
     for (const item of order.items) {
-      const row = await Inventory.findOne({
+      const row = await SkuInventory.findOne({
         product: item.product,
+        sku: item.sku,
         warehouse: order.warehouse,
       }).select("reserved");
       lines.push({
         product: String(item.product),
+        sku: item.sku ?? undefined,
         name: item.name,
         quantity: item.quantity,
         reservedAtWarehouse: row?.reserved ?? 0,
@@ -149,6 +151,7 @@ export const repairStrandedReservations = async ({
       // given back, and the audit trail should say so against this order.
       await applyMovement("release", {
         product: line.product,
+        sku: line.sku,
         warehouse: order.warehouse,
         quantity: line.quantity,
         reference: order.orderNumber,
@@ -177,7 +180,7 @@ const main = async () => {
     const result = await repairStrandedReservations({ fix });
     process.exit(result.stranded > 0 && !fix ? 2 : 0);
   } finally {
-    await Inventory.db.close();
+    await SkuInventory.db.close();
   }
 };
 
@@ -185,7 +188,7 @@ const main = async () => {
 if (isDirectRun("repairStrandedReservations")) {
   main().catch(async (error) => {
     console.error("repair:reservations failed:", error);
-    await Inventory.db.close().catch(() => undefined);
+    await SkuInventory.db.close().catch(() => undefined);
     process.exit(1);
   });
 }

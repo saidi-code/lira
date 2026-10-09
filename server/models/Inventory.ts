@@ -35,7 +35,8 @@ const inventorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// AGENT.md §11 Key Indexes — one row per product per warehouse.
+// Legacy rows remain product/warehouse keyed and are preserved by the additive
+// SKU migration. New stock operations use SkuInventory.
 inventorySchema.index({ product: 1, warehouse: 1 }, { unique: true });
 inventorySchema.index({ warehouse: 1, quantity: 1 });
 

@@ -20,6 +20,7 @@ export interface Pagination {
 
 export interface BackendOrderItem {
   product: string;
+  sku?: string | null;
   name: string;
   image?: string;
   price: number;
@@ -73,6 +74,7 @@ export interface PaginatedOrders {
 
 export interface CreateOrderItemInput {
   product: string;
+  sku?: string | null;
   quantity: number;
   size?: string | null;
   color?: string | null;

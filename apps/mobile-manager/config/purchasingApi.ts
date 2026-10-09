@@ -31,6 +31,7 @@ export type PurchaseOrderStatus =
 
 export interface BackendPurchaseOrderItem {
   product: string | { _id: string; name: string };
+  sku?: string | null;
   name: string;
   quantity: number;
   /** Invariant §11.5: never exceeds `quantity`. */
@@ -58,6 +59,7 @@ export type TransferStatus = "draft" | "in_transit" | "completed" | "cancelled";
 
 export interface BackendTransferItem {
   product: string | { _id: string; name: string };
+  sku?: string | null;
   name: string;
   quantity: number;
 }
@@ -223,7 +225,7 @@ export const purchasingApi = {
     id: string,
     payload: {
       warehouseId: string;
-      items: { productId: string; quantity: number }[];
+      items: { productId: string; sku?: string; quantity: number }[];
     },
     token?: string | null
   ) => {

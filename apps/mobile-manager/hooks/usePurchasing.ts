@@ -154,7 +154,7 @@ export function useReceivePurchaseOrder(id: string) {
   return useMutation({
     mutationFn: async (input: {
       warehouseId: string;
-      items: { productId: string; quantity: number }[];
+      items: { productId: string; sku?: string; quantity: number }[];
     }) => {
       const token = await getToken();
       return purchasingApi.receive(id, input, token);

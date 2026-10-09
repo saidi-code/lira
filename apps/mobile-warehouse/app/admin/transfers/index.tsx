@@ -171,7 +171,7 @@ export default function TransfersScreen() {
 
                 <Text className="text-secondary text-xs mt-2">
                   {item.items
-                    .map((line) => `${line.name} x${line.quantity}`)
+                    .map((line) => `${line.name} · ${line.sku ?? "legacy"} x${line.quantity}`)
                     .join(" · ")}
                 </Text>
 

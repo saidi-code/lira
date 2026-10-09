@@ -5,7 +5,8 @@
 // ==========================================
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import Inventory from "../models/Inventory.js";
+import SkuInventory from "../models/SkuInventory.js";
+import Product from "../models/Products.js";
 import StockMovement from "../models/StockMovement.js";
 import {
   adjust,
@@ -48,13 +49,13 @@ export const listInventory = async (
     const filter = warehouse ? { warehouse } : {};
 
     const [rows, total] = await Promise.all([
-      Inventory.find(filter)
+      SkuInventory.find(filter)
         .populate("product", "name price")
         .populate("warehouse", "name code")
         .skip(skip)
         .limit(limit)
         .lean(),
-      Inventory.countDocuments(filter),
+      SkuInventory.countDocuments(filter),
     ]);
 
     return res.status(200).json({
@@ -148,7 +149,7 @@ export const productAvailability = async (
       return res.status(400).json({ success: false, message: "Invalid product id" });
     }
 
-    const rows = await Inventory.find({ product: productId })
+    const rows = await SkuInventory.find({ product: productId })
       .populate("warehouse", "name code")
       .lean();
 
@@ -176,6 +177,7 @@ export const adjustStock = async (
     unknown,
     {
       productId?: unknown;
+      sku?: unknown;
       warehouseId?: unknown;
       quantity?: unknown;
       reason?: unknown;
@@ -184,7 +186,7 @@ export const adjustStock = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const { productId, warehouseId, quantity, reason } = req.body ?? {};
+    const { productId, sku: requestedSku, warehouseId, quantity, reason } = req.body ?? {};
 
     if (!isValidId(productId) || !isValidId(warehouseId)) {
       return res.status(400).json({
@@ -207,11 +209,21 @@ export const adjustStock = async (
       });
     }
 
+    const product = await Product.findById(productId).select("type sku colors");
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+    const sku = product.type === "simple" ? String(product.sku ?? "") : String(requestedSku ?? "");
+    if (!sku || (product.type === "variable" && !product.colors?.some((color: any) =>
+      color.variants?.some((variant: any) => variant.sku === sku)
+    ))) {
+      return res.status(400).json({ success: false, message: "A valid SKU is required for this product" });
+    }
+
     // Routed through the service so the change is guarded *and* leaves a
     // StockMovement row — a manual edit that skips the ledger is exactly the
     // drift reconcileStock exists to catch.
     const result = await adjust({
       product: productId,
+      sku,
       warehouse: warehouseId,
       quantity: delta,
       reason,

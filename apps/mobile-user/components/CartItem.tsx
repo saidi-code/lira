@@ -39,8 +39,12 @@ const CartItem = memo(({ item, removeItem, updateItemQuantity }: CartItemProps) 
   const isProductHasColors = Boolean(item?.color);
   const isProductHasSizes = Boolean(item?.size);
 
+  const selectedColor = (item?.product as any)?.colors?.find(
+    (color: any) => color?.name === item?.color || color?.hex === item?.color
+  );
   const imageUri =
-    item?.product?.images?.[0] ?? item?.product?.colors?.[0]?.images?.[0];
+    selectedColor?.featureImage ?? selectedColor?.images?.[0] ??
+    item?.product?.featureImage ?? item?.product?.images?.[0];
 
   return (
     <View

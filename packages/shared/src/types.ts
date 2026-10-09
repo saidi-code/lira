@@ -4,6 +4,7 @@ export interface Product {
   subtitle?: string;
   sku?: string;
   type?: "simple" | "variable";
+  featureImage?: string;
   price: number;
   images?: string[];
   description?: string;
@@ -14,8 +15,9 @@ export interface Product {
   colors?: {
     name: string;
     hex: string;
+    featureImage?: string;
     images?: string[];
-    variants?: { size: string; sku: string; stock: number }[];
+    variants?: { size: string; sku: string; stock: number; isActive?: boolean }[];
   }[];
   isFeatured?: boolean;
   isActive?: boolean;

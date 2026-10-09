@@ -33,6 +33,7 @@ import type { BackendPurchaseOrderItem } from "@/config/purchasingApi";
 
 const productIdOf = (item: BackendPurchaseOrderItem) =>
   typeof item.product === "string" ? item.product : item.product._id;
+const lineKeyOf = (item: BackendPurchaseOrderItem) => `${productIdOf(item)}::${item.sku ?? ""}`;
 
 // Admin/manager only. Reachable by deep link even when the Buy tab is hidden.
 export default function PurchaseOrderDetailRoute() {
@@ -71,17 +72,18 @@ function PurchaseOrderDetail() {
   });
 
   // Default each line to its remainder, but keep whatever the user has typed.
-  const entered = (productId: string, remaining: number) => {
-    const raw = amounts[productId];
+  const entered = (lineKey: string, remaining: number) => {
+    const raw = amounts[lineKey];
     if (raw === undefined) return remaining === 0 ? "" : String(remaining);
     return raw;
   };
 
   const payload = lines
-    .map(({ productId, remaining }) => {
-      const n = Number(entered(productId, remaining));
+    .map(({ item, productId, remaining }) => {
+      const n = Number(entered(lineKeyOf(item), remaining));
       return {
         productId,
+        sku: item.sku ?? undefined,
         quantity: Number.isFinite(n) ? n : 0,
         remaining,
       };
@@ -146,7 +148,7 @@ function PurchaseOrderDetail() {
 
           {lines.map(({ item, remaining, productId }) => (
             <View
-              key={productId}
+              key={lineKeyOf(item)}
               className="bg-card p-4 rounded-2xl border border-subtle-border mt-3"
             >
               <View className="flex-row justify-between items-start">
@@ -163,12 +165,13 @@ function PurchaseOrderDetail() {
                   ? `${remaining} outstanding · ${item.quantity} ordered at $${item.unitCost.toFixed(2)}`
                   : "Fully received"}
               </Text>
+              <Text className="text-secondary text-xs">SKU: {item.sku ?? "missing SKU"}</Text>
 
               {receivable && remaining > 0 ? (
                 <TextInput
-                  value={entered(productId, remaining)}
+                  value={entered(lineKeyOf(item), remaining)}
                   onChangeText={(text) =>
-                    setAmounts((prev) => ({ ...prev, [productId]: text }))
+                    setAmounts((prev) => ({ ...prev, [lineKeyOf(item)]: text }))
                   }
                   keyboardType="number-pad"
                   placeholder="0"
@@ -220,8 +223,9 @@ function PurchaseOrderDetail() {
                   receive.mutate(
                     {
                       warehouseId,
-                      items: payload.map(({ productId: pid, quantity }) => ({
+                      items: payload.map(({ productId: pid, sku, quantity }) => ({
                         productId: pid,
+                        sku,
                         quantity,
                       })),
                     },

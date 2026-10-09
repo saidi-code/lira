@@ -14,6 +14,7 @@ import "dotenv/config";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
 import Inventory from "../models/Inventory.js";
+import SkuInventory from "../models/SkuInventory.js";
 import Product from "../models/Products.js";
 import Warehouse from "../models/Warehouse.js";
 import { applyMovement } from "../services/inventoryService.js";
@@ -49,67 +50,75 @@ const main = async () => {
   }
 
   // ---------- inventory rows ----------
-  const products = await Product.find().select("_id name stock").lean();
+  const products = await Product.find().select("_id name stock sku type colors").lean();
   console.log(`Seeding inventory for ${products.length} product(s)…`);
 
   let created = 0;
   let skipped = 0;
 
   for (const product of products) {
-    const existing = await Inventory.findOne({
-      product: product._id,
-      warehouse: warehouse._id,
-    });
-
-    if (existing) {
+    // Existing product-level inventory is preserved and must go through the
+    // explicit previewed SKU migration; seeding beside it would duplicate stock.
+    const legacy = await Inventory.exists({ product: product._id });
+    if (legacy) {
       skipped++;
       continue;
     }
 
-    // `stock` is the catalogue's denormalised figure; the ledger starts from it so
-    // both agree until a real movement moves them apart (reconcileStock).
-    const quantity = Number(product.stock) || 0;
+    const items = product.type === "variable"
+      ? (product.colors ?? []).flatMap((color: any) =>
+          (color.variants ?? []).map((variant: any) => ({
+            sku: String(variant.sku ?? "").trim(),
+            quantity: Number(variant.stock) || 0,
+          }))
+        )
+      : [{ sku: String(product.sku ?? "").trim(), quantity: Number(product.stock) || 0 }];
 
-    // Created empty on purpose: the stock is then *moved in* through the service
-    // below, so the opening balance is a real `in` movement with a derived
-    // `delta`. Creating it pre-filled and then applying the movement would
-    // double the opening quantity.
-    await Inventory.create({
-      product: product._id,
-      warehouse: warehouse._id,
-      quantity: 0,
-      reserved: 0,
-      reorderLevel: DEFAULT_REORDER_LEVEL,
-    });
+    for (const item of items) {
+      if (!item.sku) {
+        console.warn(`Skipping ${product.name}: a sellable item has no SKU.`);
+        continue;
+      }
+      if (await SkuInventory.exists({ product: product._id, sku: item.sku, warehouse: warehouse._id })) {
+        skipped++;
+        continue;
+      }
+      await SkuInventory.create({
+        product: product._id,
+        sku: item.sku,
+        warehouse: warehouse._id,
+        quantity: 0,
+        reserved: 0,
+        reorderLevel: DEFAULT_REORDER_LEVEL,
+      });
 
-    // A zero-quantity import is skipped — `applyMovement` rejects non-positive
-    // movements, and "zero units arrived" is not a fact worth recording.
-    if (quantity > 0) {
+      if (item.quantity > 0) {
       await applyMovement("in", {
         product: product._id as mongoose.Types.ObjectId,
+        sku: item.sku,
         warehouse: warehouse._id as mongoose.Types.ObjectId,
-        quantity,
+        quantity: item.quantity,
         reference: "seed",
-        note: "Initial import from Product.stock",
+        note: "Initial import from product SKU stock",
       });
+      }
+      created++;
     }
-
-    created++;
   }
 
   console.log(
-    `Done. ${created} inventory row(s) created, ${skipped} already existed.`
+    `Done. ${created} SKU inventory row(s) created, ${skipped} were preserved/skipped.`
   );
   console.log(
     "StockMovement rows were written for each import — the ledger starts here."
   );
 
-  await Inventory.db.close();
+  await SkuInventory.db.close();
   process.exit(0);
 };
 
 main().catch(async (error) => {
   console.error("seed:warehouses failed:", error);
-  await Inventory.db.close().catch(() => undefined);
+  await SkuInventory.db.close().catch(() => undefined);
   process.exit(1);
 });

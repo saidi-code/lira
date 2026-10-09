@@ -80,6 +80,7 @@ export interface ICart extends Document {
 export interface ICartItem {
   _id: string;
   product: IProduct;
+  sku?: string | null;
   quantity: number;
   size?: string | null;
   color?: string | null;

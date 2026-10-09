@@ -26,6 +26,8 @@ import StockMovement, {
   type StockDelta,
 } from "../models/StockMovement.js";
 import Warehouse from "../models/Warehouse.js";
+import Product from "../models/Products.js";
+import SkuInventory from "../models/SkuInventory.js";
 
 export { movementDeltasFor as movementDeltas };
 export type { StockDelta };
@@ -41,6 +43,34 @@ export class InsufficientStockError extends Error {
 /** Units a customer can still buy at this inventory row (§9). */
 export const available = (row: { quantity: number; reserved: number }): number =>
   row.quantity - row.reserved;
+
+/** Keep the legacy catalogue stock fields as derived compatibility snapshots. */
+const syncProductStockSnapshot = async (
+  productId: mongoose.Types.ObjectId | string,
+  session?: ClientSession
+) => {
+  const [product, rows] = await Promise.all([
+    Product.findById(productId).session(session ?? null),
+    SkuInventory.find({ product: productId })
+      .select("sku quantity reserved")
+      .session(session ?? null)
+      .lean(),
+  ]);
+  if (!product) return;
+
+  const total = rows.reduce((sum, row) => sum + available(row), 0);
+  product.stock = total;
+  if (product.type === "variable") {
+    for (const color of product.colors ?? []) {
+      for (const variant of color.variants ?? []) {
+        variant.stock = rows
+          .filter((row) => row.sku === variant.sku)
+          .reduce((sum, row) => sum + available(row), 0);
+      }
+    }
+  }
+  await product.save(session ? { session } : undefined);
+};
 
 /**
  * The predicate that makes a movement safe under concurrency (§9).
@@ -111,6 +141,8 @@ export const assertInvariants = (
 
 export interface MovementInput {
   product: mongoose.Types.ObjectId | string;
+  /** Product SKU for simple products, variant SKU for variable products. */
+  sku?: string;
   warehouse: mongoose.Types.ObjectId | string;
   /** Positive for every type except `adjust`, which takes a signed delta. */
   quantity: number;
@@ -155,24 +187,31 @@ export const applyMovement = async (
   // when the truth is "no such row". Arriving units cannot overshoot, so their
   // guard is empty and an upsert is unambiguous.
   const arriving = type === "in" || type === "transfer_in";
-
   // Guard + increment in one server-side operation — this is what stops two
   // concurrent movements overselling the last unit (§9).
-  const updated = await Inventory.findOneAndUpdate(
-    {
-      product: input.product,
-      warehouse: input.warehouse,
-      ...guardFilter(type, input.quantity),
-    },
-    { $inc: { quantity: deltas.quantity, reserved: deltas.reserved } },
-    {
-      new: true,
-      upsert: arriving,
-      // Only meaningful on insert; an existing row keeps whatever it was set to.
-      ...(arriving ? { setDefaultsOnInsert: true } : {}),
-      ...(session ? { session } : {}),
-    }
-  );
+  const filter = {
+    product: input.product,
+    ...(input.sku ? { sku: input.sku } : {}),
+    warehouse: input.warehouse,
+    ...guardFilter(type, input.quantity),
+  };
+  const options = {
+    new: true as const,
+    upsert: arriving,
+    ...(arriving ? { setDefaultsOnInsert: true } : {}),
+    ...(session ? { session } : {}),
+  };
+  const updated = input.sku
+    ? await SkuInventory.findOneAndUpdate(
+        filter as any,
+        { $inc: { quantity: deltas.quantity, reserved: deltas.reserved } },
+        options
+      )
+    : await Inventory.findOneAndUpdate(
+        filter as any,
+        { $inc: { quantity: deltas.quantity, reserved: deltas.reserved } },
+        options
+      );
 
   if (!updated) {
     throw new InsufficientStockError(
@@ -190,6 +229,7 @@ export const applyMovement = async (
     [
       {
         product: input.product,
+        sku: input.sku ?? null,
         warehouse: input.warehouse,
         type,
         quantity: Math.abs(input.quantity),
@@ -203,6 +243,8 @@ export const applyMovement = async (
     ],
     session ? { session } : undefined
   );
+
+  if (input.sku) await syncProductStockSnapshot(input.product, session);
 
   return {
     quantity: updated.quantity,
@@ -338,14 +380,15 @@ export const transfer = async (
 /** What a customer can still buy for this product, across one or all warehouses. */
 export const getAvailable = async (
   productId: mongoose.Types.ObjectId | string,
-  warehouseId?: mongoose.Types.ObjectId | string
+  warehouseId?: mongoose.Types.ObjectId | string,
+  sku?: string
 ): Promise<number> => {
   const filter: Record<string, unknown> = { product: productId };
   if (warehouseId) filter.warehouse = warehouseId;
-
-  const rows = await Inventory.find(filter)
-    .select("quantity reserved")
-    .lean();
+  if (sku) filter.sku = sku;
+  const rows = sku
+    ? await SkuInventory.find(filter as any).select("quantity reserved").lean()
+    : await Inventory.find(filter as any).select("quantity reserved").lean();
 
   return rows.reduce(
     (sum, row) =>
@@ -361,7 +404,7 @@ export const getLowStock = async (
   const filter: Record<string, unknown> = {};
   if (warehouseId) filter.warehouse = warehouseId;
 
-  return Inventory.aggregate([
+  return SkuInventory.aggregate([
     { $match: filter },
     { $addFields: { available: { $subtract: ["$quantity", "$reserved"] } } },
     { $match: { $expr: { $lte: ["$available", "$reorderLevel"] } } },

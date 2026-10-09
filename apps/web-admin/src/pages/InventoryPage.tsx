@@ -6,6 +6,7 @@ import { adminApi, asList } from "@/lib/adminApi";
 interface InventoryItem {
   _id: string;
   product?: { _id: string; name: string; sku?: string };
+  sku: string;
   warehouse?: { _id: string; name: string };
   quantity: number;
   reserved: number;
@@ -15,6 +16,7 @@ interface InventoryItem {
 interface StockMovementItem {
   _id: string;
   product?: { _id: string; name: string };
+  sku?: string | null;
   warehouse?: { _id: string; name: string };
   type: string;
   quantity: number;
@@ -61,6 +63,7 @@ export function InventoryPage() {
   const adjustMutation = useMutation({
     mutationFn: async (payload: {
       productId: string;
+      sku: string;
       warehouseId: string;
       quantity: number;
       reason: string;
@@ -114,6 +117,7 @@ export function InventoryPage() {
             <thead>
               <tr className="border-b border-primary/10 text-xs font-semibold uppercase text-muted">
                 <th className="pb-3">Product</th>
+                <th className="pb-3">SKU</th>
                 <th className="pb-3">Warehouse</th>
                 <th className="pb-3">On Hand</th>
                 <th className="pb-3">Reserved (Hold)</th>
@@ -129,6 +133,7 @@ export function InventoryPage() {
                     <td className="py-3 font-medium text-ink">
                       {row.product?.name || "Product"}
                     </td>
+                    <td className="py-3 font-mono text-xs text-muted">{row.sku}</td>
                     <td className="py-3 text-muted">{row.warehouse?.name || "Default"}</td>
                     <td className="py-3 text-ink font-semibold">{row.quantity}</td>
                     <td className="py-3 text-muted">{row.reserved}</td>
@@ -158,7 +163,7 @@ export function InventoryPage() {
               })}
               {inventory.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted">
+                  <td colSpan={7} className="py-8 text-center text-muted">
                     No inventory records found.
                   </td>
                 </tr>
@@ -190,7 +195,7 @@ export function InventoryPage() {
                       {m.type}
                     </span>
                   </td>
-                  <td className="py-3 font-medium text-ink">{m.product?.name || "—"}</td>
+                  <td className="py-3 font-medium text-ink">{m.product?.name || "—"}{m.sku ? ` · ${m.sku}` : ""}</td>
                   <td className="py-3 text-muted">{m.warehouse?.name || "—"}</td>
                   <td className="py-3 font-mono font-semibold text-ink">{m.quantity}</td>
                   <td className="py-3 text-xs text-muted">
@@ -259,6 +264,7 @@ export function InventoryPage() {
                   if (!adjusting.product?._id || !adjusting.warehouse?._id) return;
                   adjustMutation.mutate({
                     productId: adjusting.product._id,
+                    sku: adjusting.sku,
                     warehouseId: adjusting.warehouse._id,
                     quantity: delta,
                     reason: reason || "Manual adjustment",

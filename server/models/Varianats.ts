@@ -1,14 +1,16 @@
 import mongoose from "mongoose";
 const variantSchema = new mongoose.Schema(
   {
-    // Allow a variant to hold many sizes
-    size: [{ type: String, enum: ["s", "m","l","xl"], default: "s" }],
+    // A variant is one sellable color/size SKU. Existing records that stored a
+    // one-element size array are normalized by the inventory migration.
+    size: { type: String, trim: true, required: true },
 
     // SKU is required
     sku: { type: String, required: true },
 
     // Stock applies to the whole variant
-    stock: { type: Number, default: 0 },
+    // Compatibility snapshot only. Inventory rows keyed by SKU are authoritative.
+    stock: { type: Number, default: 0, min: 0 },
 
     isActive: { type: Boolean, default: true },
   },

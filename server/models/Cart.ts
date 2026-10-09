@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import {ICartItem ,ICart } from "../types/index.js";
 const cartItemSchema = new mongoose.Schema<ICartItem>({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    sku: { type: String, trim: true, default: null },
     quantity: { type: Number, required: true, min: 1 ,default: 1},
     price: { type: Number, required: true },
     size: { type: String },

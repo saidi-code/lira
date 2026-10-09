@@ -201,6 +201,7 @@ const StockRow = ({
           <Text className="text-primary font-bold text-base">
             {productName(row)}
           </Text>
+          <Text className="text-secondary text-xs mt-0.5">SKU: {row.sku}</Text>
           <Text className="text-secondary text-xs mt-0.5">
             {warehouseName(row)}
             {row.binLocation ? ` · ${row.binLocation}` : ""}

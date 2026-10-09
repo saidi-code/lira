@@ -19,8 +19,10 @@ export interface IProduct {
   _id: string;
   name: string;
   subtitle: string;
+  sku?: string;
   type: "simple" | "variable";
   price: number;
+  featureImage?: string;
   images?: string[];
   description: string;
   sizes?: string[] | null;
@@ -30,12 +32,14 @@ export interface IProduct {
     {
       name: string;
       hex: string;
+      featureImage?: string;
       images: string[];
       variants: [
         {
           size: string;
           sku: string;
           stock: number;
+          isActive?: boolean;
         },
       ];
     },
@@ -91,6 +95,7 @@ export interface ICartItem {
   _id: string;
   product: IProduct;
   quantity: number;
+  sku?: string | null;
   size?: string | null;
   color?: string | null;
   price: number;

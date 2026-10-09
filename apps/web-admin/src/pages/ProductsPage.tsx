@@ -56,9 +56,9 @@ export function ProductsPage() {
                 <tr key={p._id} className="hover:bg-canvas/50">
                   <td className="py-3 font-medium text-ink">
                     <div className="flex items-center gap-3">
-                      {p.images?.[0] ? (
+                      {(p.featureImage || p.images?.[0] || p.colors?.[0]?.featureImage || p.colors?.[0]?.images?.[0]) ? (
                         <img
-                          src={p.images[0]}
+                          src={p.featureImage || p.images?.[0] || p.colors?.[0]?.featureImage || p.colors?.[0]?.images?.[0]}
                           alt={p.name}
                           className="h-10 w-10 rounded-lg object-cover border border-primary/10"
                         />

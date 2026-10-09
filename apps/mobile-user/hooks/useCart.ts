@@ -64,6 +64,7 @@ export function mapBackendCartToItems(cart?: BackendCart | null): ICartItem[] {
       _id: `${item.product?._id ?? ""}::${item.size ?? ""}::${item.color ?? ""}`,
       product: item.product,
       quantity: item.quantity ?? 0,
+      sku: item.sku ?? null,
       size: item.size ?? null,
       color: item.color ?? null,
       price: item.price ?? item.product?.price ?? 0,

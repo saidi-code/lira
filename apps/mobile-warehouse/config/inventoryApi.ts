@@ -44,6 +44,7 @@ export interface BackendWarehouse {
 
 export interface BackendInventoryRow {
   _id: string;
+  sku: string;
   product: string | { _id: string; name: string; sku?: string };
   warehouse: string | { _id: string; name: string; code?: string };
   quantity: number;
@@ -57,6 +58,7 @@ export interface BackendInventoryRow {
 export interface BackendStockMovement {
   _id: string;
   product: string | { _id: string; name: string };
+  sku?: string | null;
   warehouse: string | { _id: string; name: string };
   type: MovementType;
   /** Magnitude, always positive. */

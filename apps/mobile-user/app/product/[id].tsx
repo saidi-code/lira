@@ -44,7 +44,6 @@ const SingleProduct = () => {
 
   const { data: productData, isLoading: loading } = useProduct(id);
   const product: IProduct | null = productData ?? null;
-  const isOutOfStock = product?.stock === 0;
 
   // route params can be string | string[]
   const routeColor = useMemo(() => {
@@ -104,6 +103,8 @@ const SingleProduct = () => {
 
       return {
         productId: product._id,
+        sku: selectedVariant?.sku ?? null,
+        stock: Number(selectedVariant?.stock ?? 0),
         size: selectedSizeValue,
         color: selectedColorName,
         quantityToAdd: 1,
@@ -112,11 +113,15 @@ const SingleProduct = () => {
 
     return {
       productId: product._id,
+      sku: product.sku ?? null,
+      stock: Number(product.stock ?? 0),
       size: null as string | null,
       color: null as string | null,
       quantityToAdd: 1,
     };
   }, [product, pColor, pSize]);
+
+  const isOutOfStock = Boolean(product && (currentVariant?.stock ?? 0) <= 0);
 
   const matchingCartItem = useMemo(() => {
     if (!currentVariant) return null;
@@ -186,6 +191,7 @@ const SingleProduct = () => {
             <Image
               source={{
                 uri:
+                  product?.featureImage ??
                   product?.images?.[0] ??
                   (product as any)?.colors?.[0]?.images?.[0],
               }}
@@ -196,7 +202,12 @@ const SingleProduct = () => {
           ) : (
             <View className="">
               <FlatList
-                data={((product as any)?.colors?.[pColor ?? 0]?.images ?? []) as any[]}
+                data={[
+                  ...new Set([
+                    (product as any)?.colors?.[pColor ?? 0]?.featureImage,
+                    ...((product as any)?.colors?.[pColor ?? 0]?.images ?? []),
+                  ].filter(Boolean)),
+                ] as string[]}
                 keyExtractor={(_, index) => String(index)}
                 horizontal
                 pagingEnabled
@@ -312,6 +323,8 @@ const SingleProduct = () => {
                         // §3.5 — colour chips answer with a light impact.
                         hapticLight();
                         setPColor(index);
+                        setPSize(0);
+                        setActiveBannerIndex(0);
                       }}
                       className="h-8 w-8 rounded-full"
                       style={{
@@ -351,6 +364,7 @@ const SingleProduct = () => {
                   }}
                   renderItem={({ item: variant, index }) => (
                     <TouchableOpacity
+                      disabled={variant?.isActive === false || Number(variant?.stock ?? 0) <= 0}
                       activeOpacity={0.85}
                       onPress={() => {
                         // §3.5 — size chips answer with a light impact.
@@ -361,7 +375,7 @@ const SingleProduct = () => {
                       style={{
                         height: 32,
                         width: 32,
-                        backgroundColor: index === pSize ? "#B89354" : "#fff",
+                          backgroundColor: index === pSize ? "#B89354" : "#fff",
                         borderStyle: "solid",
                         borderWidth: 1,
                         borderColor:
@@ -374,6 +388,7 @@ const SingleProduct = () => {
                         className="font-tajwal text-xs uppercase font-bold"
                         style={{
                           color: index === pSize ? "#201b16" : "#807668",
+                          opacity: variant?.isActive === false || Number(variant?.stock ?? 0) <= 0 ? 0.4 : 1,
                         }}
                       >
                         {variant?.size}

@@ -11,6 +11,7 @@ const orderItemSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    sku: { type: String, trim: true, default: null },
     name: { type: String, required: true },        // snapshot of product name
     image: { type: String },                        // snapshot of product image
     price: { type: Number, required: true },        // snapshot of price at purchase

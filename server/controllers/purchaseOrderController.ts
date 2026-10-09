@@ -44,6 +44,7 @@ export const listPurchaseOrders = async (
     const [rows, total] = await Promise.all([
       PurchaseOrder.find(filter)
         .populate("supplier", "name contact")
+        .populate("items.product", "name type sku colors")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -73,6 +74,7 @@ export const getPurchaseOrder = async (
 
     const order = await PurchaseOrder.findById(id)
       .populate("supplier", "name contact email phone")
+      .populate("items.product", "name type sku colors")
       .lean();
     if (!order) return res.status(404).json(fail("Purchase order not found"));
 
@@ -112,6 +114,7 @@ export const createPurchaseOrder = async (
 
     const raw = items as {
       product?: unknown;
+      sku?: unknown;
       quantity?: unknown;
       unitCost?: unknown;
     }[];
@@ -135,8 +138,16 @@ export const createPurchaseOrder = async (
         throw new ReceiveError(`Invalid unitCost for ${product.name}`);
       }
 
+      let sku = typeof line.sku === "string" ? line.sku.trim() : "";
+      if (product.type === "simple") sku = String(product.sku ?? sku).trim();
+      if (product.type === "variable" && !product.colors?.some((color: any) =>
+        color.variants?.some((variant: any) => variant.sku === sku)
+      )) throw new ReceiveError(`Choose a valid variant SKU for ${product.name}`);
+      if (!sku) throw new ReceiveError(`Product ${product.name} has no SKU`);
+
       return {
         product: product._id,
+        sku,
         name: product.name,
         quantity,
         unitCost,
@@ -168,7 +179,7 @@ export const createPurchaseOrder = async (
 
 type ReceiveBody = {
   warehouseId?: unknown;
-  items?: { product?: unknown; quantity?: unknown }[];
+  items?: { product?: unknown; sku?: unknown; quantity?: unknown }[];
 };
 
 /**
@@ -205,6 +216,7 @@ export const receiveStock = async (
       id,
       items.map((line) => ({
         product: line.product as mongoose.Types.ObjectId,
+        sku: typeof line.sku === "string" ? line.sku : undefined,
         quantity: Number(line.quantity),
       })),
       warehouse._id as mongoose.Types.ObjectId,

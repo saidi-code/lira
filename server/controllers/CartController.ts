@@ -1,7 +1,8 @@
-import type { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { NextFunction, Request, Response } from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
+import Inventory from "../models/Inventory.js";
 import { asInteger, asPositiveInteger } from "../utils/validate.js";
 
 /**
@@ -12,13 +13,26 @@ import { asInteger, asPositiveInteger } from "../utils/validate.js";
  * enough to be awkward to display or to reason about downstream.
  */
 const MAX_CART_QUANTITY = 999;
+
+const availableForSku = async (
+  productId: mongoose.Types.ObjectId | string,
+  sku: string,
+  legacyAvailable: number
+): Promise<number> => {
+  const rows = await Inventory.find({ product: productId, sku })
+    .select("quantity reserved")
+    .lean();
+  return rows.length
+    ? rows.reduce((sum, row) => sum + row.quantity - row.reserved, 0)
+    : legacyAvailable;
+};
 // Get User Cart
 // Get /api/v1/cart
 export const getCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let cart = await Cart.findOne({
       user: req.user!._id,
-    }).populate("items.product", "name images subtitle price stock colors type");
+    }).populate("items.product", "name images featureImage subtitle price stock colors type");
     if (!cart) {
       cart = await Cart.create({ user: req.user!._id, items: [] });
     }
@@ -59,13 +73,8 @@ export const addToCart = async (req: Request, res: Response, next: NextFunction)
         .status(404)
         .json({ success: false, message: "Product not found" });
     }
-if(product.type==="simple"){
-    if (product.stock < quantity) {
-      return res
-        .status(400)
-        .json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
-    }
-}
+    let sku = String(product.sku ?? "").trim();
+    let legacyAvailable = Number(product.stock ?? 0);
     // The cart document is not loaded here any more. It used to be fetched up
     // front and mutated in memory, which is the read-modify-write this write
     // path has been rewritten to avoid - and loading an unsaved `new Cart()`
@@ -94,11 +103,21 @@ if(product.type==="simple"){
           .status(400)
           .json({ success: false, message: "Selected variant is not available" });
       }
-      if ((variant as any).stock < quantity) {
+      sku = String((variant as any).sku ?? "").trim();
+      legacyAvailable = Number((variant as any).stock ?? 0);
+      if (!sku) {
+        return res.status(409).json({ success: false, message: "This variant has no SKU" });
+      }
+    }
+
+    if (!sku) {
+      return res.status(409).json({ success: false, message: "This product has no SKU" });
+    }
+    const available = await availableForSku(product._id, sku, legacyAvailable);
+    if (available < quantity) {
         return res
           .status(400)
-          .json({ success: false, message: `Stock insuffisant : seulement ${(variant as any).stock} article(s) disponible(s) pour cette variante` });
-      }
+          .json({ success: false, message: `Stock insuffisant : seulement ${available} article(s) disponible(s)` });
     }
 
     // identity for a cart item is: (productId + size + color)
@@ -137,6 +156,7 @@ if(product.type==="simple"){
         items: {
           $elemMatch: {
             product: product._id,
+            sku,
             size: normalizedSize,
             color: normalizedColor,
           },
@@ -144,7 +164,7 @@ if(product.type==="simple"){
       },
       {
         $inc: { "items.$.quantity": quantity },
-        $set: { "items.$.price": product.price },
+        $set: { "items.$.price": product.price, "items.$.sku": sku },
       }
     );
 
@@ -180,6 +200,7 @@ if(product.type==="simple"){
             $not: {
               $elemMatch: {
                 product: product._id,
+                sku,
                 size: normalizedSize,
                 color: normalizedColor,
               },
@@ -190,6 +211,7 @@ if(product.type==="simple"){
           $push: {
             items: {
               product: product._id,
+              sku,
               quantity,
               price: product.price,
               size: normalizedSize,
@@ -206,6 +228,7 @@ if(product.type==="simple"){
             items: {
               $elemMatch: {
                 product: product._id,
+                sku,
                 size: normalizedSize,
                 color: normalizedColor,
               },
@@ -247,7 +270,7 @@ if(product.type==="simple"){
     );
 
     const cart = await Cart.findOne({ user: req.user!._id })
-      .populate("items.product", "name images price stock sizes colors type");
+      .populate("items.product", "name images featureImage price stock sizes colors type");
 
     // remove corrupted cart items (where product reference is null/undefined)
     // to avoid populate() / client crashes
@@ -359,13 +382,8 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
         return !(sameProduct && sameSize && sameColor);
       });
     } else {
-      // stock validation (simple vs variable)
-      if (product.type === "simple") {
-        if (product.stock < wanted) {
-          return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${product.stock} article(s) disponible(s)` });
-        }
-      }
-
+      let sku = String(product.sku ?? item.sku ?? "").trim();
+      let legacyAvailable = Number(product.stock ?? 0);
       if (product.type === "variable") {
         if (!color || !size) {
           return res.status(400).json({
@@ -383,13 +401,19 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
           return res.status(400).json({ success: false, message: "Selected variant is not available" });
         }
 
-        if ((variant as any).stock < wanted) {
-          return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${(variant as any).stock} article(s) disponible(s) pour cette variante` });
-        }
+        sku = String((variant as any).sku ?? item.sku ?? "").trim();
+        legacyAvailable = Number((variant as any).stock ?? 0);
+      }
+
+      if (!sku) return res.status(409).json({ success: false, message: "This product variant has no SKU" });
+      const available = await availableForSku(product._id, sku, legacyAvailable);
+      if (available < wanted) {
+        return res.status(400).json({ success: false, message: `Stock insuffisant : seulement ${available} article(s) disponible(s)` });
       }
 
       item.quantity = wanted;
       item.price = product.price;
+      item.sku = sku;
     }
 
     await cart.save();
@@ -397,7 +421,7 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
 
     const fresh = await Cart.findById(cart._id).populate(
       "items.product",
-      "name images price stock colors type"
+      "name images featureImage price stock colors type"
     );
     res.json({ success: true, data: fresh });
   } catch (error: any) {
@@ -443,7 +467,7 @@ export const deleteCartItem = async (req: Request, res: Response, next: NextFunc
 
     const fresh = await Cart.findById(cart._id).populate(
       "items.product",
-      "name images price stock colors type"
+      "name images featureImage price stock colors type"
     );
     res.json({ success: true, data: fresh });
   } catch (error: any) {

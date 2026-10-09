@@ -106,6 +106,7 @@ const CheckoutScreen = () => {
         payload: {
           items: cartItems.map((item) => ({
             product: item.product._id,
+            sku: item.sku ?? null,
             quantity: item.quantity,
             size: item.size ?? null,
             color: item.color ?? null,

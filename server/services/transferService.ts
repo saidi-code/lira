@@ -90,6 +90,7 @@ export const applyTransferStatus = async (
       transfer.toWarehouse,
       transfer.items.map((item) => ({
         product: item.product,
+        sku: item.sku ?? undefined,
         quantity: item.quantity,
         reference: transfer.reference,
         user: userId ?? null,

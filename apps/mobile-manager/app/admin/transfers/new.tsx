@@ -20,12 +20,13 @@ import {
   View,
 } from "react-native";
 
-type Line = { key: string; productId: string; quantity: string };
+type Line = { key: string; productId: string; sku: string; quantity: string };
 
 let lineCounter = 0;
 const newLine = (): Line => ({
   key: `line-${lineCounter++}`,
   productId: "",
+  sku: "",
   quantity: "",
 });
 
@@ -51,13 +52,14 @@ export default function NewTransfer() {
   const parsed = lines
     .map((line) => ({
       productId: line.productId.trim(),
+      sku: line.sku.trim(),
       quantity: Number(line.quantity),
     }))
-    .filter((line) => line.productId !== "" && line.quantity > 0);
+    .filter((line) => line.productId !== "" && line.sku !== "" && line.quantity > 0);
 
   // Same rule as purchase orders: a half-typed line must not silently drop out.
   const complete = lines.filter(
-    (line) => line.productId.trim() !== "" && line.quantity.trim() !== ""
+    (line) => line.productId.trim() !== "" && line.sku.trim() !== "" && line.quantity.trim() !== ""
   ).length;
 
   const canSubmit =
@@ -132,6 +134,14 @@ export default function NewTransfer() {
             className="bg-subtle border border-subtle-border rounded-xl px-4 py-2 text-primary mb-2"
           />
           <TextInput
+            value={line.sku}
+            onChangeText={(text) => update(line.key, { sku: text })}
+            placeholder="Sellable SKU"
+            placeholderTextColor={COLORS.secondary}
+            autoCapitalize="characters"
+            className="bg-subtle border border-subtle-border rounded-xl px-4 py-2 text-primary mb-2"
+          />
+          <TextInput
             value={line.quantity}
             onChangeText={(text) => update(line.key, { quantity: text })}
             placeholder="Quantity"
@@ -151,7 +161,7 @@ export default function NewTransfer() {
 
       {complete > parsed.length ? (
         <Text className="text-warning text-xs mt-3">
-          {complete - parsed.length} line(s) need a product id and a quantity.
+          {complete - parsed.length} line(s) need a product id, SKU, and quantity.
         </Text>
       ) : null}
 

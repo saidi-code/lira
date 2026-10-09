@@ -163,6 +163,7 @@ export function useAdjustStock() {
   return useMutation({
     mutationFn: async (input: {
       productId: string;
+      sku?: string;
       warehouseId: string;
       quantity: number;
       reason: string;

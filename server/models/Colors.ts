@@ -3,6 +3,7 @@ import { variantSchema } from "./Varianats.js";
 const colorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   hex: { type: String, required: true },
+  featureImage: { type: String, default: "" },
   images: [{ type: String }], // array of image URLs
   // Store variant subdocuments directly using variantSchema (embedded subdocuments).
   variants: [variantSchema],

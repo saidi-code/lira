@@ -15,6 +15,7 @@
 // ==========================================
 import "dotenv/config";
 import connectDB from "../config/db.js";
+import SkuInventory from "../models/SkuInventory.js";
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Products.js";
 import { findDrift, type DriftRow } from "../services/reconcileService.js";
@@ -38,10 +39,21 @@ export const reconcileStock = async ({
   fix = false,
   log = console.log,
 }: ReconcileOptions = {}): Promise<ReconcileResult> => {
+  // A zero/empty SKU ledger alongside legacy rows means migration has not run.
+  // In that state --fix would incorrectly zero the catalogue snapshots.
+  if (fix) {
+    const [skuRows, legacyRows] = await Promise.all([
+      SkuInventory.countDocuments(),
+      Inventory.countDocuments(),
+    ]);
+    if (skuRows === 0 && legacyRows > 0) {
+      throw new Error("SKU inventory migration is required before reconcile --fix; legacy Inventory rows are present and were left untouched.");
+    }
+  }
   // One row per product: availability across every warehouse (§9 step 1).
   // Σ(quantity − reserved), because that is what `Product.stock` now means —
   // comparing against on-shelf quantity would flag every pending order as drift.
-  const summed = await Inventory.aggregate<{
+  const summed = await SkuInventory.aggregate<{
     _id: unknown;
     ledger: number;
   }>([
@@ -59,7 +71,7 @@ export const reconcileStock = async ({
 
   const products = await Product.find().select("_id name stock").lean();
   const warehouses = new Set(
-    (await Inventory.distinct("warehouse")).map(String)
+    (await SkuInventory.distinct("warehouse")).map(String)
   );
 
   log(
@@ -134,7 +146,7 @@ const main = async () => {
     // cannot page anyone.
     process.exit(result.drift.length > 0 && !fix ? 2 : 0);
   } finally {
-    await Inventory.db.close();
+    await SkuInventory.db.close();
   }
 };
 
@@ -142,7 +154,7 @@ const main = async () => {
 if (isDirectRun("reconcileStock")) {
   main().catch(async (error) => {
     console.error("reconcile failed:", error);
-    await Inventory.db.close().catch(() => undefined);
+    await SkuInventory.db.close().catch(() => undefined);
     process.exit(1);
   });
 }

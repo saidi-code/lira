@@ -14,6 +14,7 @@ interface Supplier {
 
 interface PurchaseOrderItem {
   product: { _id: string; name: string };
+  sku?: string;
   quantity: number;
   unitCost: number;
   receivedQty: number;
@@ -72,7 +73,7 @@ export function PurchasingPage() {
     }: {
       id: string;
       warehouseId: string;
-      items: { productId: string; quantity: number }[];
+      items: { productId: string; sku?: string; quantity: number }[];
     }) => {
       const token = await getToken();
       return adminApi.receivePo(id, { warehouseId, items }, token);
@@ -136,8 +137,8 @@ export function PurchasingPage() {
                       <td className="py-3 text-ink">{po.supplier?.name || "—"}</td>
                       <td className="py-3 text-xs text-muted">
                         {po.items.map((i) => (
-                          <div key={i.product?._id}>
-                            {i.product?.name}: {i.receivedQty}/{i.quantity}
+                          <div key={`${i.product?._id}-${i.sku}`}>
+                            {i.product?.name} ({i.sku ?? "legacy SKU"}): {i.receivedQty}/{i.quantity}
                           </div>
                         ))}
                       </td>
@@ -155,7 +156,7 @@ export function PurchasingPage() {
                               setTargetWarehouse(defaultWh);
                               const initQty: Record<string, number> = {};
                               po.items.forEach((i) => {
-                                initQty[i.product._id] = i.quantity - i.receivedQty;
+                                initQty[`${i.product._id}::${i.sku ?? ""}`] = i.quantity - i.receivedQty;
                               });
                               setQuantities(initQty);
                             }}
@@ -210,17 +211,17 @@ export function PurchasingPage() {
                   {receivingPo.items.map((i) => {
                     const remaining = i.quantity - i.receivedQty;
                     return (
-                      <div key={i.product._id} className="flex items-center justify-between gap-4">
-                        <span className="text-sm text-ink">{i.product.name} (Max {remaining})</span>
+                      <div key={`${i.product._id}-${i.sku}`} className="flex items-center justify-between gap-4">
+                        <span className="text-sm text-ink">{i.product.name} · {i.sku ?? "legacy SKU"} (Max {remaining})</span>
                         <input
                           type="number"
                           min={0}
                           max={remaining}
-                          value={quantities[i.product._id] ?? 0}
+                          value={quantities[`${i.product._id}::${i.sku ?? ""}`] ?? 0}
                           onChange={(e) =>
                             setQuantities({
                               ...quantities,
-                              [i.product._id]: Number(e.target.value),
+                              [`${i.product._id}::${i.sku ?? ""}`]: Number(e.target.value),
                             })
                           }
                           className="w-24 rounded-lg border border-primary/20 px-2 py-1 text-sm text-right focus:border-primary focus:outline-none"
@@ -244,7 +245,10 @@ export function PurchasingPage() {
                 onClick={() => {
                   const items = Object.entries(quantities)
                     .filter(([_, q]) => q > 0)
-                    .map(([productId, quantity]) => ({ productId, quantity }));
+                    .map(([key, quantity]) => {
+                      const [productId, sku] = key.split("::");
+                      return { productId, ...(sku ? { sku } : {}), quantity };
+                    });
                   if (items.length === 0) return;
                   receiveMutation.mutate({
                     id: receivingPo._id,

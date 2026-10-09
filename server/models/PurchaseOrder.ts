@@ -25,6 +25,7 @@ const purchaseOrderItemSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    sku: { type: String, trim: true, default: null },
     name: { type: String, required: true }, // snapshot, like Order.items
     /** Units ordered. */
     quantity: { type: Number, required: true, min: 1 },

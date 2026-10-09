@@ -5,6 +5,7 @@ export interface BackendCartItem {
   _id?: string;
   product: IProduct;
   quantity: number;
+  sku?: string | null;
   price: number;
   size?: string | null;
   color?: string | null;

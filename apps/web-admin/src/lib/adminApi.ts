@@ -58,7 +58,7 @@ export const adminApi = {
     request<Envelope<unknown[]>>("get", "/purchase-orders", token),
   receivePo: (
     id: string,
-    payload: { warehouseId: string; items: { productId: string; quantity: number }[] },
+    payload: { warehouseId: string; items: { productId: string; sku?: string; quantity: number }[] },
     token?: string | null
   ) => request("post", `/purchase-orders/${id}/receive`, token, payload),
   transfers: (token?: string | null) =>

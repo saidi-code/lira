@@ -7,6 +7,7 @@ export type TransferStatus = "draft" | "in_transit" | "completed" | "cancelled";
 export interface BackendTransferItem {
   product: string | { _id: string; name: string };
   name: string;
+  sku?: string | null;
   quantity: number;
 }
 
@@ -54,7 +55,7 @@ export const transfersApi = {
     payload: {
       fromWarehouseId: string;
       toWarehouseId: string;
-      items: { productId: string; quantity: number }[];
+      items: { productId: string; sku?: string; quantity: number }[];
       notes?: string;
     },
     token?: string | null

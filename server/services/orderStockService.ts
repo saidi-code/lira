@@ -32,6 +32,8 @@ export interface OrderStockLine {
   product: mongoose.Types.ObjectId;
   name: string;
   quantity: number;
+  /** Product SKU for simple products; selected color/size SKU otherwise. */
+  sku?: string;
 }
 
 /**
@@ -168,7 +170,9 @@ export const reserveForOrder = async (
 
   try {
     for (const line of lines) {
-      if (!(await takeFromAvailability(line, session))) {
+      // SKU lines are guarded by the SKU/warehouse ledger. Legacy order lines
+      // without a SKU retain their old product-level stock path until migrated.
+      if (!line.sku && !(await takeFromAvailability(line, session))) {
         throw new InsufficientStockError(`Not enough stock for ${line.name}`);
       }
 
@@ -178,6 +182,7 @@ export const reserveForOrder = async (
             [
               {
                 product: line.product,
+                sku: line.sku,
                 warehouse,
                 quantity: line.quantity,
                 reference,
@@ -185,12 +190,16 @@ export const reserveForOrder = async (
             ],
             session
           );
+        } else if (line.sku) {
+          throw new Error("Variant-aware stock requires a configured warehouse");
         }
         reserved.push(line);
       } catch (error) {
         // The ledger refused this line — put its availability back so the two
         // sources agree, then unwind the lines already held.
-        await giveBackToAvailability(line, session).catch(() => undefined);
+        if (!line.sku) {
+          await giveBackToAvailability(line, session).catch(() => undefined);
+        }
         throw error;
       }
     }
@@ -225,12 +234,16 @@ export const releaseForOrder = async (
   const target = await resolveOrderWarehouse(warehouse);
 
   for (const line of lines) {
-    await giveBackToAvailability(line, session);
     if (target) {
       await ledgerRelease(
-        [{ product: line.product, warehouse: target, quantity: line.quantity, reference }],
+        [{ product: line.product, sku: line.sku, warehouse: target, quantity: line.quantity, reference }],
         session
       );
+      if (!line.sku) await giveBackToAvailability(line, session);
+    } else if (!line.sku) {
+      await giveBackToAvailability(line, session);
+    } else {
+      throw new Error("Cannot release SKU stock without its warehouse allocation");
     }
   }
 };
@@ -252,7 +265,7 @@ export const commitOrderStock = async (
 
   for (const line of lines) {
     await ledgerCommit(
-      [{ product: line.product, warehouse: target, quantity: line.quantity, reference }],
+      [{ product: line.product, sku: line.sku, warehouse: target, quantity: line.quantity, reference }],
       session
     );
   }

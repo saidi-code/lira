@@ -36,10 +36,12 @@ function AdjustStockScreen() {
   const params = useLocalSearchParams<{
     productId?: string;
     productName?: string;
+    sku?: string;
     warehouseId?: string;
   }>();
 
   const [productId, setProductId] = useState(params.productId ?? "");
+  const [sku, setSku] = useState(params.sku ?? "");
   const [warehouseId, setWarehouseId] = useState(params.warehouseId ?? "");
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("");
@@ -63,6 +65,7 @@ function AdjustStockScreen() {
     adjust.mutate(
       {
         productId: productId.trim(),
+        sku: sku.trim(),
         warehouseId,
         quantity: amount,
         reason: reason.trim(),
@@ -121,6 +124,17 @@ function AdjustStockScreen() {
             );
           })}
         </View>
+      </Field>
+
+      <Field label="SKU">
+        <TextInput
+          value={sku}
+          onChangeText={setSku}
+          placeholder="sellable SKU"
+          placeholderTextColor={COLORS.secondary}
+          autoCapitalize="characters"
+          className="bg-card border border-subtle-border rounded-xl px-4 py-3 text-primary"
+        />
       </Field>
 
       <Field label="Quantity (signed)">

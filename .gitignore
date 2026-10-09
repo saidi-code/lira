@@ -12,6 +12,14 @@
 # committed, so it is ignored here rather than left to chance.
 .mongodb-binaries/
 
+# Local production database backups must never enter Git.
+server/backups/
+
 # misc
 .DS_Store
 Thumbs.db
+
+# Local credentials/configuration are never project source.
+.env
+.env.*
+!.env.example

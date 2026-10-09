@@ -5,6 +5,8 @@ import Category from "../models/Categories.js";
 import cloudinary from "../config/cloundinary.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
 import { asFiniteNumber, asInteger, asString } from "../utils/validate.js";
+import { applyMovement, getDefaultWarehouse } from "../services/inventoryService.js";
+import SkuInventory from "../models/SkuInventory.js";
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -200,21 +202,40 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    let images: string[] = [];
+    let images = transformStringToArray(req.body.images).filter((value) => typeof value === "string") as string[];
     const files = (req as any).files as unknown;
     if (Array.isArray(files) && files.length > 0) {
-      images = await uploadImages(files);
+      images = [...images, ...(await uploadImages(files))];
     }
-
-    if (images.length === 0) {
-      return res.json({ success: false, message: "At least one image is required" });
-    }
-
     const type = req.body.type as "simple" | "variable";
+    if (type !== "simple" && type !== "variable") {
+      return res.status(400).json({ success: false, message: "type must be simple or variable" });
+    }
 
-    // sizes/colors can come as JSON-stringified arrays from form-data
-    const sizes = transformStringToArray(req.body.sizes) as any[];
-    const colors = transformStringToArray(req.body.colors) as any;
+    const inputColors = transformStringToArray(req.body.colors ?? req.body.vcolors) as any[];
+    const featureImage = String(req.body.featureImage ?? images[0] ?? "").trim();
+    const colors = type === "variable" ? inputColors.map((color) => ({
+      ...color,
+      featureImage: String(color.featureImage ?? color.images?.[0] ?? "").trim(),
+      images: Array.isArray(color.images) ? color.images : [],
+      variants: (Array.isArray(color.variants) ? color.variants : []).map((variant: any) => ({
+        ...variant,
+        size: Array.isArray(variant.size) ? variant.size[0] : variant.size,
+        sku: String(variant.sku ?? "").trim(),
+        stock: Number(variant.stock ?? 0),
+      })),
+    })) : [];
+
+    if (!featureImage && images.length === 0 && !colors.some((color) => color.featureImage || color.images.length)) {
+      return res.status(400).json({ success: false, message: "A feature image or product image is required" });
+    }
+    if (type === "variable" && (!colors.length || colors.some((color) =>
+      (!color.featureImage && !color.images.length) ||
+      !color.variants.length ||
+      color.variants.some((variant: any) => !variant.size || !variant.sku)
+    ))) {
+      return res.status(400).json({ success: false, message: "Each variable color needs an image and each size needs its own SKU" });
+    }
 
     // Category may arrive as an ObjectId or a title (admin UI sends titles)
     let categoryId = req.body.category;
@@ -230,54 +251,50 @@ export const createProduct = async (req: Request, res: Response) => {
       categoryId = categoryDoc._id;
     }
 
-    // Build payload differently based on product type
-    // Schema notes (models/Products.ts):
-    // - simple/variable both have: sizes, images, colors, stock
-    // - variable likely needs `vcolors` (array of { name, hex, images, variants[] })
-    //   but schema does not enforce it, so we forward it if provided.
+    const simpleSku = String(req.body.sku ?? `SMP-${Date.now().toString(36).toUpperCase()}`).trim();
+    const requestedStock = asInteger(req.body.stock ?? 0, "stock", { min: 0 });
     const productData: any = {
       ...req.body,
       category: categoryId,
       images,
+      featureImage,
       type,
-      sizes: sizes ?? [],
+      sku: type === "simple" ? simpleSku : (req.body.sku || undefined),
+      stock: 0,
+      sizes: type === "simple" ? [] : [...new Set(colors.flatMap((color) => color.variants.map((variant: any) => String(variant.size))))],
+      colors: type === "variable" ? colors : [],
     };
+    const product = await Product.create(productData);
 
-    if (type === "simple") {
-      // simple: sizes/colors are plain arrays
-      productData.colors = colors ?? [];
-    } else {
-      // variable: vcolors is array of objects.
-      // Your schema stores `colors` as [String], and also has `vcolors: [{...Color}]`.
-      // Prefer vcolors as source of truth.
-      const vcolors = req.body.vcolors ? req.body.vcolors : undefined;
-      if (vcolors) {
-        productData.vcolors = vcolors;
-
-        // Derive top-level colors and sizes from vcolors
-        const derivedColors = (Array.isArray(vcolors) ? vcolors : [])
-          .map((c: any) => c?.name)
-          .filter(Boolean);
-        const derivedSizes = (Array.isArray(vcolors) ? vcolors : [])
-          .flatMap((c: any) => (c?.variants ? c.variants.map((v: any) => v.size) : []));
-
-        productData.colors = derivedColors.length ? derivedColors : colors ?? [];
-        productData.sizes = (derivedSizes.length ? derivedSizes : sizes ?? []).filter(Boolean);
-      } else {
-        // fallback if client only sent colors/sizes
-        productData.colors = colors ?? [];
-        productData.sizes = sizes ?? [];
+    const initialStock = type === "simple"
+      ? [{ sku: simpleSku, quantity: requestedStock }]
+      : colors.flatMap((color) => color.variants.map((variant: any) => ({ sku: variant.sku, quantity: asInteger(variant.stock, "variant stock", { min: 0 }) })));
+    if (initialStock.some((entry) => entry.quantity > 0)) {
+      const warehouse = await getDefaultWarehouse();
+      for (const entry of initialStock) {
+        await SkuInventory.updateOne(
+          { product: product._id, sku: entry.sku, warehouse: warehouse._id },
+          { $setOnInsert: { quantity: 0, reserved: 0, reorderLevel: 0, binLocation: "" } },
+          { upsert: true }
+        );
+        if (entry.quantity > 0) {
+          await applyMovement("in", {
+            product: product._id,
+            sku: entry.sku,
+            warehouse: warehouse._id,
+            quantity: entry.quantity,
+            reference: "product-create",
+            note: "Initial SKU inventory",
+          });
+        }
       }
     }
-
-
-    const product = await Product.create(productData);
 
     return res.status(201).json({ success: true, data: product });
   } catch (error: any) {
     return res
-      .status(500)
-      .json({ success: false, message: "Error creating product", error });
+      .status(error?.name === "ValidationError" ? 400 : 500)
+      .json({ success: false, message: error?.message ?? "Error creating product" });
   }
 };
 
@@ -366,6 +383,13 @@ export const updateProduct = async (
     // Scalar fields (only overwrite when provided)
     const { name, description, price, stock, category, isFeatured, sizes } = req.body;
 
+    if (stock !== undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be changed through the SKU inventory adjustment endpoint",
+      });
+    }
+
     // Validated rather than `Number(...)`-cast. `Number(null)`, `Number("")`,
     // `Number([])` and `Number(false)` are all 0, so `{"stock": null}` silently
     // set a product's stock to zero, and `{"price": "abc"}` stored NaN. The
@@ -375,7 +399,6 @@ export const updateProduct = async (
       product.description = asString(description, "description", { maxLength: 5000 });
     }
     if (price !== undefined) product.price = asFiniteNumber(price, "price", { min: 0 });
-    if (stock !== undefined) product.stock = asInteger(stock, "stock", { min: 0 });
     if (isFeatured !== undefined) {
       product.isFeatured = isFeatured === true || isFeatured === "true";
     }

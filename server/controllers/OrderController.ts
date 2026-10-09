@@ -32,6 +32,7 @@ interface OrderItemInput {
   quantity: number;
   size?: string | null;
   color?: string | null;
+  sku?: string | null;
 }
 
 interface ShippingAddressInput {
@@ -74,6 +75,7 @@ interface OrderQuery {
 
 interface OrderItemDoc {
   product: mongoose.Types.ObjectId;
+  sku?: string | null;
   name: string;
   image?: string;
   price: number;
@@ -93,6 +95,7 @@ class InsufficientStockError extends Error {
 
 interface StockLine {
   product: mongoose.Types.ObjectId;
+  sku?: string;
   name: string;
   quantity: number;
 }
@@ -116,10 +119,11 @@ const readIdempotencyKey = (req: Request): string | null => {
 };
 
 const toStockLines = (
-  items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[]
+  items: { product: mongoose.Types.ObjectId; sku?: string | null; name: string; quantity: number }[]
 ): StockLine[] =>
   items.map((item) => ({
     product: item.product,
+    sku: item.sku ?? undefined,
     name: item.name,
     quantity: item.quantity,
   }));
@@ -159,7 +163,7 @@ export interface CancellableOrder {
    * id in `runCancellation`.
    */
   orderNumber?: string | null;
-  items: { product: mongoose.Types.ObjectId; name: string; quantity: number }[];
+  items: { product: mongoose.Types.ObjectId; sku?: string | null; name: string; quantity: number }[];
   /**
    * The warehouse the hold was taken in, stamped at checkout. Releasing to the
    * *current* default instead would credit a warehouse that never held the units
@@ -374,10 +378,39 @@ export const createOrder = async (
         });
       }
 
-      if (typeof product.stock === "number" && product.stock < quantity) {
+      if (product.type === "simple" && typeof product.stock === "number" && product.stock < quantity) {
         return res.status(400).json({
           success: false,
           message: `Not enough stock for ${product.name}`,
+        });
+      }
+
+      let sku = String(product.sku ?? "").trim();
+      let image = product.featureImage || product.images?.[0];
+      if (product.type === "variable") {
+        const selectedColor = product.colors?.find(
+          (entry: any) => entry.name === item.color || entry.hex === item.color
+        );
+        const selectedVariant = selectedColor?.variants?.find((entry: any) => {
+          const sizes = Array.isArray(entry.size) ? entry.size : [entry.size];
+          return sizes.some((value: unknown) => String(value) === String(item.size));
+        });
+        if (!selectedColor || !selectedVariant || selectedVariant.isActive === false) {
+          return res.status(400).json({
+            success: false,
+            message: `Selected color and size are unavailable for ${product.name}`,
+          });
+        }
+        sku = String(selectedVariant.sku ?? "").trim();
+        image = selectedColor.featureImage || selectedColor.images?.[0] || image;
+        if (!sku || (item.sku && item.sku !== sku)) {
+          return res.status(400).json({ success: false, message: "Invalid product variant SKU" });
+        }
+      }
+      if (!sku) {
+        return res.status(409).json({
+          success: false,
+          message: `Product ${product.name} has no valid SKU and cannot be ordered`,
         });
       }
 
@@ -387,8 +420,9 @@ export const createOrder = async (
 
       orderItems.push({
         product: product._id,
+        sku,
         name: product.name,
-        image: product.images?.[0],
+        image,
         price,
         quantity,
         size: item.size ?? null,

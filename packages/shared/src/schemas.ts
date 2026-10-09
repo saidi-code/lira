@@ -8,6 +8,7 @@ export interface ProductCreateInput {
   subtitle?: string;
   sku?: string;
   type?: "simple" | "variable";
+  featureImage?: string;
   price: number;
   cost?: number;
   stock?: number;
@@ -16,7 +17,13 @@ export interface ProductCreateInput {
   description?: string;
   images?: string[];
   sizes?: string[];
-  colors?: { name: string; hex: string }[];
+  colors?: {
+    name: string;
+    hex: string;
+    featureImage?: string;
+    images?: string[];
+    variants?: { size: string; sku: string; stock?: number; isActive?: boolean }[];
+  }[];
   isFeatured?: boolean;
   isActive?: boolean;
 }

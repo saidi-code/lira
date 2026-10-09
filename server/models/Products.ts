@@ -5,7 +5,7 @@ import Color from "./Colors.js";
 const productSchema = new mongoose.Schema({
  name: { type: String, required: true,trim:true },
  type:{type:String,required:true,enum:["simple","variable"],default:"simple"},
- sku:{type:String,required:true}, 
+ sku:{type:String,required:function(this: { type?: string }) { return this.type === "simple"; },trim:true},
  subtitle: { type: String, required: true },
  description: { type: String, required: true },
  sizes:[{type:String}],
@@ -14,11 +14,12 @@ const productSchema = new mongoose.Schema({
     ref: 'Category', 
     required: true
 },
- subCategory: { type: String, required: true,enum:["man","woman","kids"] },
+ subCategory: { type: String, required: true,enum:["man","woman","men","women","kids"] },
   brand: { type: String, required: true },
   price:{type:Number,required:true,min:0},
   stock: { type: Number ,min:0,default:0},
   isFeatured: { type: Boolean, default: false },
+  featureImage: { type: String, default: "" },
   images:[{type:String}],
   isActive: { type: Boolean, default: true },
   /**
