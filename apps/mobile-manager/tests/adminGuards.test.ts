@@ -39,6 +39,7 @@ const ADMIN_DIR = path.resolve(__dirname, "..", "app", "admin");
  * directions, so nothing can be added or removed without this list agreeing.
  */
 const SCREEN_CAPABILITY: Record<string, Capability> = {
+  "announcements.tsx": "announcements",
   "inventory/index.tsx": "inventory.read",
   "inventory/movements.tsx": "inventory.read",
   "inventory/adjust.tsx": "inventory.adjust",

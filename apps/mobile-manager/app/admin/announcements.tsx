@@ -56,6 +56,6 @@ function AnnouncementComposer() {
   );
 }
 
-export default function AnnouncementsScreen() {
+export default function AnnouncementsRoute() {
   return <RequireCapability capability="announcements"><AnnouncementComposer /></RequireCapability>;
 }
