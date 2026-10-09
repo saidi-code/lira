@@ -2,10 +2,8 @@
 // ==========================================
 //   The role vocabulary, in one dependency-free place.
 //
-// This is data, not behaviour, so it deliberately imports nothing: it used to
-// live in `config/adminApi.ts`, which meant the permission rules and the role
-// list reached `react-native` through the HTTP client and could not be tested
-// outside a bundler. `adminApi` re-exports it, so existing imports still work.
+// This is data, not behaviour, and mirrors the server role vocabulary without
+// coupling UI code to the HTTP client.
 // ==========================================
 
 /** Mirrors `USER_ROLES` in `server/models/User.ts`. */

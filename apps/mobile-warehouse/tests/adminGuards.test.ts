@@ -39,22 +39,10 @@ const ADMIN_DIR = path.resolve(__dirname, "..", "app", "admin");
  * directions, so nothing can be added or removed without this list agreeing.
  */
 const SCREEN_CAPABILITY: Record<string, Capability> = {
-  "index.tsx": "dashboard",
-  "orders.tsx": "orders",
   "inventory/index.tsx": "inventory.read",
   "inventory/movements.tsx": "inventory.read",
-  "inventory/adjust.tsx": "inventory.adjust",
-  "products/index.tsx": "products",
-  "products/add.tsx": "products",
-  "products/edit/[id].tsx": "products",
-  "purchasing/index.tsx": "purchasing",
-  "purchasing/new.tsx": "purchasing",
-  "purchasing/[id].tsx": "purchasing",
-  "purchasing/suppliers.tsx": "suppliers",
-  "staff/index.tsx": "users",
   "transfers/index.tsx": "transfers",
   "transfers/new.tsx": "transfers",
-  "transfers/warehouses.tsx": "warehouses",
 };
 
 /** Every screen file under `app/admin`, as posix-style paths, layouts excluded. */
@@ -71,8 +59,8 @@ const read = (rel: string) =>
   readFileSync(path.join(ADMIN_DIR, ...rel.split("/")), "utf8");
 
 /**
- * A screen needs a guard when some staff role reaches the backoffice but not this
- * capability. If every staff role has it, a guard would be dead weight.
+ * The warehouse app contains only inventory and transfer screens, both
+ * available to the warehouse_staff role.
  */
 const needsGuard = (capability: Capability) =>
   !STAFF_ROLES.every((role) => can(role, capability));
@@ -154,23 +142,22 @@ describe("backoffice screens", () => {
 });
 
 describe("guard usefulness", () => {
-  it("only guards capabilities that actually exclude a staff role", () => {
-    // Guards exist because a staff role can be inside /admin without the
-    // capability. If that stopped being true the wrappers would be decoration.
-    const guarded = Object.entries(SCREEN_CAPABILITY).filter(([, cap]) =>
-      needsGuard(cap)
+  it("contains only inventory and transfer screens for warehouse staff", () => {
+    assert.deepEqual(
+      [...new Set(Object.values(SCREEN_CAPABILITY))].sort(),
+      ["inventory.read", "transfers"]
     );
-
-    assert.ok(
-      guarded.length > 0,
-      "no screen needs a guard, which cannot be right"
-    );
+    for (const capability of Object.values(SCREEN_CAPABILITY)) {
+      assert.ok(
+        can("warehouse_staff", capability),
+        `warehouse_staff cannot use ${capability}`
+      );
+    }
   });
 
   it("covers the warehouse case that motivated the guard", () => {
-    // warehouse_staff reaches the backoffice and the transfers tab, but the
-    // warehouses API is admin/manager only. This is the concrete pair that was
-    // reachable and 403ing.
+    // Warehouse staff can read only the minimal choices list needed to create
+    // transfers; warehouse administration remains manager/admin-only.
     assert.equal(can("warehouse_staff", "transfers"), true);
     assert.equal(can("warehouse_staff", "warehouses"), false);
     assert.equal(needsGuard("warehouses"), true);

@@ -1,6 +1,6 @@
 import { useSignIn } from "@clerk/clerk-expo";
 import type { EmailCodeFactor } from "@clerk/types";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import * as React from "react";
 import {
   ActivityIndicator,
@@ -13,7 +13,6 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import Entypo from "@expo/vector-icons/build/Entypo";
 import { COLORS } from "@/constants";
 import { useAppColors, type Colors } from "@/constants/utility";
 export default function Page() {
@@ -280,32 +279,7 @@ export default function Page() {
               </Text>
             )}
           </TouchableOpacity>
-          <View style={styles.linkContainer}>
-            <Link href="/signUp">
-              <Text className="text-base underline font-semibold text-right text-accent">
-                إنشاء حساب
-              </Text>
-            </Link>
-            <Text className="text-base text-muted text-right">
-              لا تمتلك حساباً؟
-            </Text>
-          </View>
         </View>
-                 <View className="mt-6 items-center justify-center">
-            <Link
-              href="/"
-              className="flex-row-reverse items-center  px-6 py-3 rounded-full"
-              style={{ backgroundColor: colors.card }}
-            >
-              <Text
-                className="text-primary font-tajwal  font-bold text-lg"
-                style={{ textDecorationLine: "underline" }}
-              >
-                العودة إلي المتجر
-              </Text>
-              <Entypo name="shop" size={18} color={COLORS.primary} />
-            </Link>
-          </View>
       </View>
     </SafeAreaView>
   );
@@ -359,12 +333,5 @@ const createStyles = (colors: Colors) =>
   buttonText: {
     color: colors.white,
     fontWeight: "600",
-  },
-  linkContainer: {
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 8,
-    alignItems: "center",
-    justifyContent: "flex-end",
   },
 });

@@ -1,6 +1,6 @@
 import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
 import { Navigate, Outlet } from "react-router-dom";
-import { isStaff, normalizeRole } from "@lira/shared";
+import { normalizeRole } from "@lira/shared";
 import { Sidebar } from "@/components/Sidebar";
 
 export function AdminLayout() {
@@ -15,7 +15,7 @@ export function AdminLayout() {
         <RedirectToSignIn />
       </SignedOut>
       <SignedIn>
-        {!isStaff(role) ? (
+        {role !== "admin" ? (
           <Navigate to="/denied" replace />
         ) : (
           <div className="flex min-h-screen">

@@ -18,6 +18,7 @@ export type Capability =
   | "suppliers"
   | "warehouses"
   | "transfers"
+  | "announcements"
   | "users";
 
 export const CAPABILITY_ROLES = {
@@ -30,6 +31,7 @@ export const CAPABILITY_ROLES = {
   suppliers: ["admin", "manager"],
   warehouses: ["admin", "manager"],
   transfers: ["admin", "manager", "warehouse_staff"],
+  announcements: ["admin", "manager"],
   users: ["admin"],
 } as const satisfies Record<Capability, readonly UserRole[]>;
 

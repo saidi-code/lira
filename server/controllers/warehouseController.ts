@@ -28,6 +28,25 @@ export const listWarehouses = async (
   }
 };
 
+/** GET /warehouses/choices — only the fields staff need to route a transfer. */
+export const listWarehouseChoices = async (
+  _req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const warehouses = await Warehouse.find({ isActive: true })
+      .select("name code isActive isDefault")
+      .sort({ isDefault: -1, name: 1 })
+      .lean();
+    return res.status(200).json({ success: true, data: warehouses });
+  } catch {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching warehouse choices",
+    });
+  }
+};
+
 /** GET /warehouses/:id — with a per-product stock summary. */
 export const getWarehouse = async (
   req: Request<Record<string, string>>,

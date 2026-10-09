@@ -13,7 +13,6 @@ export default function TransfersLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: "Transfers" }} />
-      <Stack.Screen name="warehouses" options={{ title: "Warehouses" }} />
       <Stack.Screen
         name="new"
         options={{ title: "Move stock", presentation: "modal" }}

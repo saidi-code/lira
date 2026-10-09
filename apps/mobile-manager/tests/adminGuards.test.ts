@@ -39,19 +39,13 @@ const ADMIN_DIR = path.resolve(__dirname, "..", "app", "admin");
  * directions, so nothing can be added or removed without this list agreeing.
  */
 const SCREEN_CAPABILITY: Record<string, Capability> = {
-  "index.tsx": "dashboard",
-  "orders.tsx": "orders",
   "inventory/index.tsx": "inventory.read",
   "inventory/movements.tsx": "inventory.read",
   "inventory/adjust.tsx": "inventory.adjust",
-  "products/index.tsx": "products",
-  "products/add.tsx": "products",
-  "products/edit/[id].tsx": "products",
   "purchasing/index.tsx": "purchasing",
   "purchasing/new.tsx": "purchasing",
   "purchasing/[id].tsx": "purchasing",
   "purchasing/suppliers.tsx": "suppliers",
-  "staff/index.tsx": "users",
   "transfers/index.tsx": "transfers",
   "transfers/new.tsx": "transfers",
   "transfers/warehouses.tsx": "warehouses",

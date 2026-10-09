@@ -8,7 +8,7 @@
 // ==========================================
 import { COLORS } from "@/constants";
 import { useWarehousesQuery } from "@/hooks/useInventory";
-import { useCreateTransfer } from "@/hooks/usePurchasing";
+import { useCreateTransfer } from "@/hooks/useTransfers";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -55,7 +55,7 @@ export default function NewTransfer() {
     }))
     .filter((line) => line.productId !== "" && line.quantity > 0);
 
-  // Same rule as purchase orders: a half-typed line must not silently drop out.
+  // A half-typed line must not silently drop out of the submitted transfer.
   const complete = lines.filter(
     (line) => line.productId.trim() !== "" && line.quantity.trim() !== ""
   ).length;

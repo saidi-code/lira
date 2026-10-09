@@ -4,6 +4,10 @@ import type { Product } from "@lira/shared";
 export const adminApi = {
   stats: (token?: string | null) =>
     request<Envelope<Record<string, unknown>>>("get", "/admin/stats", token),
+  broadcastNotification: (
+    payload: { type: "promotion" | "new_product"; title: string; body: string; productId?: string },
+    token?: string | null
+  ) => request("post", "/notifications/broadcast", token, payload),
   users: (token?: string | null, page = 1) =>
     request<Envelope<unknown[]>>("get", "/admin/users", token, undefined, {
       page,

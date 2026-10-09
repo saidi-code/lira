@@ -12,9 +12,7 @@ import {
   useLowStockQuery,
   useWarehousesQuery,
 } from "@/hooks/useInventory";
-import { usePermissions } from "@/hooks/usePermissions";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,16 +31,10 @@ type Filter = "all" | "low";
 const productName = (row: BackendInventoryRow) =>
   typeof row.product === "string" ? "—" : row.product.name;
 
-const productId = (row: BackendInventoryRow) =>
-  typeof row.product === "string" ? row.product : row.product._id;
-
 const warehouseName = (row: BackendInventoryRow) =>
   typeof row.warehouse === "string" ? "—" : row.warehouse.name;
 
 export default function InventoryScreen() {
-  const router = useRouter();
-  const { can } = usePermissions();
-
   const [warehouse, setWarehouse] = useState<string | undefined>(undefined);
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -80,15 +72,6 @@ export default function InventoryScreen() {
 
         <View className="flex-1" />
 
-        {can("inventory.adjust") && (
-          <TouchableOpacity
-            onPress={() => router.push("/admin/inventory/adjust")}
-            className="flex-row items-center bg-primary px-3 py-2 rounded-full"
-          >
-            <Ionicons name="create-outline" size={14} color={COLORS.white} />
-            <Text className="text-white text-xs font-bold ml-1">Adjust</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <View className="px-4 pb-2">
@@ -162,20 +145,6 @@ export default function InventoryScreen() {
           renderItem={({ item }) => (
             <StockRow
               row={item}
-              canAdjust={can("inventory.adjust")}
-              onAdjust={() =>
-                router.push({
-                  pathname: "/admin/inventory/adjust",
-                  params: {
-                    productId: productId(item),
-                    productName: productName(item),
-                    warehouseId:
-                      typeof item.warehouse === "string"
-                        ? item.warehouse
-                        : item.warehouse._id,
-                  },
-                })
-              }
             />
           )}
         />
@@ -217,12 +186,8 @@ const FilterChip = ({
 
 const StockRow = ({
   row,
-  canAdjust,
-  onAdjust,
 }: {
   row: BackendInventoryRow;
-  canAdjust: boolean;
-  onAdjust: () => void;
 }) => {
   // The server may omit `available`; falling back to `quantity` would overstate
   // what a customer can actually buy, so derive it rather than trust it.
@@ -230,10 +195,7 @@ const StockRow = ({
   const low = available <= row.reorderLevel;
 
   return (
-    <TouchableOpacity
-      onPress={canAdjust ? onAdjust : undefined}
-      className="bg-card p-4 rounded-2xl border border-subtle-border mb-3"
-    >
+    <View className="bg-card p-4 rounded-2xl border border-subtle-border mb-3">
       <View className="flex-row justify-between items-start">
         <View className="flex-1 pr-3">
           <Text className="text-primary font-bold text-base">
@@ -260,7 +222,7 @@ const StockRow = ({
         <Stat label="Reserved" value={row.reserved} />
         <Stat label="Reorder at" value={row.reorderLevel} />
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 

@@ -96,13 +96,13 @@ jobs:
           fi
           ls -la "$MONGOMS_DOWNLOAD_DIR"
 
-  client:
-    name: client — typecheck + lint + unit tests
+  mobile-user:
+    name: mobile-user — typecheck + lint + unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: client
+        working-directory: apps/mobile-user
     steps:
       - uses: actions/checkout@v4
 
@@ -110,7 +110,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: apps/mobile-user/package-lock.json
 
       - run: npm ci
 
@@ -159,19 +159,17 @@ jobs:
       - name: Unit tests
         run: npm test
 
-  # admin/ and web/ were committed without coverage, and both have since held a
-  # real bug this file would have caught: shared imports with a `.js` suffix
-  # that Vite resolves and webpack does not, so `admin` built while `web` did
-  # not. These jobs are build-only on purpose: neither package has tests, and
-  # each build runs `tsc --noEmit` first, so the build is the stronger check
-  # and costs one step.
-  admin:
-    name: admin — build
+  mobile-staff:
+    name: mobile-${{ matrix.app }} — unit tests
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile-manager, mobile-warehouse]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: admin
+        working-directory: apps/${{ matrix.app }}
     steps:
       - uses: actions/checkout@v4
 
@@ -179,12 +177,54 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: admin/package-lock.json
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+  web-admin:
+    name: web-admin — build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web-admin/package-lock.json
 
       - run: npm ci
 
       - name: Build
         run: npm run build
+
+  desktop-cashier:
+    name: desktop-cashier — typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/desktop-cashier
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop-cashier/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
 
   web:
     name: web — build
@@ -192,7 +232,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: web
+        working-directory: apps/web
     env:
       # The build prerenders every page, and Clerk throws without a publishable
       # key — so without this the build fails in CI exactly as it does locally
@@ -210,7 +250,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
 
       - run: npm ci
 

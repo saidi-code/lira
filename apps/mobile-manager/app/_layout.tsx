@@ -4,7 +4,7 @@
 // staff land on `/admin` (the dashboard tab). There is deliberately no
 // drawer, no shop tabs, no cart modal, no SettingsProvider — those are
 // consumer concerns that live in `mobile/`, not here.
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
@@ -13,6 +13,8 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../constants/config";
+import { COLORS } from "../constants";
+import { ActivityIndicator, View } from "react-native";
 import "../global.css";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -40,15 +42,35 @@ const queryClient = new QueryClient({
  */
 function StaffGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const router = useRouter();
   const segments = useSegments();
+  const isManager = user?.publicMetadata?.role === "manager";
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !isUserLoaded) return;
     const inAuth = segments[0] === "(auth)";
+    const inDenied = segments[0] === "(staff)" && segments[1] === "denied";
     if (!isSignedIn && !inAuth) router.replace("/(auth)/signIn");
-    else if (isSignedIn && inAuth) router.replace("/admin");
-  }, [isLoaded, isSignedIn, segments, router]);
+    else if (isSignedIn && inAuth) router.replace(isManager ? "/admin" : "/(staff)/denied");
+    else if (isSignedIn && isManager && inDenied) router.replace("/admin");
+    else if (isSignedIn && !isManager && !inDenied) router.replace("/(staff)/denied");
+  }, [isLoaded, isUserLoaded, isSignedIn, isManager, segments, router]);
+
+  const inAuth = segments[0] === "(auth)";
+  const inDenied = segments[0] === "(staff)" && segments[1] === "denied";
+  const canRender =
+    (isSignedIn && isManager && !inDenied) ||
+    (!isSignedIn && inAuth) ||
+    (isSignedIn && !isManager && inDenied);
+
+  if (!isLoaded || !isUserLoaded || !canRender) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surface">
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return <>{children}</>;
 }

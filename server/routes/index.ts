@@ -15,6 +15,7 @@ import warehouseRouter from "./warehouseRoutes.js";
 import supplierRouter from "./supplierRoutes.js";
 import purchaseOrderRouter from "./purchaseOrderRoutes.js";
 import transferRouter from "./transferRoutes.js";
+import notificationRouter from "./notificationRoutes.js";
 const router = express.Router();
 router.use('/products', productsRouter); 
 router.use('/addresses',addressesRoutes)
@@ -35,5 +36,6 @@ router.use('/warehouses', warehouseRouter)
 router.use('/suppliers', supplierRouter)
 router.use('/purchase-orders', purchaseOrderRouter)
 router.use('/transfers', transferRouter)
+router.use('/notifications', notificationRouter)
 
 export default router;

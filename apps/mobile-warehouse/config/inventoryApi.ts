@@ -129,30 +129,6 @@ export const inventoryApi = {
     return data?.available ?? 0;
   },
 
-  /**
-   * POST /inventory/adjust — signed quantity, mandatory reason.
-   *
-   * Admin/manager only, and 409 if it would drive stock negative. The reason is
-   * required by the server: an unexplained adjustment is indistinguishable from
-   * a bug.
-   */
-  adjust: async (
-    payload: {
-      productId: string;
-      warehouseId: string;
-      quantity: number;
-      reason: string;
-    },
-    token?: string | null
-  ) => {
-    const res = await api.post<InventoryResponse<BackendInventoryRow>>(
-      "/inventory/adjust",
-      payload,
-      { headers: authHeaders(token) }
-    );
-    return res;
-  },
-
   /** GET /inventory/movements — the append-only audit trail. */
   movements: async (
     params?: MovementQueryParams,
@@ -168,30 +144,11 @@ export const inventoryApi = {
     };
   },
 
-  /** GET /warehouses — admin/manager. */
+  /** GET /warehouses/choices — minimal active warehouse data for stock transfers. */
   warehouses: async (token?: string | null): Promise<BackendWarehouse[]> => {
-    const res = await api.get<InventoryResponse<BackendWarehouse>>("/warehouses", {
+    const res = await api.get<InventoryResponse<BackendWarehouse>>("/warehouses/choices", {
       headers: authHeaders(token),
     });
     return unwrap(res);
-  },
-
-  /** GET /warehouses/:id — includes a stock summary. */
-  warehouse: async (id: string, token?: string | null) => {
-    const res = await api.get<InventoryResponse<BackendWarehouse>>(
-      `/warehouses/${id}`,
-      { headers: authHeaders(token) }
-    );
-    return Array.isArray(res.data) ? res.data[0] : res.data;
-  },
-
-  /** POST /warehouses/:id/default — demotes the incumbent in the same pass. */
-  setDefaultWarehouse: async (id: string, token?: string | null) => {
-    const res = await api.post<InventoryResponse<BackendWarehouse>>(
-      `/warehouses/${id}/default`,
-      undefined,
-      { headers: authHeaders(token) }
-    );
-    return res;
   },
 };

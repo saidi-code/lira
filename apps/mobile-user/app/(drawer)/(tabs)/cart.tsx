@@ -101,7 +101,7 @@ const Cart = () => {
                 {/* Main Button */}
                 <TouchableOpacity
                   onPress={
-                    () => router.navigate("/checkout")
+                    () => router.push("/checkout")
                   }
                   activeOpacity={0.8}
                   className="self-stretch py-5 bg-[#785920] rounded-full shadow-md flex-row justify-center items-center gap-2"

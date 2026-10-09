@@ -206,8 +206,7 @@ Subtle **ambient luxury glow** using a transparent gold tint rather than muddy g
    - Align text naturally per script
 
 2. **Strict Currency Representation**
-   - Saudi Riyal: `ر.س` (Arabic) or `SAR` (English) → `١,٢٥٠ ر.س` or `1,250 SAR`
-   - Never hardcode currency symbols — use `usePrice()` (mobile) or `formatPrice()` (admin)
+   - Supported codes are `TND`, `EUR`, `USD`, and `SAR`. Format amounts with `usePrice()` on mobile or the shared `formatPrice()` helper on web; do not hardcode symbols or assume every amount is stored in the selected display currency.
 
 3. **No Pure Black Elements**
    - Avoid `#000000` in text, borders, shadows, or backgrounds
@@ -240,11 +239,11 @@ Six clients on one Express API, each purpose-built for a role:
 | # | Client | Path | Stack | Role(s) | Purpose |
 |---|---|---|---|---|---|
 | 1 | **Mobile — User** | `apps/mobile-user/` | React Native 0.81, Expo SDK 54, Expo Router v6, NativeWind v4 | `user` | Customer storefront (iOS/Android) |
-| 2 | **Mobile — Manager** | `apps/mobile-manager/` | React Native + Expo | `manager` | Approvals, reports, staff oversight |
-| 3 | **Mobile — Warehouse** | `apps/mobile-warehouse/` | React Native + Expo + camera | `warehouse_staff` | QR scanning, stock in/out, receiving |
+| 2 | **Mobile — Manager** | `apps/mobile-manager/` | React Native + Expo | `manager` | Inventory, purchasing, and transfers |
+| 3 | **Mobile — Warehouse** | `apps/mobile-warehouse/` | React Native + Expo | `warehouse_staff` | Inventory visibility and stock transfers |
 | 4 | **Desktop — Cashier** | `apps/desktop-cashier/` | Electron + React + Vite + TS | `cashier` | POS, receipt printer, USB scanner |
 | 5 | **Admin Web** | `apps/web-admin/` | React 18 + Vite + TS + shadcn/ui + TanStack Query/Table | `admin` | Inventory, orders, catalog, users, reports |
-| 6 | **Storefront Web** | `apps/web/` | Next.js 14 (App Router) | public | Public SEO shop *(planned)* |
+| 6 | **Storefront Web** | `apps/web/` | Next.js 14 (App Router) | public | Public storefront and checkout |
 
 All clients consume REST at `/api/v1` and share types via `@lira/shared`.
 
@@ -258,7 +257,7 @@ All clients consume REST at `/api/v1` and share types via `@lira/shared`.
 | Server | Node.js, Express v5, TypeScript, `tsx` |
 | Database | MongoDB via Mongoose v9 |
 | Real-time | Socket.IO (order updates, notifications) |
-| Push Notifications | Expo Push Service (dev) → FCM/APNs (prod) |
+| Push Notifications | Expo Push Service for customer promotions and new-product announcements |
 | Cache / Queues | Redis + BullMQ *(planned)* |
 | File Storage | Cloudinary |
 | Email | Nodemailer |
@@ -289,7 +288,6 @@ lira_app/
 │   │   │   ├── address/
 │   │   │   ├── payment-methods/
 │   │   │   ├── reviews/
-│   │   │   ├── notifications/   # notification center
 │   │   │   ├── profile/
 │   │   │   └── settings/
 │   │   ├── components/
@@ -301,24 +299,10 @@ lira_app/
 │   │   └── assets/
 │   │
 │   ├── mobile-manager/      # Expo RN app — manager (role: manager)
-│   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   ├── dashboard/
-│   │   │   ├── approvals/
-│   │   │   ├── reports/
-│   │   │   └── staff/
-│   │   └── ... (same structure as mobile-user)
+│   │   └── app/             # manager-only inventory, purchasing, transfers
 │   │
 │   ├── mobile-warehouse/    # Expo RN app — warehouse (role: warehouse_staff)
-│   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   ├── scan/            # QR camera screen
-│   │   │   ├── stock-in/
-│   │   │   ├── stock-out/
-│   │   │   ├── inventory-count/
-│   │   │   └── history/
-│   │   ├── offline/             # SQLite/AsyncStorage queue
-│   │   └── ... (same structure)
+│   │   └── app/             # warehouse-only inventory and transfer workflows
 │   │
 │   ├── desktop-cashier/     # Electron POS
 │   │   ├── src/main/            # main process, printer, kiosk
@@ -340,7 +324,7 @@ lira_app/
 │   │   ├── tailwind.config.js
 │   │   └── vite.config.ts
 │   │
-│   └── web/                 # Storefront (Next.js) — planned
+│   └── web/                 # Storefront (Next.js)
 │
 ├── packages/
 │   ├── shared/              # @lira/shared — types, schemas, tokens, roles
@@ -357,11 +341,11 @@ lira_app/
     ├── config/              # DB, Redis, Cloudinary, pricing
     ├── controllers/
     ├── routes/              # Mounted at /api/v1
-    ├── middlewares/         # auth.ts, require-client.ts, upload.ts
-    ├── models/              # incl. DeviceToken, Notification
-    ├── services/            # incl. notifications.ts, push.ts
+    ├── middlewares/         # auth.ts, errorHandler.ts, upload.ts
+    ├── models/              # Mongoose schemas and indexes
+    ├── services/            # Business logic and domain services
     ├── socket.ts            # Socket.IO setup
-    ├── jobs/                # (reserved; see §15)
+    ├── jobs/                # Background jobs (when present)
     ├── seeds/
     ├── templates/
     └── utils/
@@ -385,12 +369,12 @@ lira_app/
                              ┌────────────▼────────────────┐
                              │   Express API (/api/v1)     │
                              │   Clerk auth + RBAC         │
-                             │   + clientId enforcement    │
+                             │   + role-based authorization│
                              └──┬───────┬────────┬─────────┘
                                 │       │        │
                     ┌───────────▼─┐ ┌───▼────┐ ┌─▼───────────┐
                     │ MongoDB     │ │ Redis  │ │ Cloudinary  │
-                    │ + Socket.IO │ │(planned│ │             │
+                    │ + Socket.IO │ │ planned│ │             │
                     └─────────────┘ └────────┘ └─────────────┘
                                           │
                              ┌────────────▼────────────┐
@@ -408,14 +392,15 @@ lira_app/
 5. **Design tokens are shared.** All clients use the same palette via `@lira/shared/tokens`.
 6. **RTL-first UI.** Every layout checks `isRTL` from settings.
 7. **One app per role.** No role-routed mega-app — smaller bundles, cleaner auth, independent releases.
-8. **Every API call carries `X-Client-Id`.** The backend enforces client ↔ role pairing at login and on every request.
+8. **The API owns data access.** Every private route authenticates the account and authorizes its role; never rely on hidden tabs or client-only checks to protect data.
+9. **Keep app roles exclusive.** Customer mobile accepts guests and `user`; manager mobile accepts `manager`; warehouse mobile accepts `warehouse_staff`; desktop cashier accepts `cashier`; admin web accepts `admin`. A screen guard improves navigation, while `authorize(...)` on the API remains the data security boundary.
 
 ### Layers
 
 | Layer | Responsibility | Location |
 |---|---|---|
 | Routes | URL → controller | `server/routes/` |
-| Middleware | Auth, clientId, uploads, errors | `server/middlewares/` |
+| Middleware | Auth, role authorization, uploads, errors | `server/middlewares/` |
 | Controllers | Request → service → response | `server/controllers/` |
 | Services | Business logic, transactions | `server/services/` |
 | Models | Mongoose schemas, indexes | `server/models/` |
@@ -433,7 +418,7 @@ Three separate Expo apps, each locked to its own role. They share design tokens,
 
 **Role:** `user`
 
-**Purpose:** Browse products, place orders, receive notifications for new products and promotions, track deliveries.
+**Purpose:** Browse products, place orders, manage the customer account, and track deliveries.
 
 **Key screens:**
 - Auth (sign up / login)
@@ -441,108 +426,63 @@ Three separate Expo apps, each locked to its own role. They share design tokens,
 - Product detail
 - Cart & checkout
 - Order tracking (Socket.IO live updates)
-- **Notifications center** (see §9)
+- Customer notification inbox and unread badge; see §9 for the push and staff publishing flow.
 - Wishlist
 - Profile, addresses, payment methods
 
-**Backend endpoints:** `GET /products`, `POST /orders`, `GET /orders/mine`, `POST /cart`, `GET /notifications`, `POST /notifications/devices`, etc.
+**Backend endpoints:** Check `server/routes/` and `server/controllers/` for current route names and authorization requirements before adding or documenting an API. Do not add admin endpoints or admin screens to this app.
 
 ### 7.2 `mobile-manager` — Manager App
 
 **Role:** `manager`
 
-**Purpose:** Approvals, real-time dashboards, staff oversight, reports on the go.
+**Purpose:** Manager operations on inventory, purchasing, and inter-warehouse transfers.
 
 **Key screens:**
 - Auth (login only)
-- Dashboard — today's sales, orders, low-stock alerts
-- Approvals — refunds, discounts, purchase orders
-- Reports — revenue, top products, staff activity
-- Staff monitor — cashier/warehouse activity
-- Notifications — Socket.IO-driven alerts
+- Inventory levels, low-stock view, adjustments, and movement history
+- Suppliers and purchase orders
+- Inter-warehouse transfers
+- Account password settings
 
-**Backend endpoints:** `GET /reports/*`, `POST /approvals/*`, `GET /admin/users`, etc.
+The app is restricted to the `manager` role. Admin-only dashboard, order, product, and staff-management screens belong in `apps/web-admin/`.
 
 ### 7.3 `mobile-warehouse` — Warehouse Staff App
 
 **Role:** `warehouse_staff`
 
-**Purpose:** **QR scanning** for stock in/out, receiving, inventory counts.
+**Purpose:** Warehouse staff inventory visibility and transfers. The app is
+restricted to the `warehouse_staff` role.
 
 **Key screens:**
 - Auth (login only)
-- Scan (camera, `expo-camera` / `mobile_scanner`)
-- Stock In — scan → confirm qty → submit
-- Stock Out — scan → confirm → submit
-- Inventory count — bulk scan mode, offline queue
-- History — recent scans, sync status
+- Inventory levels and movement history
+- Create and process inter-warehouse transfers
+- Account password settings
 
-**Offline-first is critical.** Warehouses have poor WiFi.
+Camera scanning, stock receiving/out, inventory counts, and offline sync are not
+implemented yet. Keep them out of the navigation until their API and ledger-safe
+workflows are ready.
 
-```ts
-// Offline queue pattern
-async function handleScan(code: string, action: "in" | "out") {
-  const entry = { code, action, ts: Date.now(), id: uuid() };
+**Inventory changes must use the inventory service.** Do not mutate `Product.stock`
+or write `Inventory` rows directly from a route or client. `server/services/inventoryService.ts`
+applies guarded movements and writes the matching `StockMovement` audit row. Use
+the existing inventory endpoints and service. A scan handler that directly updates
+stock would bypass the ledger and could double-count concurrent or retried scans.
 
-  if (!isOnline()) {
-    await queue.push(entry);            // persist to SQLite/AsyncStorage
-    return;
-  }
-  try {
-    await api.post("/inventory/scan", entry, {
-      headers: { "X-Client-Id": "mobile-warehouse" }
-    });
-  } catch {
-    await queue.push(entry);
-  }
-}
-
-// Background sync when connectivity returns
-useEffect(() => {
-  const unsub = NetInfo.addEventListener(s => {
-    if (s.isConnected) flushQueue();
-  });
-  return unsub;
-}, []);
-```
-
-**Backend endpoint** (idempotent by client-generated `id`):
-
-```ts
-router.post(
-  "/inventory/scan",
-  authenticate,
-  requireClient("mobile-warehouse"),
-  requireRole("warehouse_staff", "admin"),
-  async (req, res) => {
-    const { code, action, id } = req.body;
-    const existing = await ScanLog.findOne({ clientId: id });
-    if (existing) return res.json(existing.result);   // replay-safe
-
-    const product = await Product.findOne({ qrCode: code });
-    if (!product) return res.status(404).json({ error: "Not found" });
-
-    product.stock += action === "in" ? 1 : -1;
-    await product.save();
-
-    io.to("role:warehouse_staff").emit("inventory:updated", {
-      productId: product._id, stock: product.stock,
-    });
-
-    const result = toPublicProduct(product);
-    await ScanLog.create({ clientId: id, result, userId: req.user.id });
-    res.json(result);
-  }
-);
-```
+For any future offline scan queue, persist a unique operation ID with each entry,
+validate the operation and warehouse on the server, and make replay protection
+atomic with the stock movement. Retrying a queued request must never apply a
+movement twice. Do not add an offline scan endpoint until it can preserve these
+invariants.
 
 ### 7.4 Shared Patterns Across All Three Mobile Apps
 
 - **Routing:** Expo Router v6, file-system, `(groupName)` groups.
 - **Root layout:** `QueryClientProvider → ClerkProvider → SettingsProvider → GestureHandlerRootView → Stack`.
 - **State:** TanStack React Query v4 — `staleTime: 2 min`, `cacheTime: 15 min`, `retry: 1`, `refetchOnWindowFocus: false`.
-- **Auth:** Clerk SDK; each app validates its allowed role at login and refuses others.
-- **API layer:** `config/*Api.ts` per domain, axios base URL from `EXPO_PUBLIC_API_URL`, `X-Client-Id` header injected globally.
+- **Auth:** Clerk SDK; the app root allows only its assigned role and sends other roles to a sign-out screen. Guests may browse the customer app.
+- **API layer:** `config/*Api.ts` per domain, axios base URL from `EXPO_PUBLIC_API_URL`. Backend route authorization is authoritative; app route guards are not a substitute.
 - **Styling:** NativeWind v4 + tokens from `@lira/shared/tokens`.
 - **Fonts (mobile-user, and mobile-manager if editorial):**
   - `jazera-bold` → Al-Jazeera-Arabic-Bold
@@ -582,7 +522,6 @@ router.post(
 | `useDebouncedSearch` | Debounced search |
 | `usePrice` | Currency-aware price formatting |
 | `useTranslation` | UI strings |
-| `useNotifications` | Notification list + unread count (see §9) |
 
 > ⚠️ `useProdoucts.ts` is an empty stub — always import from `useProducts.ts`.
 
@@ -609,16 +548,16 @@ router.post(
 | UI | Tailwind + large touch targets (min 44px) |
 | Printer | `electron-pos-printer` (main process) |
 | Scanner | USB HID → keyboard input into a hidden `<input>` |
-| State | Zustand or Redux Toolkit |
-| Auth | Clerk JWT (role: `cashier`), `X-Client-Id: desktop-cashier` |
-| Real-time | Socket.IO (order updates, price changes) |
-| Kiosk | `electron-kiosk` or custom fullscreen |
-| Auto-update | `electron-updater` |
+| State | Follow the state pattern already used in `src/`; avoid adding a second state library without a concrete need. |
+| Auth | Clerk JWT (role: `cashier`); the client ID header is informational, not an authorization boundary. |
+| Real-time | Verify the current implementation before relying on Socket.IO events. |
+| Kiosk mode | Planned; no kiosk package is currently declared. |
+| Auto-update | `electron-updater` dependency is present; confirm release configuration before treating updates as operational. |
 
 **Flow:**
-1. Cashier logs in → backend validates `role === "cashier"` and `clientId === "desktop-cashier"`.
+1. Cashier logs in → backend validates `role === "cashier"`.
 2. USB scanner types SKU into a focused input → cart updates.
-3. Checkout → `POST /orders` with `Idempotency-Key` (see §12).
+3. Checkout → use the existing orders API and its server-side idempotency contract; verify the route and key format before changing it.
 4. Backend saves order, reserves stock, emits `sale:created`.
 5. Electron main process prints receipt.
 6. Manager app + admin dashboard update live via Socket.IO.
@@ -627,50 +566,73 @@ router.post(
 
 ---
 
-## 9. Notifications & Push (mobile-user)
+## 9. Notifications & Push
 
-New products and promotions are broadcast to every `user`-role account. Two delivery channels work together:
+Customer announcements are stored in MongoDB and delivered through Expo Push Service.
+Only admins and managers can publish promotions or new-product announcements. The
+customer app registers push devices only for signed-in `user` accounts when phone
+notifications are enabled; customers can also read announcements in the inbox.
 
 | Channel | Purpose | When |
 |---|---|---|
 | **Push (Expo Push Service)** | Reach device when app is closed | New product, promotion |
-| **In-app (Socket.IO + DB)** | Live update when app is open | Same events + order updates |
-| **Notification center** | Persisted history, unread badge | User opens app later |
+| **In-app (MongoDB)** | Persisted announcement history | Customer opens the notification center |
+| **Socket.IO** | Not currently used for announcement delivery | Push is sent separately through Expo |
 
-### 9.1 Data Models
+### 9.1 Implementation requirements
 
-```ts
-// server/models/DeviceToken.ts
-const deviceTokenSchema = new Schema({
-  userId:     { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-  token:      { type: String, required: true, unique: true },
-  platform:   { type: String, enum: ["ios", "android"], required: true },
-  clientId:   { type: String, default: "mobile-user" },
-  lastSeenAt: { type: Date, default: Date.now },
-  createdAt:  { type: Date, default: Date.now },
-});
-deviceTokenSchema.index({ userId: 1, token: 1 }, { unique: true });
-```
+Implemented locations: `server/routes/notificationRoutes.ts`,
+`server/controllers/notificationController.ts`, `server/models/Notification.ts`,
+`server/models/NotificationRead.ts`, `server/models/PushDevice.ts`, and the customer
+app's `components/PushNotificationRegistration.tsx` and notifications screen.
+`server/vercel.json` routes the API through the Express application.
 
-```ts
-// server/models/Notification.ts
-const notificationSchema = new Schema({
-  userId:    { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-  type:      { type: String, enum: ["new_product", "promotion", "order_update"], required: true },
-  title:     { type: String, required: true },
-  body:      { type: String, required: true },
-  imageUrl:  String,
-  data:      { type: Schema.Types.Mixed },   // { productId } or { promoId }
-  readAt:    { type: Date, default: null },
-  createdAt: { type: Date, default: Date.now, index: true },
-});
-notificationSchema.index({ userId: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, readAt: 1 });
-```
+- Store device tokens per authenticated user and platform; refresh tokens on app
+  startup and remove them when customers opt out or sign out. Expo ticket errors
+  for `DeviceNotRegistered` remove the invalid token.
+- Persist announcements before attempting dispatch so temporary Expo failures do
+  not lose the in-app announcement.
+- Respect the phone notification preference and keep the in-app inbox available
+  independently of push permission.
+- Scope notification reads and updates to the authenticated user; never trust a
+  client-supplied user ID.
+- Inbox responses are paginated (up to 50 entries) and unread counts are calculated
+  from per-user read receipts. Push messages contain announcement text and an
+  optional product ID only; never include private order or account data.
+- Set `EXPO_PUBLIC_EAS_PROJECT_ID` when building the mobile app. Configure the
+  Android FCM and iOS APNs credentials for the EAS project before expecting device
+  delivery. `EXPO_ACCESS_TOKEN` on Vercel is optional unless Expo push security is
+  enabled for the project.
 
-```ts
-// server/models/ScanLog.ts — replay guard for warehouse scanning
-const scanLogSchema = new Schema({
-  clientId: { type: String, required: true, unique: true },   // client-generated UUID
-  userId:   { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-  result:   { type: Schema.Types.Mixed },
+The announcement route uses `authorize("admin", "manager")`; never weaken that
+server-side check or rely on hiding the send form as the only permission boundary.
+
+### 9.2 Mobile-user startup and CI troubleshooting
+
+- If Metro reports `Unable to resolve "expo-device"` or
+  `Unable to resolve "expo-notifications"` from the push registration component,
+  confirm both packages are declared in `apps/mobile-user/package.json` and its
+  `package-lock.json`. Install from `apps/mobile-user` with `npm ci`, then restart
+  Metro with `npm run start -- --clear`. Do not work around a missing module by
+  removing the push registration feature.
+- Expo Go (Android, SDK 53+) does not support remote push notifications. Avoid a
+  top-level import of `expo-notifications` in app startup code: it can throw
+  before the app renders. Check `Constants.executionEnvironment` and dynamically
+  import the module only outside Expo Go. This keeps Expo Go usable for ordinary
+  app development; test remote push delivery in an Expo development build.
+- If React Navigation logs that passing an object to `navigate` is deprecated,
+  use Expo Router's `router.push("/path")` for app route navigation. For a warning
+  emitted inside the tab navigator, check the resolved
+  `@react-navigation/bottom-tabs` version and its `CommonActions.navigate` call;
+  keep the package lock consistent with `package.json` and use a version that
+  calls `navigate(name, params)` instead of passing a route object.
+- A Clerk development-key warning is informational during local development. It
+  is not a Metro resolution or navigation failure. Use production Clerk keys in
+  production configuration; never copy secrets into this file.
+- GitHub Actions working directories must match actual repository folders. The
+  mobile apps live under `apps/mobile-user`, `apps/mobile-manager`, and
+  `apps/mobile-warehouse`; web apps live under `apps/web` and `apps/web-admin`;
+  the API lives under `server`. When changing a workflow working directory,
+  verify its install/test/build commands and local `file:` dependencies from
+  that directory. Keep `package.json` and `package-lock.json` in sync so `npm ci`
+  works in CI.

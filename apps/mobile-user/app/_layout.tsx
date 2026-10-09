@@ -9,6 +9,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../constants/config";
 import LoginOrRegisterModal from "../components/LoginOrRegisterModal";
+import CustomerRoleGate from "../components/CustomerRoleGate";
+import PushNotificationRegistration from "../components/PushNotificationRegistration";
 import { useAuthModal } from "../hooks/useCart";
 import { SettingsProvider } from "../context/SettingsContext";
 import "../global.css";
@@ -50,10 +52,13 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
         <SettingsProvider>
+        <PushNotificationRegistration />
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
-            <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-          </Stack>
+          <CustomerRoleGate>
+            <Stack screenOptions={{ headerShown: false, navigationBarHidden: true }}>
+              <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+            </Stack>
+          </CustomerRoleGate>
         </GestureHandlerRootView>
         <AuthModalContainer />
         <Toast config={toastConfig} />

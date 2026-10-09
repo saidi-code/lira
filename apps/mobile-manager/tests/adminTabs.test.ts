@@ -77,13 +77,13 @@ describe("ADMIN_TABS", () => {
   it("keeps tab order as the bar order", () => {
     // Not cosmetic: the first tab is where a role lands, so an admin opening the
     // backoffice should arrive at the dashboard rather than the stock list.
-    assert.equal(ADMIN_TABS[0].name, "index");
-    assert.equal(ADMIN_TABS[0].title, "Dashboard");
+    assert.equal(ADMIN_TABS[0].name, "inventory");
+    assert.equal(ADMIN_TABS[0].title, "Stock");
   });
 });
 
 describe("visibleTabNames", () => {
-  it("gives an admin the whole bar", () => {
+  it("offers the manager app's complete operational bar", () => {
     assert.deepEqual(
       visibleTabNames("admin"),
       ADMIN_TABS.map((tab) => tab.name)
@@ -97,6 +97,7 @@ describe("visibleTabNames", () => {
       "inventory",
       "purchasing",
       "transfers",
+      "announcements",
     ]);
   });
 

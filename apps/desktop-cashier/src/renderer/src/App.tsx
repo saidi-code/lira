@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   SignIn,
-  SignedIn,
-  SignedOut,
   UserButton,
   useAuth,
   useUser,
@@ -396,8 +394,7 @@ function AuthWindow() {
           />
         </div>
         <p className="auth-hint">
-          Backend validates <code>role === "cashier"</code> and{" "}
-          <code>X-Client-Id: desktop-cashier</code> (spec §8).
+          Backend validates <code>role === "cashier"</code>.
         </p>
       </main>
     </div>
@@ -426,11 +423,36 @@ function AuthUnavailable() {
   );
 }
 
-/** Auth gate: signed out → auth window, signed in → POS. */
+function WrongRole({ signOut }: { signOut: () => Promise<void> }) {
+  return (
+    <div className="app auth-window">
+      <header className="app-header">
+        <div className="brand">🇱🇷 Lira Cashier</div>
+        <div className="user">Cashier account required</div>
+      </header>
+      <main className="auth-main">
+        <p className="auth-hint">
+          This account belongs to another Lira app. Sign out and open the app
+          assigned to your role.
+        </p>
+        <button type="button" className="btn" onClick={() => void signOut()}>
+          Sign out
+        </button>
+      </main>
+    </div>
+  );
+}
+
+/** Auth and role gate: only cashier accounts mount the POS or its API effects. */
 function ClerkGate() {
-  const { isLoaded, isSignedIn } = useAuth();
-  if (!isLoaded) return <BootScreen message="Loading auth…" />;
-  return isSignedIn ? <PosShell /> : <AuthWindow />;
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const { user, isLoaded: isUserLoaded } = useUser();
+  if (!isLoaded || !isUserLoaded) return <BootScreen message="Loading auth…" />;
+  if (!isSignedIn) return <AuthWindow />;
+  if (user?.publicMetadata?.role !== "cashier") {
+    return <WrongRole signOut={signOut} />;
+  }
+  return <PosShell />;
 }
 
 export default function App({ clerk }: { clerk: boolean }) {

@@ -2,19 +2,17 @@ import Header from "@/components/Header";
 import { COLORS } from "@/constants";
 import { Feather, Fontisto, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSettings } from "@/context/SettingsContext";
 import { useTranslation } from "@/hooks/useTranslation";
 const Settings = () => {
-  const [phoneNotification, setPhoneNotification] = useState<boolean>(false);
-  const [emailNoatification, setEmailNoatification] = useState<boolean>(false);
   const router = useRouter();
   // Language / currency / theme rows read the saved preference instead of
   // hardcoding "العربية" / "د.ت" / "فاتح" (AGENT.md §3.6.2, §7 i18n).
-  const { currencySymbol, languageLabel, settings } = useSettings();
+  const { currencySymbol, languageLabel, settings, setPhoneNotifications, setEmailNotifications } = useSettings();
   const { t } = useTranslation();
   return (
     <SafeAreaView className="bg-surface  flex-1" edges={["top"]}>
@@ -81,8 +79,8 @@ const Settings = () => {
                   trackColor={{ false: COLORS.surface, true: COLORS.primary }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => setPhoneNotification((prev) => !prev)}
-                  value={phoneNotification}
+                  onValueChange={setPhoneNotifications}
+                  value={settings.phoneNotifications}
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">
@@ -100,8 +98,8 @@ const Settings = () => {
                   trackColor={{ false: COLORS.surface, true: COLORS.primary }}
                   // thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
                   ios_backgroundColor="#3e3e3e"
-                  onValueChange={() => setEmailNoatification((prev) => !prev)}
-                  value={emailNoatification}
+                  onValueChange={setEmailNotifications}
+                  value={settings.emailNotifications}
                 />
                 <View className="flex-row justify-end items-center gap-6 p-4 border-b border-b-primary-100">
                   <Text className="text-lg font-body font-meduim">

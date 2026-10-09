@@ -1,11 +1,6 @@
 // app/(staff)/denied.tsx — Lyra Admin
 // ==========================================
-// Where non-staff roles land. A customer who signs into the staff app with a
-// valid session is authenticated but not authorised: there is no dashboard tab
-// for them, so this explains why and offers sign-out (which returns them to
-// sign-in via the root StaffGate). Without this, the admin layout's old
-// `router.replace("/")` sent them to the shop route — which does not exist in
-// this app — and rendered an empty screen.
+// Where accounts assigned to another role land. This app is manager-only.
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
@@ -35,13 +30,13 @@ export default function StaffDenied() {
   return (
     <View className="flex-1 items-center justify-center bg-surface px-8">
       <Text className="text-primary font-bold text-lg text-center">
-        Staff access only
+        Manager access only
       </Text>
       <Text className="text-secondary text-sm mt-2 text-center">
         {role
-          ? `This account is signed in as "${role}", which has no backoffice access.`
-          : "This account has no staff role assigned."}{" "}
-        Ask an admin to set a staff role in Clerk, or sign in with a staff account.
+          ? `This account is signed in as "${role}". The manager app is for manager accounts.`
+          : "This account has no role assigned."}{" "}
+        Sign in with the account assigned to this app, or use the app for your role.
       </Text>
       <TouchableOpacity
         onPress={onSignOut}

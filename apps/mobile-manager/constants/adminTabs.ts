@@ -31,13 +31,10 @@ export interface AdminTab {
  * with no icon is a compile error rather than an invisible tab.
  */
 export const ADMIN_TABS = [
-  { name: "index", title: "Dashboard", capability: "dashboard" },
   { name: "inventory", title: "Stock", capability: "inventory.read" },
   { name: "purchasing", title: "Buy", capability: "purchasing" },
   { name: "transfers", title: "Move", capability: "transfers" },
-  { name: "staff", title: "Staff", capability: "users" },
-  { name: "orders", title: "Orders", capability: "orders" },
-  { name: "products", title: "Products", capability: "products" },
+  { name: "announcements", title: "Notify", capability: "announcements" },
 ] as const satisfies readonly AdminTab[];
 
 export type AdminTabName = (typeof ADMIN_TABS)[number]["name"];

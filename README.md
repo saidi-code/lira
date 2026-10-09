@@ -29,49 +29,38 @@ The visual design system is anchored in tactile alabaster and cream canvas backd
 
 ## 3. Repository Architecture
 
-```
+The repository has separate clients for each role. Each app has its own routes and
+navigation; the API remains the authority for which data each role can read or change.
+
+| App | Role | Main features |
+|---|---|---|
+| `apps/mobile-user/` | `user` (guests may browse) | Storefront, cart, checkout, orders, profile |
+| `apps/mobile-manager/` | `manager` | Inventory, purchasing, transfers |
+| `apps/mobile-warehouse/` | `warehouse_staff` | Inventory visibility, transfers |
+| `apps/desktop-cashier/` | `cashier` | Point of sale, receipts |
+| `apps/web-admin/` | `admin` | Catalog and back-office management |
+| `apps/web/` | Public | Storefront and checkout |
+
+```text
 lira_app/
-├── AGENT.md                 # Single source of truth for agent & developer context
-├── README.md                # Project documentation and quickstart
-├── CONTRIBUTING.md          # Contribution guidelines & architectural invariants
-├── CHANGELOG.md             # Ecosystem release history and milestones
-│
-├── client/                  # Customer storefront & backoffice mobile app (Expo SDK 54)
-│   ├── app/                 # Expo Router v6 routes
-│   │   ├── (auth)/          # Clerk authentication screens
-│   │   ├── (drawer)/(tabs)/ # Core customer tabs (Storefront, Catalog, Cart, Wishlist, Profile)
-│   │   ├── admin/           # Role-gated backoffice (Inventory, Purchasing, Transfers, Staff, Warehouses)
-│   │   ├── checkout/        # Checkout flow with idempotency protection
-│   │   └── product/         # Product detail and curated presentation
-│   ├── components/          # Reusable UI widgets and layout containers
-│   ├── config/              # Typed API clients per domain
-│   ├── constants/           # Design tokens, theme store, translations, permissions
-│   ├── hooks/               # React Query data fetching & mutation hooks
-│   └── scripts/             # Route type generator for CI typechecking
-│
-├── admin/                   # Web backoffice (Vite + React Router)
-│   ├── src/pages/           # Dashboard, Orders, Products, Inventory, Purchasing, Staff
-│   └── src/lib/             # Typed API clients over @lira/shared
-│
-├── web/                     # Customer storefront (Next.js 14 App Router)
-│   ├── app/                 # Shop, product, cart, checkout, orders, wishlist
-│   └── middleware.ts        # Clerk request authentication
-│
-├── packages/
-│   ├── shared/              # @lira/shared: roles, permissions, currency, tokens, types
-│   └── config/              # @lira/config: shared tsconfig + eslint base
-│
-└── server/                  # Node.js + Express REST API (/api/v1)
-    ├── server.ts            # Application bootstrap & middleware stack
-    ├── config/              # MongoDB connection, pricing rules
-    ├── controllers/         # HTTP request orchestration & validation
-    ├── middlewares/         # Clerk authentication & RBAC authorization
-    ├── models/              # Mongoose schemas & indexes (Product, Order, Inventory, StockMovement, ...)
-    ├── routes/              # Mounted Express route modules
-    ├── scripts/             # Migration, reconciliation, and indexing utilities
-    ├── services/            # Core business logic (Ledger, Lifecycle, Stock, Purchasing)
-    └── tests/               # Unit and in-memory MongoDB integration test suites
+├── apps/                    # Role-specific clients
+│   ├── mobile-user/
+│   ├── mobile-manager/
+│   ├── mobile-warehouse/
+│   ├── desktop-cashier/
+│   ├── web-admin/
+│   └── web/
+├── packages/                # Shared types, permissions, tokens, and config
+├── server/                  # Express API, MongoDB models, services, and tests
+├── AGENT.md                 # Development and agent guidance
+├── README.md
+├── CONTRIBUTING.md
+└── CHANGELOG.md
 ```
+
+App entry gates route accounts to their assigned client. These gates only shape
+the user experience: every private API route must still authenticate the request
+and enforce role authorization on the server.
 
 ---
 

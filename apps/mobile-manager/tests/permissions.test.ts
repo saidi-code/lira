@@ -51,10 +51,12 @@ describe("can", () => {
     assert.equal(can("manager", "inventory.read"), true);
     assert.equal(can("manager", "inventory.adjust"), true);
     assert.equal(can("manager", "purchasing"), true);
+    assert.equal(can("manager", "announcements"), true);
 
     assert.equal(can("manager", "users"), false);
     assert.equal(can("manager", "dashboard"), false);
     assert.equal(can("manager", "orders"), false);
+    assert.equal(can("warehouse_staff", "announcements"), false);
   });
 
   it("lets warehouse staff read stock and move it between warehouses", () => {

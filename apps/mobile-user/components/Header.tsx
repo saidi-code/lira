@@ -8,12 +8,13 @@ import { HeaderProps } from "../constants/types";
 import { useCart } from "../hooks/useCart";
 import { useFavoris } from "../hooks/useFavoris";
 import OpenNavMenuBtn from "./OpenNavMenuBtn";
-
-const notificationCount = 3; // Replace with your actual notification count logic
+import { useNotifications } from "../hooks/useNotifications";
 
 const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
   const { itemCount } = useCart();
   const { itemsCount: favorisCount } = useFavoris();
+  const { data: notifications } = useNotifications();
+  const notificationCount = notifications?.unreadCount ?? 0;
   const router = useRouter();
 
   return (
@@ -62,7 +63,7 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
             <TouchableOpacity
               activeOpacity={0.7}
               className="relative"
-              onPress={() => router.navigate("/cart")}
+              onPress={() => router.push("/cart")}
             >
               <Ionicons
                 name={itemCount > 0 ? "bag-sharp" : "bag-outline"}
@@ -82,7 +83,7 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
             <TouchableOpacity
               activeOpacity={0.7}
               className="relative"
-              onPress={() => router.navigate("/wishlist")}
+              onPress={() => router.push("/wishlist")}
             >
               <Ionicons
                 name={favorisCount > 0 ? "heart-sharp" : "heart-outline"}
@@ -101,7 +102,7 @@ const Header = ({ showSearch = false, showBack = false }: HeaderProps) => {
             {/* Notifications */}
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.navigate("/notifications")}
+              onPress={() => router.push("/(drawer)/notifications" as any)}
               className="relative"
             >
               <MaterialIcons

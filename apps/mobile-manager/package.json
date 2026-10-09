@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --import tsx --test mobile-admin/tests/*.test.ts",
+    "test": "node --import tsx --test \"tests/*.test.ts\"",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },

@@ -77,25 +77,22 @@ describe("ADMIN_TABS", () => {
   it("keeps tab order as the bar order", () => {
     // Not cosmetic: the first tab is where a role lands, so an admin opening the
     // backoffice should arrive at the dashboard rather than the stock list.
-    assert.equal(ADMIN_TABS[0].name, "index");
-    assert.equal(ADMIN_TABS[0].title, "Dashboard");
+    assert.equal(ADMIN_TABS[0].name, "inventory");
+    assert.equal(ADMIN_TABS[0].title, "Stock");
   });
 });
 
 describe("visibleTabNames", () => {
-  it("gives an admin the whole bar", () => {
+  it("offers the warehouse app's complete operational bar", () => {
     assert.deepEqual(
       visibleTabNames("admin"),
       ADMIN_TABS.map((tab) => tab.name)
     );
   });
 
-  it("gives a manager the operational tools and not the admin ones", () => {
-    // The regression this file exists for: these three used to be hidden from a
-    // manager by `role !== "admin"`, while the server granted every one.
+  it("does not offer manager-only purchasing tools in the warehouse app", () => {
     assert.deepEqual(visibleTabNames("manager"), [
       "inventory",
-      "purchasing",
       "transfers",
     ]);
   });

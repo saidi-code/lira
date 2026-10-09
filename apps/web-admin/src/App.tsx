@@ -10,6 +10,7 @@ import { TransfersPage } from "@/pages/TransfersPage";
 import { WarehousesPage } from "@/pages/WarehousesPage";
 import { StaffPage } from "@/pages/StaffPage";
 import { DeniedPage } from "@/pages/DeniedPage";
+import { AnnouncementsPage } from "@/pages/AnnouncementsPage";
 
 export function App() {
   return (
@@ -29,6 +30,14 @@ export function App() {
           element={
             <RequireCapability capability="products">
               <ProductsPage />
+            </RequireCapability>
+          }
+        />
+        <Route
+          path="/announcements"
+          element={
+            <RequireCapability capability="announcements">
+              <AnnouncementsPage />
             </RequireCapability>
           }
         />

@@ -1,4 +1,5 @@
 import { COLORS } from "@/constants";
+import { useAuth } from "@clerk/clerk-expo";
 import { ADMIN_TABS, type AdminTabName } from "@/constants/adminTabs";
 import { useAppColors } from "@/constants/utility";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,17 +18,15 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
  * compile instead of rendering a blank slot.
  */
 const TAB_ICON: Record<AdminTabName, IconName> = {
-  index: "grid-outline",
   inventory: "cube-outline",
   purchasing: "cart-outline",
   transfers: "swap-horizontal-outline",
-  staff: "people-outline",
-  orders: "receipt-outline",
-  products: "pricetag-outline",
+  announcements: "notifications-outline",
 };
 
 export default function AdminLayout() {
   const { isLoaded, isStaff, can } = usePermissions();
+  const { signOut } = useAuth();
 
   const router = useRouter();
 
@@ -58,6 +57,7 @@ export default function AdminLayout() {
 
   return (
     <Tabs
+      initialRouteName="inventory"
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.card,
@@ -71,11 +71,14 @@ export default function AdminLayout() {
         tabBarInactiveTintColor: colors.inactive,
         headerRight: () => (
           <TouchableOpacity
-            onPress={() => router.replace("/(staff)/denied")}
+            onPress={async () => {
+              await signOut();
+              router.replace("/(auth)/signIn");
+            }}
             className="mr-4 flex-row items-center"
           >
             <Ionicons name="log-out-outline" size={24} color={COLORS.primary} />
-            <Text className="ml-1 text-primary font-medium">Exit</Text>
+            <Text className="ml-1 text-primary font-medium">Sign out</Text>
           </TouchableOpacity>
         ),
       }}

@@ -5,11 +5,13 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { unregisterPushDevice } from "@/config/pushDevice";
 
 const Profile = () => {
   const { user } = useUser();
-  const { signOut } = useAuth();
+  const { signOut, getToken } = useAuth();
   const handleLogout = async () => {
+    await unregisterPushDevice(await getToken()).catch(() => undefined);
     await signOut();
     router.replace("/(auth)/signIn");
   };
@@ -124,14 +126,6 @@ const Profile = () => {
                 عضو مسجل
               </Text>
             </View>
-            {user.publicMetadata?.role === "admin" && (
-              <TouchableOpacity
-                onPress={() => router.push("/admin")}
-                className="mt-4 px-6 py-2 bg-primary-solid rounded-full"
-              >
-                <Text className="font-bold text-white">Go to Admin Panel</Text>
-              </TouchableOpacity>
-            )}
           </View>
           <View className="mx-4  bg-card shadow shadow-accent/5 rounded-md mb-3 ">
             {PROFILE_MENU.map((m, index) => (

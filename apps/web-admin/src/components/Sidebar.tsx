@@ -5,6 +5,7 @@ import { can, normalizeRole, type Capability } from "@lira/shared";
 const LINKS: { to: string; label: string; capability: Capability }[] = [
   { to: "/", label: "Dashboard", capability: "dashboard" },
   { to: "/products", label: "Products", capability: "products" },
+  { to: "/announcements", label: "Announcements", capability: "announcements" },
   { to: "/orders", label: "Orders", capability: "orders" },
   { to: "/inventory", label: "Inventory", capability: "inventory.read" },
   { to: "/purchasing", label: "Purchasing", capability: "purchasing" },
