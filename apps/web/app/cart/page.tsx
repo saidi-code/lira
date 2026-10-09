@@ -47,6 +47,8 @@ export default function CartPage() {
                   <p className="text-sm text-muted">
                     الكمية {item.quantity}
                     {item.size ? ` · ${item.size}` : ""}
+                    {item.color ? ` · ${item.color}` : ""}
+                    {item.sku ? ` · SKU ${item.sku}` : ""}
                   </p>
                   <p className="mt-1 font-bold text-primary">
                     {formatPrice(item.price * item.quantity, "TND")}

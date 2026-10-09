@@ -291,6 +291,23 @@ body {
   gap: 0.15rem;
 }
 
+.variant-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.variant-controls select {
+  min-height: 34px;
+  max-width: 190px;
+  padding: 0.3rem 0.5rem;
+  color: #FAF7F2;
+  background: #1C1917;
+  border: 1px solid rgba(184, 147, 84, 0.35);
+  border-radius: 6px;
+}
+
 .muted {
   color: #78716C;
 }

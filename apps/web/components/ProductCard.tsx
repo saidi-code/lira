@@ -3,7 +3,7 @@ import type { Product } from "@lira/shared";
 import { formatPrice } from "@lira/shared";
 
 export function ProductCard({ product }: { product: Product }) {
-  const image = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
+  const image = product.featureImage ?? product.images?.[0] ?? product.colors?.[0]?.featureImage ?? product.colors?.[0]?.images?.[0];
   return (
     <Link
       href={`/product/${product._id}`}

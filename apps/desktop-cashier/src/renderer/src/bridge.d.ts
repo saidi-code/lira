@@ -9,6 +9,8 @@ interface CartLine {
   product?: { _id?: string; name?: string; price?: number; images?: string[] } | string;
   name?: string;
   sku?: string;
+  size?: string | null;
+  color?: string | null;
   quantity: number;
   price: number;
 }
@@ -21,6 +23,9 @@ interface ShopProduct {
   sku?: string;
   stock?: number;
   images?: string[];
+  featureImage?: string;
+  type?: "simple" | "variable";
+  colors?: { name: string; hex: string; featureImage?: string; images?: string[]; variants?: { size: string; sku: string; stock: number; isActive?: boolean }[] }[];
   brand?: string;
 }
 
@@ -54,8 +59,8 @@ interface CashierApi {
   listProducts(limit?: number): Promise<ProductSearchResult>;
   getProductById(id: string): Promise<{ success: boolean; data: ShopProduct }>;
   getCart(): Promise<{ success: boolean; data: { items: CartLine[] } }>;
-  addToCart(productId: string, quantity?: number): Promise<{ success: boolean; data: { items: CartLine[] } }>;
-  removeCartItem(productId: string): Promise<{ success: boolean; data: { items: CartLine[] } }>;
+  addToCart(productId: string, quantity?: number, size?: string | null, color?: string | null): Promise<{ success: boolean; data: { items: CartLine[] } }>;
+  removeCartItem(productId: string, size?: string | null, color?: string | null): Promise<{ success: boolean; data: { items: CartLine[] } }>;
   clearCart(): Promise<{ success: boolean; data: { items: CartLine[] } }>;
   placeOrder(body: Record<string, unknown>, idempotencyKey: string): Promise<PlaceOrderResult>;
   getPrinterStatus(): Promise<PrinterStatus>;

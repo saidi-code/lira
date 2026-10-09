@@ -39,8 +39,8 @@ function lineProductId(line: CartLine): string {
   return line.productId;
 }
 
-function orderLines(items: CartLine[]): { product: string; quantity: number }[] {
-  return cartLines(items).map((l) => ({ product: lineProductId(l), quantity: l.quantity }));
+function orderLines(items: CartLine[]): { product: string; sku?: string; size?: string | null; color?: string | null; quantity: number }[] {
+  return cartLines(items).map((l) => ({ product: lineProductId(l), sku: l.sku, size: l.size, color: l.color, quantity: l.quantity }));
 }
 
 function receiptFor(
@@ -86,6 +86,7 @@ function PosShell() {
   const [lastOrder, setLastOrder] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<string[] | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [variantChoice, setVariantChoice] = useState<Record<string, { color: string; size: string }>>({});
 
   // Spec §8 auth: hand the Clerk session JWT to the preload so every backend
   // call (`/cart`, `/orders`, …) goes out with `Authorization: Bearer …`.
@@ -159,25 +160,31 @@ function PosShell() {
     };
   }, []);
 
-  const handleAdd = useCallback(async (productId: string) => {
+  const handleAdd = useCallback(async (product: ShopProduct) => {
     if (typeof window.api === "undefined") return;
     setCartBusy(true);
     setNotice(null);
     try {
-      const res = await window.api.addToCart(productId, 1);
+      const choice = variantChoice[product._id];
+      const color = product.colors?.find((c) => c.name === choice?.color || c.hex === choice?.color) ?? product.colors?.[0];
+      const variant = color?.variants?.find((v) => v.size === choice?.size) ?? color?.variants?.find((v) => v.isActive !== false && v.stock > 0);
+      if (product.type === "variable" && (!color || !variant || variant.isActive === false || variant.stock <= 0)) {
+        throw new Error("Choose an available color and size first");
+      }
+      const res = await window.api.addToCart(product._id, 1, variant?.size ?? null, color?.name ?? null);
       setCart(cartLines(res.data?.items ?? []));
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "Add to cart failed");
     } finally {
       setCartBusy(false);
     }
-  }, []);
+  }, [variantChoice]);
 
-  const handleRemove = useCallback(async (productId: string) => {
+  const handleRemove = useCallback(async (item: CartLine) => {
     if (typeof window.api === "undefined") return;
     setCartBusy(true);
     try {
-      const res = await window.api.removeCartItem(productId);
+      const res = await window.api.removeCartItem(lineProductId(item), item.size, item.color);
       setCart(cartLines(res.data?.items ?? []));
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "Remove failed");
@@ -299,15 +306,32 @@ function PosShell() {
                   <strong>{p.name}</strong>
                   <div className="muted small">
                     {p.price.toFixed(2)} TND
-                    {typeof p.stock === "number" ? ` · stock ${p.stock}` : ""}
+                    {p.type === "variable" ? " · variable" : typeof p.stock === "number" ? ` · stock ${p.stock}` : ""}
                     {p.sku ? ` · ${p.sku}` : ""}
                   </div>
+                  {p.type === "variable" && p.colors?.length ? (() => {
+                    const choice = variantChoice[p._id];
+                    const color = p.colors?.find((c) => c.name === choice?.color || c.hex === choice?.color) ?? p.colors?.[0];
+                    const variants = color?.variants ?? [];
+                    return <div className="variant-controls">
+                      <select aria-label={`Color for ${p.name}`} value={color?.name ?? ""} onChange={(e) => {
+                        const next = p.colors?.find((c) => c.name === e.target.value);
+                        const first = next?.variants?.find((v) => v.isActive !== false && v.stock > 0);
+                        setVariantChoice((old) => ({ ...old, [p._id]: { color: e.target.value, size: first?.size ?? "" } }));
+                      }}>
+                        {p.colors.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                      </select>
+                      <select aria-label={`Size for ${p.name}`} value={variants.some((v) => v.size === choice?.size) ? choice?.size : variants.find((v) => v.isActive !== false && v.stock > 0)?.size ?? ""} onChange={(e) => setVariantChoice((old) => ({ ...old, [p._id]: { color: color?.name ?? "", size: e.target.value } }))}>
+                        {variants.map((v) => <option key={v.sku} value={v.size} disabled={v.isActive === false || v.stock <= 0}>{v.size} · {v.stock} in stock</option>)}
+                      </select>
+                    </div>;
+                  })() : null}
                 </div>
                 <button
                   type="button"
                   className="btn"
-                  disabled={cartBusy}
-                  onClick={() => void handleAdd(p._id)}
+                  onClick={() => void handleAdd(p)}
+                  disabled={cartBusy || (p.type === "variable" && !p.colors?.some((c) => c.variants?.some((v) => v.isActive !== false && v.stock > 0)))}
                 >
                   Add
                 </button>
@@ -326,15 +350,15 @@ function PosShell() {
             <>
               <ul className="cart-list">
                 {cart.map((l) => (
-                  <li key={lineProductId(l)} className="cart-row">
+                  <li key={`${lineProductId(l)}-${l.sku ?? ""}`} className="cart-row">
                     <span>
-                      {l.quantity} × {lineName(l)} — {(linePrice(l) * l.quantity).toFixed(2)} TND
+                      {l.quantity} × {lineName(l)}{l.color ? ` · ${l.color}` : ""}{l.size ? ` · ${l.size}` : ""}{l.sku ? ` · SKU ${l.sku}` : ""} — {(linePrice(l) * l.quantity).toFixed(2)} TND
                     </span>
                     <button
                       type="button"
                       className="btn btn-ghost"
                       disabled={cartBusy}
-                      onClick={() => void handleRemove(lineProductId(l))}
+                      onClick={() => void handleRemove(l)}
                     >
                       Remove
                     </button>

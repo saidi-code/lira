@@ -22,6 +22,14 @@ export default function ProductPage() {
     queryFn: () => catalogApi.product(id),
   });
 
+  const colors = product?.colors ?? [];
+  const selectedColor = colors.find((c) => c.name === color || c.hex === color) ?? colors[0];
+  const variants = selectedColor?.variants ?? [];
+  const selectedVariant = variants.find((v) => v.size === size) ?? variants.find((v) => v.isActive !== false && v.stock > 0);
+  const isVariable = product?.type === "variable";
+  const image = product?.featureImage ?? selectedColor?.featureImage ?? selectedColor?.images?.[0] ?? product?.images?.[0];
+  const available = isVariable ? Number(selectedVariant?.stock ?? 0) : Number(product?.stock ?? 0);
+
   const add = useMutation({
     mutationFn: async () => {
       if (!isSignedIn) {
@@ -30,7 +38,7 @@ export default function ProductPage() {
       }
       const token = await getToken();
       return cartApi.add(
-        { productId: id, quantity: 1, size, color },
+        { productId: id, quantity: 1, size: isVariable ? selectedVariant?.size ?? null : null, color: isVariable ? selectedColor?.name ?? null : null },
         token
       );
     },
@@ -60,10 +68,6 @@ export default function ProductPage() {
     return <p className="text-muted">القطعة غير موجودة.</p>;
   }
 
-  const image = product.images?.[0] ?? product.colors?.[0]?.images?.[0];
-  const sizes = product.sizes ?? [];
-  const colors = product.colors ?? [];
-
   return (
     <div className="grid gap-10 md:grid-cols-2">
       <div className="overflow-hidden rounded-2xl bg-surface-dim">
@@ -90,60 +94,49 @@ export default function ProductPage() {
           <p className="leading-relaxed text-ink/80">{product.description}</p>
         ) : null}
 
-        {sizes.length > 0 ? (
-          <div>
-            <p className="mb-2 text-xs uppercase tracking-widest text-muted">المقاس</p>
-            <div className="flex flex-wrap gap-2">
-              {sizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`rounded-full border px-4 py-2 text-sm ${
-                    size === s
-                      ? "border-primary bg-surface-dim text-primary-dim"
-                      : "border-primary/20"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {colors.length > 0 ? (
+        {isVariable && colors.length > 0 ? (
           <div>
             <p className="mb-2 text-xs uppercase tracking-widest text-muted">اللون</p>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => (
-                <button
-                  key={c.hex}
-                  onClick={() => setColor(c.hex)}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm ${
-                    color === c.hex
-                      ? "border-primary bg-surface-dim"
-                      : "border-primary/20"
-                  }`}
-                >
-                  <span
-                    className="h-4 w-4 rounded-full border border-primary/20"
-                    style={{ background: c.hex }}
-                  />
-                  {c.name}
+                <button key={c.name} type="button" onClick={() => { setColor(c.name); setSize(null); }}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm ${selectedColor?.name === c.name ? "border-primary bg-surface-dim" : "border-primary/20"}`}>
+                  <span className="h-4 w-4 rounded-full border border-primary/20" style={{ background: c.hex }} />{c.name}
                 </button>
               ))}
             </div>
           </div>
         ) : null}
 
-        {typeof product.stock === "number" && product.stock <= 2 && product.stock > 0 ? (
-          <p className="italic text-danger">تبقّى {product.stock} فقط</p>
+        {isVariable && variants.length > 0 ? (
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-widest text-muted">المقاس</p>
+            <div className="flex flex-wrap gap-2">
+              {variants.map((v) => (
+                <button key={v.sku} type="button" disabled={v.isActive === false || v.stock <= 0}
+                  onClick={() => setSize(v.size)}
+                    className={`rounded-full border px-4 py-2 text-sm ${
+                    selectedVariant?.sku === v.sku
+                      ? "border-primary bg-surface-dim text-primary-dim"
+                      : "border-primary/20"
+                  } disabled:opacity-40`}
+                >
+                  {v.size}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
+
+        {available > 0 && available <= 2 ? (
+          <p className="italic text-danger">تبقّى {available} فقط</p>
+        ) : null}
+        {isVariable && selectedVariant ? <p className="text-xs text-muted">SKU: {selectedVariant.sku}</p> : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={() => add.mutate()}
-            disabled={add.isLoading}
+            disabled={add.isLoading || (isVariable && (!selectedVariant || selectedVariant.isActive === false || selectedVariant.stock <= 0)) || (!isVariable && available <= 0)}
             className="flex-1 rounded-xl bg-primary py-4 font-medium text-white shadow-md shadow-primary/20 active:scale-[0.98]"
           >
             {add.isLoading ? "..." : "أضف إلى الحقيبة"}

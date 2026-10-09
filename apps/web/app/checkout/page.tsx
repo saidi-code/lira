@@ -55,6 +55,7 @@ export default function CheckoutPage() {
             quantity: i.quantity,
             size: i.size,
             color: i.color,
+            sku: i.sku,
           })),
           shippingAddressId: selected._id,
           paymentMethod: "cash",

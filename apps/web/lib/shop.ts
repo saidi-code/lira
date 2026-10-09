@@ -7,6 +7,7 @@ export type CartItem = {
   price: number;
   size?: string | null;
   color?: string | null;
+  sku?: string | null;
 };
 
 export type Cart = {
@@ -98,6 +99,7 @@ export const orderApi = {
         quantity: number;
         size?: string | null;
         color?: string | null;
+        sku?: string | null;
       }[];
       shippingAddressId?: string;
       paymentMethod: "cash" | "stripe";

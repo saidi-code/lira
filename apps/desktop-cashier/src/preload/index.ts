@@ -17,6 +17,8 @@ export interface CartLine {
   productId: string;
   name?: string;
   sku?: string;
+  size?: string | null;
+  color?: string | null;
   quantity: number;
   price: number;
 }
@@ -41,6 +43,9 @@ export interface ShopProduct {
   sku?: string;
   stock?: number;
   images?: string[];
+  featureImage?: string;
+  type?: "simple" | "variable";
+  colors?: { name: string; hex: string; featureImage?: string; images?: string[]; variants?: { size: string; sku: string; stock: number; isActive?: boolean }[] }[];
   brand?: string;
 }
 
@@ -95,14 +100,14 @@ const api = {
 
   getCart: () => request<{ success: boolean; data: { items: CartLine[] } }>("/cart"),
 
-  addToCart: (productId: string, quantity = 1) =>
+  addToCart: (productId: string, quantity = 1, size?: string | null, color?: string | null) =>
     request<{ success: boolean; data: { items: CartLine[] } }>("/cart/add", {
       method: "POST",
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify({ productId, quantity, size, color }),
     }),
 
-  removeCartItem: (productId: string) =>
-    request<{ success: boolean; data: { items: CartLine[] } }>(`/cart/item/${productId}`, {
+  removeCartItem: (productId: string, size?: string | null, color?: string | null) =>
+    request<{ success: boolean; data: { items: CartLine[] } }>(`/cart/item/${productId}?${new URLSearchParams({ ...(size ? { size } : {}), ...(color ? { color } : {}) })}`, {
       method: "DELETE",
     }),
 
